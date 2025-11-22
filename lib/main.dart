@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'services/api_service.dart';
 
 void main() => runApp(MyApp());
 
@@ -97,7 +98,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Animated Logo Container
                       Container(
                         width: 140,
                         height: 140,
@@ -135,7 +135,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       
                       SizedBox(height: 40),
                       
-                      // App Name with Glow Effect
                       ShaderMask(
                         shaderCallback: (bounds) => LinearGradient(
                           colors: [Color(0xFF00d4ff), Color(0xFF5b86e5)],
@@ -159,7 +158,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       
                       SizedBox(height: 15),
                       
-                      // Subtitle
                       Text(
                         'Your Ultimate Anime Experience',
                         style: TextStyle(
@@ -172,7 +170,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       
                       SizedBox(height: 60),
                       
-                      // Loading Animation
                       Container(
                         width: 60,
                         height: 4,
@@ -210,7 +207,49 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<dynamic> animeList = [];
+  bool isLoading = true;
+  String error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    loadHomeData();
+  }
+
+  void loadHomeData() async {
+    setState(() {
+      isLoading = true;
+      error = '';
+    });
+
+    try {
+      final result = await ApiService.getHome();
+      if (result['success'] == true) {
+        setState(() {
+          animeList = result['data'] ?? [];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          error = result['error'] ?? 'Unknown error';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,6 +258,17 @@ class HomeScreen extends StatelessWidget {
         title: Text('Hiotaku', style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFF16213e),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SearchScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -231,52 +281,190 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF00d4ff), Color(0xFF5b86e5)],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFF00d4ff).withOpacity(0.3),
-                      blurRadius: 20,
-                      spreadRadius: 2,
+        child: isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00d4ff)),
+                ),
+              )
+            : error.isNotEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error, color: Colors.red, size: 60),
+                        SizedBox(height: 20),
+                        Text(
+                          'Error: $error',
+                          style: TextStyle(color: Colors.white),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: loadHomeData,
+                          child: Text('Retry'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.home_rounded,
-                  size: 80,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 30),
-              Text(
-                'Welcome to Hiotaku!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 15),
-              Text(
-                'Your anime streaming journey begins here',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-                textAlign: TextAlign.center,
-              ),
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.all(16),
+                    itemCount: animeList.length,
+                    itemBuilder: (context, index) {
+                      final anime = animeList[index];
+                      return Card(
+                        color: Color(0xFF16213e),
+                        margin: EdgeInsets.only(bottom: 16),
+                        child: ListTile(
+                          leading: anime['poster'] != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    anime['poster'],
+                                    width: 60,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 60,
+                                        height: 80,
+                                        color: Colors.grey,
+                                        child: Icon(Icons.image, color: Colors.white),
+                                      );
+                                    },
+                                  ),
+                                )
+                              : Container(
+                                  width: 60,
+                                  height: 80,
+                                  color: Colors.grey,
+                                  child: Icon(Icons.image, color: Colors.white),
+                                ),
+                          title: Text(
+                            anime['title'] ?? 'Unknown Title',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            anime['type'] ?? 'Anime',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          onTap: () {
+                            // Navigate to anime details
+                          },
+                        ),
+                      );
+                    },
+                  ),
+      ),
+    );
+  }
+}
+
+class SearchScreen extends StatefulWidget {
+  @override
+  _SearchScreenState createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<dynamic> searchResults = [];
+  bool isLoading = false;
+
+  void searchAnime(String query) async {
+    if (query.isEmpty) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final result = await ApiService.searchAnime(query);
+      if (result['success'] == true) {
+        setState(() {
+          searchResults = result['data'] ?? [];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          searchResults = [];
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        searchResults = [];
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFF1a1a2e),
+      appBar: AppBar(
+        title: TextField(
+          controller: _searchController,
+          style: TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Search anime...',
+            hintStyle: TextStyle(color: Colors.white70),
+            border: InputBorder.none,
+          ),
+          onSubmitted: searchAnime,
+        ),
+        backgroundColor: Color(0xFF16213e),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1a1a2e),
+              Color(0xFF16213e),
             ],
           ),
         ),
+        child: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: EdgeInsets.all(16),
+                itemCount: searchResults.length,
+                itemBuilder: (context, index) {
+                  final anime = searchResults[index];
+                  return Card(
+                    color: Color(0xFF16213e),
+                    margin: EdgeInsets.only(bottom: 16),
+                    child: ListTile(
+                      leading: anime['poster'] != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                anime['poster'],
+                                width: 60,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Container(
+                              width: 60,
+                              height: 80,
+                              color: Colors.grey,
+                              child: Icon(Icons.image, color: Colors.white),
+                            ),
+                      title: Text(
+                        anime['title'] ?? 'Unknown Title',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      onTap: () {
+                        // Navigate to anime details
+                      },
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
