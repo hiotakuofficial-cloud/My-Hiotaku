@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/api_service.dart';
+import 'models/api_models.dart';
 
 void main() => runApp(MyApp());
 
@@ -213,7 +214,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<dynamic> animeList = [];
+  List<AnimeItem> animeList = [];
   bool isLoading = true;
   String error = '';
 
@@ -231,17 +232,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final result = await ApiService.getHome();
-      if (result['success'] == true) {
-        setState(() {
-          animeList = result['data'] ?? [];
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          error = result['error'] ?? 'Unknown error';
-          isLoading = false;
-        });
-      }
+      setState(() {
+        animeList = result.data;
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         error = e.toString();
@@ -316,11 +310,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Color(0xFF16213e),
                         margin: EdgeInsets.only(bottom: 16),
                         child: ListTile(
-                          leading: anime['poster'] != null
+                          leading: anime.poster != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.network(
-                                    anime['poster'],
+                                    anime.poster!,
                                     width: 60,
                                     height: 80,
                                     fit: BoxFit.cover,
@@ -341,11 +335,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Icon(Icons.image, color: Colors.white),
                                 ),
                           title: Text(
-                            anime['title'] ?? 'Unknown Title',
+                            anime.title,
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            anime['type'] ?? 'Anime',
+                            anime.type ?? 'Anime',
                             style: TextStyle(color: Colors.white70),
                           ),
                           onTap: () {
@@ -367,7 +361,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<dynamic> searchResults = [];
+  List<AnimeItem> searchResults = [];
   bool isLoading = false;
 
   void searchAnime(String query) async {
@@ -379,17 +373,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     try {
       final result = await ApiService.searchAnime(query);
-      if (result['success'] == true) {
-        setState(() {
-          searchResults = result['data'] ?? [];
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          searchResults = [];
-          isLoading = false;
-        });
-      }
+      setState(() {
+        searchResults = result.results;
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         searchResults = [];
@@ -438,11 +425,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     color: Color(0xFF16213e),
                     margin: EdgeInsets.only(bottom: 16),
                     child: ListTile(
-                      leading: anime['poster'] != null
+                      leading: anime.poster != null
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                anime['poster'],
+                                anime.poster!,
                                 width: 60,
                                 height: 80,
                                 fit: BoxFit.cover,
@@ -455,7 +442,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               child: Icon(Icons.image, color: Colors.white),
                             ),
                       title: Text(
-                        anime['title'] ?? 'Unknown Title',
+                        anime.title,
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                       onTap: () {
