@@ -1,0 +1,19 @@
+# Environment variables
+.env
+*.env
+
+# API keys and secrets
+/lib/config/secrets.dart
+
+# Build outputs
+/build/
+/android/app/build/
+
+# IDE
+.vscode/
+.idea/
+
+# Packages
+.packages
+.dart_tool/
+pubspec.lock

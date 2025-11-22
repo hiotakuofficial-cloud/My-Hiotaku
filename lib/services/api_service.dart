@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://v1-w3sc.onrender.com';
+  static String get baseUrl => AppConfig.baseUrl;
   
   static Future<Map<String, dynamic>> getHome() async {
     try {
