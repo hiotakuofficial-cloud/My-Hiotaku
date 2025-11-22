@@ -1,9 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.my_hiotaku">
    <application
-        android:label="my_hiotaku"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:label="Hiotaku"
+        android:name="${applicationName}">
         <activity
             android:name=".MainActivity"
             android:exported="true"
