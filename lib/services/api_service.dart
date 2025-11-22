@@ -22,7 +22,9 @@ class ApiService {
   }
 
   static Future<HomeResponse> getHome([int page = 1]) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=home&page=$page'), headers: _headers);
+    final url = '$baseUrl/api.php?action=home&page=$page';
+    print('DEBUG: Calling URL: $url'); // Debug print
+    final response = await http.get(Uri.parse(url), headers: _headers);
     if (response.statusCode == 200) {
       return HomeResponse.fromJson(jsonDecode(response.body));
     }
