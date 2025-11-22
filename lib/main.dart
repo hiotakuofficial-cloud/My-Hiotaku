@@ -8,6 +8,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Hiotaku',
       home: SplashScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -18,58 +19,182 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late AnimationController _fadeController;
+  late AnimationController _scaleController;
+  late AnimationController _rotateController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotateAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: Duration(seconds: 2),
-      vsync: this,
-    );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
-    _controller.forward();
     
-    Future.delayed(Duration(seconds: 3), () {
+    _fadeController = AnimationController(duration: Duration(milliseconds: 1500), vsync: this);
+    _scaleController = AnimationController(duration: Duration(milliseconds: 2000), vsync: this);
+    _rotateController = AnimationController(duration: Duration(milliseconds: 3000), vsync: this);
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut)
+    );
+    
+    _scaleAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut)
+    );
+    
+    _rotateAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _rotateController, curve: Curves.easeInOut)
+    );
+
+    _startAnimations();
+    
+    Future.delayed(Duration(seconds: 4), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => HomeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: Duration(milliseconds: 800),
+        ),
       );
     });
+  }
+
+  void _startAnimations() async {
+    await Future.delayed(Duration(milliseconds: 300));
+    _fadeController.forward();
+    await Future.delayed(Duration(milliseconds: 500));
+    _scaleController.forward();
+    _rotateController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: FadeTransition(
-          opacity: _animation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue, Colors.purple],
-                  ),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Icon(Icons.play_arrow, size: 50, color: Colors.white),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'HIOTAKU',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1a1a2e),
+              Color(0xFF16213e),
+              Color(0xFF0f3460),
+              Color(0xFF533483),
             ],
+          ),
+        ),
+        child: Center(
+          child: AnimatedBuilder(
+            animation: Listenable.merge([_fadeController, _scaleController, _rotateController]),
+            builder: (context, child) {
+              return FadeTransition(
+                opacity: _fadeAnimation,
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Animated Logo Container
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFF00d4ff),
+                              Color(0xFF5b86e5),
+                              Color(0xFF36d1dc),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(70),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF00d4ff).withOpacity(0.4),
+                              blurRadius: 30,
+                              spreadRadius: 5,
+                            ),
+                            BoxShadow(
+                              color: Color(0xFF5b86e5).withOpacity(0.3),
+                              blurRadius: 50,
+                              spreadRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: RotationTransition(
+                          turns: _rotateAnimation,
+                          child: Icon(
+                            Icons.play_circle_filled,
+                            size: 70,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      
+                      SizedBox(height: 40),
+                      
+                      // App Name with Glow Effect
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [Color(0xFF00d4ff), Color(0xFF5b86e5)],
+                        ).createShader(bounds),
+                        child: Text(
+                          'HIOTAKU',
+                          style: TextStyle(
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 4,
+                            shadows: [
+                              Shadow(
+                                color: Color(0xFF00d4ff).withOpacity(0.5),
+                                blurRadius: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      
+                      SizedBox(height: 15),
+                      
+                      // Subtitle
+                      Text(
+                        'Your Ultimate Anime Experience',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white70,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+                      
+                      SizedBox(height: 60),
+                      
+                      // Loading Animation
+                      Container(
+                        width: 60,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFF00d4ff),
+                              Color(0xFF5b86e5),
+                            ],
+                          ),
+                        ),
+                        child: LinearProgressIndicator(
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.transparent),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -78,7 +203,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   void dispose() {
-    _controller.dispose();
+    _fadeController.dispose();
+    _scaleController.dispose();
+    _rotateController.dispose();
     super.dispose();
   }
 }
@@ -87,9 +214,69 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Hiotaku')),
-      body: Center(
-        child: Text('Welcome to Hiotaku!', style: TextStyle(fontSize: 24)),
+      backgroundColor: Color(0xFF1a1a2e),
+      appBar: AppBar(
+        title: Text('Hiotaku', style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFF16213e),
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1a1a2e),
+              Color(0xFF16213e),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF00d4ff), Color(0xFF5b86e5)],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF00d4ff).withOpacity(0.3),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.home_rounded,
+                  size: 80,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 30),
+              Text(
+                'Welcome to Hiotaku!',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 15),
+              Text(
+                'Your anime streaming journey begins here',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
