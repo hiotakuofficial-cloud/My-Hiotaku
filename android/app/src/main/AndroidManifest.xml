@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.my_hiotaku">
+    package="com.hiotaku.app">
    <application
         android:label="Hiotaku"
         android:name="${applicationName}">

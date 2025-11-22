@@ -1,4 +1,4 @@
-package com.example.my_hiotaku
+package com.hiotaku.app
 
 import io.flutter.embedding.android.FlutterActivity
 
