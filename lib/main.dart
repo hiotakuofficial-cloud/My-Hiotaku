@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:ui';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,13 @@ void main() async {
     url: 'https://brwzqawoncblbxqoqyua.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA',
   );
+
+  // Listen for deep links
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    if (data.event == AuthChangeEvent.signedIn) {
+      print('User signed in via deep link: ${data.session?.user?.email}');
+    }
+  });
   
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(MyApp());
@@ -36,6 +44,8 @@ class MyApp extends StatelessWidget {
       home: SplashScreen(),
       routes: {
         '/main': (context) => MainScreen(),
+        '/login': (context) => LoginScreen(),
+        '/confirm': (context) => ConfirmationScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
@@ -253,6 +263,58 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class ConfirmationScreen extends StatefulWidget {
+  @override
+  _ConfirmationScreenState createState() => _ConfirmationScreenState();
+}
+
+class _ConfirmationScreenState extends State<ConfirmationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _handleConfirmation();
+  }
+
+  void _handleConfirmation() async {
+    // Wait a moment for auth state to update
+    await Future.delayed(Duration(seconds: 1));
+    
+    if (Supabase.instance.client.auth.currentUser != null) {
+      // User is confirmed and logged in
+      Navigator.pushReplacementNamed(context, '/main');
+    } else {
+      // Redirect to login with success message
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F0F23), Color(0xFF1A1A2E)],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Color(0xFF64B5F6)),
+              SizedBox(height: 20),
+              Text(
+                'Confirming your account...',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

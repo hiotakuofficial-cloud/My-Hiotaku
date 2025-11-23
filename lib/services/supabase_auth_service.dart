@@ -40,6 +40,7 @@ class SupabaseAuthService {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        emailRedirectTo: 'https://hiotaku.app/confirm', // Deep link redirect
       );
       
       if (response.user != null) {
