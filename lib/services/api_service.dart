@@ -2,242 +2,67 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/api_models.dart';
+import 'api_cache.dart';
 
 class ApiService {
-  // Working URL confirmed
   static const String baseUrl = 'https://v1-w3sc.onrender.com';
-  
   static final http.Client _client = http.Client();
   
   static Map<String, String> get _headers => {
-    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0.4472.120 Mobile Safari/537.36',
     'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.9',
     'Connection': 'keep-alive',
   };
 
-  // Main API (api.php) - English/Japanese anime
-  static Future<InfoResponse> getInfo() async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=info'), headers: _headers);
-    if (response.statusCode == 200) {
-      return InfoResponse.fromJson(jsonDecode(response.body));
-    }
-    throw Exception('Failed to get API info');
-  }
-
   static Future<HomeResponse> getHome([int page = 1]) async {
+    final cacheKey = 'home_$page';
+    final cached = ApiCache.get<HomeResponse>(cacheKey);
+    if (cached != null) return cached;
+
     final url = '$baseUrl/api.php?action=home&page=$page';
-    print('DEBUG: Calling URL: $url');
     
     try {
-      final response = await _client.get(
-        Uri.parse(url), 
-        headers: _headers
-      ).timeout(
-        Duration(seconds: 30),
-        onTimeout: () => throw Exception('Request timeout - server too slow')
-      );
-      
-      print('DEBUG: Response status: ${response.statusCode}');
-      print('DEBUG: Response headers: ${response.headers}');
-      print('DEBUG: Response body (first 100 chars): ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}');
+      final response = await _client.get(Uri.parse(url), headers: _headers)
+          .timeout(Duration(seconds: 30));
       
       if (response.statusCode == 200) {
-        try {
-          final jsonData = jsonDecode(response.body);
-          print('DEBUG: JSON structure: ${jsonData.runtimeType}');
-          
-          // Handle different response structures
-          if (jsonData is Map<String, dynamic>) {
-            if (jsonData.containsKey('success') && jsonData.containsKey('data')) {
-              // Standard API response with success wrapper
-              return HomeResponse.fromJson(jsonData);
-            } else if (jsonData.containsKey('data')) {
-              // Direct data response
-              return HomeResponse(
-                section: 'home',
-                total: (jsonData['data'] as List?)?.length ?? 0,
-                page: 1,
-                hasMore: false,
-                data: (jsonData['data'] as List?)?.map((e) => AnimeItem.fromJson(e)).toList() ?? []
-              );
-            } else {
-              // Assume the whole response is data
-              return HomeResponse(
-                section: 'home',
-                total: 1,
-                page: 1,
-                hasMore: false,
-                data: [AnimeItem.fromJson(jsonData)]
-              );
-            }
-          } else if (jsonData is List) {
-            // Direct array response
-            return HomeResponse(
-              section: 'home',
-              total: jsonData.length,
-              page: 1,
-              hasMore: false,
-              data: jsonData.map((e) => AnimeItem.fromJson(e)).toList()
-            );
-          }
-          
-          throw Exception('Unknown response structure');
-        } catch (e) {
-          print('DEBUG: JSON parsing error: $e');
-          throw Exception('Invalid JSON response: $e');
-        }
+        final jsonData = jsonDecode(response.body);
+        final result = _parseHomeResponse(jsonData);
+        ApiCache.set(cacheKey, result);
+        return result;
       }
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
-    } on SocketException catch (e) {
-      throw Exception('Network error: Check internet connection - $e');
-    } on FormatException catch (e) {
-      throw Exception('Invalid response format - $e');
+      throw Exception('HTTP ${response.statusCode}');
+    } on SocketException {
+      throw Exception('Network error: Check internet connection');
+    } on FormatException {
+      throw Exception('Invalid response format');
     } catch (e) {
       throw Exception('Request failed: $e');
     }
   }
 
-  static Future<SearchResponse> searchAnime(String query) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=search&q=${Uri.encodeComponent(query)}'), headers: _headers);
-    if (response.statusCode == 200) {
-      return SearchResponse.fromJson(jsonDecode(response.body));
+  static HomeResponse _parseHomeResponse(dynamic jsonData) {
+    if (jsonData is Map<String, dynamic>) {
+      if (jsonData.containsKey('success') && jsonData.containsKey('data')) {
+        return HomeResponse.fromJson(jsonData);
+      } else if (jsonData.containsKey('data')) {
+        return HomeResponse(
+          section: 'home',
+          total: (jsonData['data'] as List?)?.length ?? 0,
+          page: 1,
+          hasMore: false,
+          data: (jsonData['data'] as List?)?.map((e) => AnimeItem.fromJson(e)).toList() ?? []
+        );
+      }
+    } else if (jsonData is List) {
+      return HomeResponse(
+        section: 'home',
+        total: jsonData.length,
+        page: 1,
+        hasMore: false,
+        data: jsonData.map((e) => AnimeItem.fromJson(e)).toList()
+      );
     }
-    throw Exception('Search failed');
-  }
-
-  static Future<EpisodesResponse> getEpisodes(String animeId) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=episodes&id=${Uri.encodeComponent(animeId)}'), headers: _headers);
-    if (response.statusCode == 200) {
-      return EpisodesResponse.fromJson(jsonDecode(response.body));
-    }
-    throw Exception('Failed to load episodes');
-  }
-
-  static Future<VideoSourcesResponse> getVideoSources(String animeId, String episodeId) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=video&id=${Uri.encodeComponent(animeId)}&ep=${Uri.encodeComponent(episodeId)}'), headers: _headers);
-    if (response.statusCode == 200) {
-      return VideoSourcesResponse.fromJson(jsonDecode(response.body));
-    }
-    throw Exception('Failed to get video sources');
-  }
-
-  static Future<PaginatedResponse<AnimeItem>> getPopular([int page = 1]) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=popular&page=$page'), headers: _headers);
-    if (response.statusCode == 200) {
-      return PaginatedResponse.fromJson(jsonDecode(response.body), (json) => AnimeItem.fromJson(json));
-    }
-    throw Exception('Failed to load popular anime');
-  }
-
-  static Future<PaginatedResponse<AnimeItem>> getTopUpcoming([int page = 1]) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=top-upcoming&page=$page'), headers: _headers);
-    if (response.statusCode == 200) {
-      return PaginatedResponse.fromJson(jsonDecode(response.body), (json) => AnimeItem.fromJson(json));
-    }
-    throw Exception('Failed to load upcoming anime');
-  }
-
-  static Future<PaginatedResponse<AnimeItem>> getMovies([int page = 1]) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=movie&page=$page'), headers: _headers);
-    if (response.statusCode == 200) {
-      return PaginatedResponse.fromJson(jsonDecode(response.body), (json) => AnimeItem.fromJson(json));
-    }
-    throw Exception('Failed to load movies');
-  }
-
-  static Future<PaginatedResponse<AnimeItem>> getSubbed([int page = 1]) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=subbed&page=$page'), headers: _headers);
-    if (response.statusCode == 200) {
-      return PaginatedResponse.fromJson(jsonDecode(response.body), (json) => AnimeItem.fromJson(json));
-    }
-    throw Exception('Failed to load subbed anime');
-  }
-
-  static Future<PaginatedResponse<AnimeItem>> getDubbed([int page = 1]) async {
-    final response = await http.get(Uri.parse('$baseUrl/api.php?action=dubbed&page=$page'), headers: _headers);
-    if (response.statusCode == 200) {
-      return PaginatedResponse.fromJson(jsonDecode(response.body), (json) => AnimeItem.fromJson(json));
-    }
-    throw Exception('Failed to load dubbed anime');
-  }
-
-  // Hindi API (hindi.php) - Hindi dubbed anime
-  static Future<List<AnimeItem>> getHindiHome() async {
-    final response = await http.get(Uri.parse('$baseUrl/hindi.php?action=home'), headers: _headers);
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => AnimeItem.fromJson(e)).toList();
-    }
-    throw Exception('Failed to load Hindi anime');
-  }
-
-  static Future<List<AnimeItem>> searchHindiAnime(String query) async {
-    final response = await http.get(Uri.parse('$baseUrl/hindi.php?action=search&q=${Uri.encodeComponent(query)}'), headers: _headers);
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => AnimeItem.fromJson(e)).toList();
-    }
-    throw Exception('Hindi search failed');
-  }
-
-  // Hindi V2 API (hindiv2.php) - Alternative Hindi source
-  static Future<List<AnimeItem>> getHindiV2Home() async {
-    final response = await http.get(Uri.parse('$baseUrl/hindiv2.php?action=home'), headers: _headers);
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => AnimeItem.fromJson(e)).toList();
-    }
-    throw Exception('Failed to load Hindi V2 anime');
-  }
-
-  static Future<List<AnimeItem>> searchHindiV2Anime(String query) async {
-    final response = await http.get(Uri.parse('$baseUrl/hindiv2.php?action=search&q=${Uri.encodeComponent(query)}'), headers: _headers);
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => AnimeItem.fromJson(e)).toList();
-    }
-    throw Exception('Hindi V2 search failed');
-  }
-
-  // Combined methods for app
-  static Future<Map<String, dynamic>> getAllContent() async {
-    try {
-      final futures = await Future.wait([
-        getHome().catchError((e) => null),
-        getHindiHome().catchError((e) => <AnimeItem>[]),
-        getHindiV2Home().catchError((e) => <AnimeItem>[]),
-      ]);
-
-      return {
-        'success': true,
-        'english': futures[0],
-        'hindi': futures[1],
-        'hindi_v2': futures[2],
-      };
-    } catch (e) {
-      return {'success': false, 'error': e.toString()};
-    }
-  }
-
-  // Legacy compatibility methods
-  static Future<Map<String, dynamic>> getAnimeDetails(String animeId) async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/api.php?action=details&id=${Uri.encodeComponent(animeId)}'), headers: _headers);
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return {'success': false, 'error': 'Failed to load anime details'};
-    } catch (e) {
-      return {'success': false, 'error': e.toString()};
-    }
-  }
-
-  static Future<Map<String, dynamic>> getStream(String episodeId) async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/api.php?action=stream&id=${Uri.encodeComponent(episodeId)}'), headers: _headers);
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return {'success': false, 'error': 'Failed to get stream'};
-    } catch (e) {
-      return {'success': false, 'error': e.toString()};
-    }
+    throw Exception('Unknown response structure');
   }
 }
