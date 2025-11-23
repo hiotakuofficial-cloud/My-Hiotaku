@@ -14,7 +14,6 @@ class SupabaseAuthService {
     try {
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.hiotaku.app://login-callback',
         authScreenLaunchMode: LaunchMode.externalApplication,
       );
     } catch (e) {
