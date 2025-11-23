@@ -10,15 +10,10 @@ class ApiService {
   static final http.Client _client = http.Client();
   
   static Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
     'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
     'Accept': 'application/json, text/plain, */*',
     'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
     'Connection': 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'cross-site',
   };
 
   // Main API (api.php) - English/Japanese anime
@@ -44,6 +39,8 @@ class ApiService {
       );
       
       print('DEBUG: Response status: ${response.statusCode}');
+      print('DEBUG: Response headers: ${response.headers}');
+      print('DEBUG: Response body (first 100 chars): ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}');
       
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
