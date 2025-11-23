@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
     
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
     
@@ -60,13 +60,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       CurvedAnimation(parent: _buttonController, curve: Curves.easeInOut),
     );
 
-    // Start animations immediately
-    _controller.forward();
-    
-    // Start form animation after a short delay
-    Future.delayed(Duration(milliseconds: 400), () {
+    // Force start animations immediately after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _formController.forward();
+        _controller.forward();
+        
+        Future.delayed(Duration(milliseconds: 400), () {
+          if (mounted) {
+            _formController.forward();
+          }
+        });
       }
     });
   }
