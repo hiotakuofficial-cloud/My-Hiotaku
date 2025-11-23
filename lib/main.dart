@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -84,51 +85,114 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) => setState(() => _currentIndex = index),
-        children: _screens,
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            onPageChanged: (index) => setState(() => _currentIndex = index),
+            children: _screens,
+          ),
+          _buildBottomNav(),
+        ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -5))],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        child: BottomNavigationBar(
-          backgroundColor: Color(0xFF16213e),
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            HapticFeedback.lightImpact();
-            setState(() => _currentIndex = index);
-            _pageController.animateToPage(index, duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
-          },
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.white54,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: [
-            BottomNavigationBarItem(icon: _buildNavIcon(Icons.home, 0), label: 'Home'),
-            BottomNavigationBarItem(icon: _buildNavIcon(Icons.search, 1), label: 'Search'),
-            BottomNavigationBarItem(icon: _buildNavIcon(Icons.favorite, 2), label: 'Favorites'),
-            BottomNavigationBarItem(icon: _buildNavIcon(Icons.person, 3), label: 'Profile'),
+    return Positioned(
+      bottom: 20,
+      left: 20,
+      right: 20,
+      child: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          color: Color(0xFF1a1a1a).withOpacity(0.9),
+          borderRadius: BorderRadius.circular(35),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 30,
+              offset: Offset(0, 10),
+            ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(35),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavItem(Icons.home_rounded, 0, 'Home'),
+                _buildNavItem(Icons.search_rounded, 1, 'Search'),
+                _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
+                _buildNavItem(Icons.person_rounded, 3, 'Profile'),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNavIcon(IconData icon, int index) {
-    return AnimatedScale(
-      scale: _currentIndex == index ? 1.2 : 1.0,
-      duration: Duration(milliseconds: 200),
-      child: Icon(icon),
+  Widget _buildNavItem(IconData icon, int index, String label) {
+    bool isSelected = _currentIndex == index;
+    
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        setState(() => _currentIndex = index);
+        _pageController.animateToPage(
+          index,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      },
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 16 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: isSelected ? 1.1 : 1.0,
+              duration: Duration(milliseconds: 200),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.black : Colors.white.withOpacity(0.6),
+                size: 24,
+              ),
+            ),
+            if (isSelected) ...[
+              SizedBox(width: 8),
+              AnimatedOpacity(
+                opacity: isSelected ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 200),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
