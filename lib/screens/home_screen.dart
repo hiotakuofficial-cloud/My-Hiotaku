@@ -119,16 +119,16 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Row(
         children: [
-          // HIOTAKU Logo
+          // HIOTAKU Logo - bigger size
           Container(
-            height: 32,
+            height: 45,
             child: Image.asset(
               'assets/images/header_logo.png',
               fit: BoxFit.contain,
             ),
           ),
           Spacer(),
-          // Profile Section
+          // Profile Section - no background
           GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
@@ -144,16 +144,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               }
             },
             child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isUserLoggedIn ? null : Colors.white.withOpacity(0.1),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
+              width: 32,
+              height: 32,
               child: isUserLoggedIn
                   ? ClipOval(
                       child: AuthService.userPhotoUrl != null
@@ -161,18 +153,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                               AuthService.userPhotoUrl!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.person, color: Colors.white, size: 18);
+                                return Icon(Icons.person, color: Colors.white, size: 20);
                               },
                             )
-                          : Icon(Icons.person, color: Colors.white, size: 18),
+                          : Icon(Icons.person, color: Colors.white, size: 20),
                     )
-                  : Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Image.asset(
-                        'assets/images/login.png',
-                        color: Colors.white,
-                        fit: BoxFit.contain,
-                      ),
+                  : Image.asset(
+                      'assets/images/login.png',
+                      color: Colors.white,
+                      fit: BoxFit.contain,
                     ),
             ),
           ),
