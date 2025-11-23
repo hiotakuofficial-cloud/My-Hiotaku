@@ -119,12 +119,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Future<void> _handleAuth() async {
     if (!_formKey.currentState!.validate()) {
-      HapticFeedback.notificationFeedback(NotificationFeedbackType.error);
+      HapticFeedback.vibrate();
       return;
     }
 
     _buttonController.forward().then((_) => _buttonController.reverse());
-    HapticFeedback.impactFeedback(HapticFeedbackStyle.medium);
+    HapticFeedback.lightImpact();
     
     setState(() => _isLoading = true);
 
@@ -134,19 +134,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           _emailController.text.trim(),
           _passwordController.text,
         );
-        HapticFeedback.notificationFeedback(NotificationFeedbackType.success);
+        HapticFeedback.lightImpact();
         _showSnackBar('Account created! Check your email ✨', Colors.green);
       } else {
         await SupabaseAuthService.signInWithEmail(
           _emailController.text.trim(),
           _passwordController.text,
         );
-        HapticFeedback.notificationFeedback(NotificationFeedbackType.success);
+        HapticFeedback.lightImpact();
         Navigator.pop(context);
         _showSnackBar('Welcome back! 🎉', Colors.green);
       }
     } catch (e) {
-      HapticFeedback.notificationFeedback(NotificationFeedbackType.error);
+      HapticFeedback.vibrate();
       _showSnackBar(_isSignUp ? 'Sign up failed 😞' : 'Login failed 😞', Colors.red);
     }
 
