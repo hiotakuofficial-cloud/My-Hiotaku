@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/api_models.dart';
 
@@ -6,10 +7,13 @@ class ApiService {
   // Working URL confirmed
   static const String baseUrl = 'https://v1-w3sc.onrender.com';
   
+  static final http.Client _client = http.Client();
+  
   static Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'User-Agent': 'HiotakuApp/1.0',
     'Accept': 'application/json',
+    'Connection': 'keep-alive',
   };
 
   // Main API (api.php) - English/Japanese anime
@@ -26,17 +30,27 @@ class ApiService {
     print('DEBUG: Calling URL: $url');
     
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse(url), 
         headers: _headers
-      ).timeout(Duration(seconds: 30)); // 30 second timeout
+      ).timeout(
+        Duration(seconds: 30),
+        onTimeout: () => throw Exception('Request timeout - server too slow')
+      );
+      
+      print('DEBUG: Response status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
-        return HomeResponse.fromJson(jsonDecode(response.body));
+        final jsonData = jsonDecode(response.body);
+        return HomeResponse.fromJson(jsonData);
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    } on SocketException catch (e) {
+      throw Exception('Network error: Check internet connection - $e');
+    } on FormatException catch (e) {
+      throw Exception('Invalid response format - $e');
     } catch (e) {
-      throw Exception('Failed to load home data: $e');
+      throw Exception('Request failed: $e');
     }
   }
 
