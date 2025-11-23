@@ -133,32 +133,50 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       child: Container(
         height: 70,
         decoration: BoxDecoration(
-          color: Color(0xFF1a1a1a).withOpacity(0.9),
           borderRadius: BorderRadius.circular(35),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
-          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 30,
-              offset: Offset(0, 10),
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 40,
+              offset: Offset(0, 16),
             ),
           ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(35),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildNavItem(Icons.home_rounded, 0, 'Home'),
-                _buildNavItem(Icons.search_rounded, 1, 'Search'),
-                _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
-                _buildNavItem(Icons.person_rounded, 3, 'Profile'),
-              ],
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(35),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1.5,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.15),
+                    Colors.white.withOpacity(0.05),
+                  ],
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(Icons.home_rounded, 0, 'Home'),
+                  _buildNavItem(Icons.search_rounded, 1, 'Search'),
+                  _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
+                  _buildNavItem(Icons.person_rounded, 3, 'Profile'),
+                ],
+              ),
             ),
           ),
         ),
