@@ -98,23 +98,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           _emailController.text.trim(),
           _passwordController.text,
         );
-        _showSnackBar('✅ Account created! Check email for verification', true);
+        _showSnackBar('Account created successfully! 🎉', true);
       } else {
         await SupabaseAuthService.signInWithEmail(
           _emailController.text.trim(),
           _passwordController.text,
         );
         Navigator.pop(context);
-        _showSnackBar('✅ Login successful! Welcome back', true);
+        _showSnackBar('Welcome back! 🎉', true);
       }
     } catch (e) {
       HapticFeedback.vibrate();
-      // Show detailed error in toast
-      String errorMsg = e.toString();
-      if (errorMsg.contains('Exception:')) {
-        errorMsg = errorMsg.replaceAll('Exception: ', '');
-      }
-      _showSnackBar('❌ Error: $errorMsg', false);
+      String errorMsg = e.toString().replaceAll('Exception: ', '');
+      _showSnackBar(errorMsg, false);
     }
 
     setState(() => _isLoading = false);
@@ -131,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: EdgeInsets.all(16),
-        duration: Duration(seconds: 5), // Longer duration to read error
+        duration: Duration(seconds: 3), // Normal duration
       ),
     );
   }

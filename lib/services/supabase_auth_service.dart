@@ -12,52 +12,37 @@ class SupabaseAuthService {
   // Email Sign In
   static Future<void> signInWithEmail(String email, String password) async {
     try {
-      print('Attempting sign in with email: $email');
-      
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
       
-      print('Sign in response: ${response.user?.id}');
-      print('User confirmed: ${response.user?.emailConfirmedAt}');
-      
       if (response.user == null) {
-        throw Exception('Login failed - no user returned');
+        throw Exception('Login failed');
       }
       
-      // Check if email is confirmed
       if (response.user!.emailConfirmedAt == null) {
-        throw Exception('Please check your email and confirm your account first');
+        throw Exception('Please confirm your email first');
       }
-      
-      print('Sign in successful for user: ${response.user!.email}');
     } catch (e) {
-      print('Email Sign-In Error: $e');
       if (e.toString().contains('Invalid login credentials')) {
         throw Exception('Invalid email or password');
       } else if (e.toString().contains('Email not confirmed')) {
         throw Exception('Please confirm your email first');
       }
-      throw Exception('Login failed: ${e.toString()}');
+      throw Exception('Login failed');
     }
   }
 
   // Email Sign Up
   static Future<void> signUpWithEmail(String email, String password) async {
     try {
-      print('Attempting sign up with email: $email');
-      
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
       );
       
-      print('Sign up response: ${response.user?.id}');
-      
       if (response.user != null) {
-        print('Creating user profile in database...');
-        
         // Check if user already exists in public.users
         final existingUser = await _supabase
             .from('users')
@@ -66,26 +51,22 @@ class SupabaseAuthService {
             .maybeSingle();
         
         if (existingUser == null) {
-          // Create user profile in public.users table (without password field)
+          // Create user profile in public.users table
           await _supabase.from('users').insert({
             'id': response.user!.id,
             'email': email,
             'username': email.split('@')[0],
             'created_at': DateTime.now().toIso8601String(),
           });
-          print('User profile created successfully');
-        } else {
-          print('User profile already exists, skipping creation');
         }
       } else {
-        throw Exception('Sign up failed - no user returned');
+        throw Exception('Sign up failed');
       }
     } catch (e) {
-      print('Email Sign-Up Error: $e');
       if (e.toString().contains('already registered')) {
-        throw Exception('Email already registered. Try signing in instead.');
+        throw Exception('Email already registered');
       }
-      throw Exception('Sign up failed. Please try again.');
+      throw Exception('Sign up failed');
     }
   }
 
