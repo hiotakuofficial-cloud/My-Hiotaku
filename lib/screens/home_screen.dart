@@ -83,17 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              _buildHeader(),
-              
-              // Content
-              Expanded(
-                child: _buildContent(),
-              ),
-            ],
-          ),
+          child: _buildContent(),
         ),
       ),
     );
@@ -253,16 +243,29 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       onRefresh: _onRefresh,
       color: Colors.blue,
       backgroundColor: Color(0xFF16213e),
-      child: ListView.builder(
+      child: CustomScrollView(
         physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        itemCount: animeList.length,
-        itemBuilder: (context, index) {
-          return AnimeCard(
-            anime: animeList[index],
-            index: index,
-          );
-        },
+        slivers: [
+          // Header as part of scrollable content
+          SliverToBoxAdapter(
+            child: _buildHeader(),
+          ),
+          // Anime list
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return AnimeCard(
+                    anime: animeList[index],
+                    index: index,
+                  );
+                },
+                childCount: animeList.length,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
