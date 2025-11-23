@@ -3,9 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/api_models.dart';
 
 class ApiService {
-  // Fixed: v1-w3sc.onrender.com (not vl-w3sc)
+  // Working URL confirmed
   static const String baseUrl = 'https://v1-w3sc.onrender.com';
-  static const String fallbackUrl = 'https://216.24.57.251'; // Direct IP fallback
   
   static Map<String, String> get _headers => {
     'Content-Type': 'application/json',
@@ -24,22 +23,19 @@ class ApiService {
 
   static Future<HomeResponse> getHome([int page = 1]) async {
     final url = '$baseUrl/api.php?action=home&page=$page';
-    print('DEBUG: Calling URL: $url'); // Debug print
+    print('DEBUG: Calling URL: $url');
     
     try {
-      final response = await http.get(Uri.parse(url), headers: _headers);
+      final response = await http.get(
+        Uri.parse(url), 
+        headers: _headers
+      ).timeout(Duration(seconds: 30)); // 30 second timeout
+      
       if (response.statusCode == 200) {
         return HomeResponse.fromJson(jsonDecode(response.body));
       }
       throw Exception('HTTP ${response.statusCode}');
     } catch (e) {
-      print('DEBUG: Primary URL failed: $e');
-      // Try with different DNS or wait for network
-      await Future.delayed(Duration(seconds: 2));
-      final response = await http.get(Uri.parse(url), headers: _headers);
-      if (response.statusCode == 200) {
-        return HomeResponse.fromJson(jsonDecode(response.body));
-      }
       throw Exception('Failed to load home data: $e');
     }
   }
