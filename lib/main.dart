@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'services/api_service.dart';
 import 'models/api_models.dart';
 
@@ -9,8 +11,47 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hiotaku',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Color(0xFF0a0e27),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        pageTransitionsTheme: PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _SmoothPageTransition(),
+            TargetPlatform.iOS: _SmoothPageTransition(),
+          },
+        ),
+      ),
       home: SplashScreen(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class _SmoothPageTransition extends PageTransitionsBuilder {
+  @override
+  Widget buildTransitions<T extends Object?>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeInOut,
+      ),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: Offset(0.1, 0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(
+          parent: animation,
+          curve: Curves.fastOutSlowIn,
+        )),
+        child: child,
+      ),
     );
   }
 }
@@ -306,45 +347,129 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: animeList.length,
                     itemBuilder: (context, index) {
                       final anime = animeList[index];
-                      return Card(
-                        color: Color(0xFF16213e),
+                      return AnimatedContainer(
+                        duration: Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
                         margin: EdgeInsets.only(bottom: 16),
-                        child: ListTile(
-                          leading: anime.poster != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    anime.poster!,
-                                    width: 60,
-                                    height: 80,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: 60,
-                                        height: 80,
-                                        color: Colors.grey,
-                                        child: Icon(Icons.image, color: Colors.white),
-                                      );
-                                    },
-                                  ),
-                                )
-                              : Container(
-                                  width: 60,
-                                  height: 80,
-                                  color: Colors.grey,
-                                  child: Icon(Icons.image, color: Colors.white),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 25,
+                              spreadRadius: -5,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Color(0xFF16213e).withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1,
                                 ),
-                          title: Text(
-                            anime.title,
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    // Navigate to anime details
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        Hero(
+                                          tag: 'anime_${anime.id}',
+                                          child: AnimatedContainer(
+                                            duration: Duration(milliseconds: 300),
+                                            curve: Curves.easeInOut,
+                                            child: anime.poster != null
+                                                ? ClipRRect(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    child: Image.network(
+                                                      anime.poster!,
+                                                      width: 60,
+                                                      height: 80,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context, error, stackTrace) {
+                                                        return Container(
+                                                          width: 60,
+                                                          height: 80,
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.grey.withOpacity(0.3),
+                                                            borderRadius: BorderRadius.circular(12),
+                                                          ),
+                                                          child: Icon(Icons.image, color: Colors.white54),
+                                                        );
+                                                      },
+                                                    ),
+                                                  )
+                                                : Container(
+                                                    width: 60,
+                                                    height: 80,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey.withOpacity(0.3),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Icon(Icons.image, color: Colors.white54),
+                                                  ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                anime.title,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 8),
+                                              AnimatedOpacity(
+                                                opacity: 0.7,
+                                                duration: Duration(milliseconds: 300),
+                                                child: Text(
+                                                  anime.type ?? 'Anime',
+                                                  style: TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        AnimatedScale(
+                                          scale: 1.0,
+                                          duration: Duration(milliseconds: 200),
+                                          child: Icon(
+                                            Icons.play_circle_outline,
+                                            color: Colors.blue,
+                                            size: 32,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                          subtitle: Text(
-                            anime.type ?? 'Anime',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          onTap: () {
-                            // Navigate to anime details
-                          },
                         ),
                       );
                     },
