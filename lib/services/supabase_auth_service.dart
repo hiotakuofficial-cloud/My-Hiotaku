@@ -12,14 +12,20 @@ class SupabaseAuthService {
   // Email Sign In
   static Future<void> signInWithEmail(String email, String password) async {
     try {
+      print('Attempting sign in with email: $email');
+      
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
       
+      print('Sign in response: ${response.user?.id}');
+      
       if (response.user == null) {
-        throw Exception('Login failed');
+        throw Exception('Login failed - no user returned');
       }
+      
+      print('Sign in successful for user: ${response.user!.email}');
     } catch (e) {
       print('Email Sign-In Error: $e');
       throw Exception('Invalid email or password');
@@ -29,12 +35,17 @@ class SupabaseAuthService {
   // Email Sign Up
   static Future<void> signUpWithEmail(String email, String password) async {
     try {
+      print('Attempting sign up with email: $email');
+      
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
       );
       
+      print('Sign up response: ${response.user?.id}');
+      
       if (response.user != null) {
+        print('Creating user profile in database...');
         // Create user profile in public.users table
         await _supabase.from('users').insert({
           'id': response.user!.id,
@@ -42,6 +53,9 @@ class SupabaseAuthService {
           'username': email.split('@')[0],
           'created_at': DateTime.now().toIso8601String(),
         });
+        print('User profile created successfully');
+      } else {
+        throw Exception('Sign up failed - no user returned');
       }
     } catch (e) {
       print('Email Sign-Up Error: $e');
