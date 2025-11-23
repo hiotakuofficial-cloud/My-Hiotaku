@@ -14,16 +14,23 @@ class AuthService {
   // Google Sign In
   static Future<UserCredential?> signInWithGoogle() async {
     try {
+      print('Starting Google Sign-In...');
+      
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
-        // User canceled the sign-in
+        print('User canceled the sign-in');
         return null;
       }
 
+      print('Google user: ${googleUser.email}');
+
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      print('Access token: ${googleAuth.accessToken != null}');
+      print('ID token: ${googleAuth.idToken != null}');
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
@@ -31,11 +38,25 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
+      print('Signing in to Firebase...');
+      
       // Sign in to Firebase with the Google credential
-      return await _auth.signInWithCredential(credential);
+      final result = await _auth.signInWithCredential(credential);
+      
+      print('Firebase sign-in successful: ${result.user?.email}');
+      
+      return result;
     } catch (e) {
-      print('Google Sign-In Error: $e');
-      throw Exception('Google Sign-In failed: $e');
+      print('Google Sign-In Error Details: $e');
+      if (e.toString().contains('network_error')) {
+        throw Exception('Network error. Check internet connection.');
+      } else if (e.toString().contains('sign_in_canceled')) {
+        throw Exception('Sign-in was canceled.');
+      } else if (e.toString().contains('sign_in_failed')) {
+        throw Exception('Google Sign-In failed. Please try again.');
+      } else {
+        throw Exception('Authentication failed: ${e.toString()}');
+      }
     }
   }
 
