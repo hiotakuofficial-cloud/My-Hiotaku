@@ -98,18 +98,23 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           _emailController.text.trim(),
           _passwordController.text,
         );
-        _showSnackBar('Account created! Check your email 📧', true);
+        _showSnackBar('✅ Account created! Check email for verification', true);
       } else {
         await SupabaseAuthService.signInWithEmail(
           _emailController.text.trim(),
           _passwordController.text,
         );
         Navigator.pop(context);
-        _showSnackBar('Welcome back! 🎉', true);
+        _showSnackBar('✅ Login successful! Welcome back', true);
       }
     } catch (e) {
       HapticFeedback.vibrate();
-      _showSnackBar(_isSignUp ? 'Sign up failed' : 'Invalid credentials', false);
+      // Show detailed error in toast
+      String errorMsg = e.toString();
+      if (errorMsg.contains('Exception:')) {
+        errorMsg = errorMsg.replaceAll('Exception: ', '');
+      }
+      _showSnackBar('❌ Error: $errorMsg', false);
     }
 
     setState(() => _isLoading = false);
@@ -126,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: EdgeInsets.all(16),
+        duration: Duration(seconds: 5), // Longer duration to read error
       ),
     );
   }
