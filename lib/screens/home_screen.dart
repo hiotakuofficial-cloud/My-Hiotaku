@@ -145,8 +145,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               }
             },
             child: Container(
-              width: 32,
-              height: 32,
+              width: 24,
+              height: 24,
               child: isUserLoggedIn
                   ? ClipOval(
                       child: AuthService.userPhotoUrl != null
