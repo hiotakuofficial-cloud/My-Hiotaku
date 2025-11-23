@@ -1,6 +1,3 @@
-import 'dart:convert';
-import '../models/api_models.dart';
-
 class ApiCache {
   static final Map<String, CacheItem> _cache = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);

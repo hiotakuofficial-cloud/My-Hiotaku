@@ -25,6 +25,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: SplashScreen(),
+      routes: {
+        '/main': (context) => MainScreen(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }
