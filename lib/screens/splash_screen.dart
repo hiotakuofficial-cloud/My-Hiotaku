@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+import '../services/api_service.dart';
+import '../services/api_cache.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -35,10 +37,32 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
     
+    // Preload main screen data during splash
+    _preloadData();
+    
     Future.delayed(Duration(milliseconds: 2500), () {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       Navigator.of(context).pushReplacementNamed('/main');
     });
+  }
+
+  Future<void> _preloadData() async {
+    try {
+      // Check if data is already cached
+      final cacheKey = 'home_1';
+      final cached = ApiCache.get(cacheKey);
+      
+      if (cached == null) {
+        // Load fresh data in background during splash
+        await ApiService.getHome();
+        print('Main screen data preloaded during splash');
+      } else {
+        print('Using cached data for main screen');
+      }
+    } catch (e) {
+      print('Preload failed: $e');
+      // Continue to main screen even if preload fails
+    }
   }
 
   @override
