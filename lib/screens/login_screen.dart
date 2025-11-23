@@ -3,13 +3,97 @@ import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../services/supabase_auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  bool _isSignUp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleAuth() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (_isSignUp) {
+        await SupabaseAuthService.signUpWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Account created! Please check your email.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        await SupabaseAuthService.signInWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome back!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isSignUp ? 'Sign up failed' : 'Login failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+
+    setState(() => _isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -18,151 +102,166 @@ class LoginScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header with back button
-              Padding(
-                padding: EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.arrow_back, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-              
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 40),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(24),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Form(
+                  key: _formKey,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      SizedBox(height: 60),
+                      
                       // Logo
-                      Container(
-                        height: 60,
-                        child: Image.asset(
-                          'assets/images/header_logo.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      
-                      SizedBox(height: 60),
-                      
-                      // Welcome text
-                      Text(
-                        'Welcome to Hiotaku',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      
-                      SizedBox(height: 16),
-                      
-                      Text(
-                        'Sign in to access personalized features,\nsync your favorites, and get recommendations.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.7),
-                          height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      
-                      SizedBox(height: 60),
-                      
-                      // Google Sign-In Button
-                      Container(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            try {
-                              HapticFeedback.lightImpact();
-                              
-                              // Show loading
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) => Center(
-                                  child: CircularProgressIndicator(color: Colors.white),
-                                ),
-                              );
-                              
-                              await SupabaseAuthService.signInWithGoogle();
-                              
-                              // Close loading
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                              
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Welcome ${SupabaseAuthService.userName}!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            } catch (e) {
-                              // Close loading if open
-                              if (Navigator.canPop(context)) Navigator.pop(context);
-                              
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Login failed. Please try again.'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                          icon: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'G',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          label: Text(
-                            'Continue with Google',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                            elevation: 8,
+                      Center(
+                        child: Container(
+                          height: 80,
+                          child: Image.asset(
+                            'assets/images/header_logo.png',
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ),
                       
                       SizedBox(height: 40),
                       
-                      // Skip button
+                      // Title
+                      Text(
+                        _isSignUp ? 'Create Account' : 'Welcome Back',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: 8),
+                      
+                      Text(
+                        _isSignUp ? 'Join the Hiotaku community' : 'Sign in to continue',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: 40),
+                      
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          labelStyle: TextStyle(color: Colors.white70),
+                          prefixIcon: Icon(Icons.email, color: Colors.white70),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value?.isEmpty ?? true) return 'Email required';
+                          if (!value!.contains('@')) return 'Invalid email';
+                          return null;
+                        },
+                      ),
+                      
+                      SizedBox(height: 20),
+                      
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        style: TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          labelStyle: TextStyle(color: Colors.white70),
+                          prefixIcon: Icon(Icons.lock, color: Colors.white70),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.white70,
+                            ),
+                            onPressed: () {
+                              setState(() => _isPasswordVisible = !_isPasswordVisible);
+                            },
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value?.isEmpty ?? true) return 'Password required';
+                          if (value!.length < 6) return 'Password too short';
+                          return null;
+                        },
+                      ),
+                      
+                      SizedBox(height: 30),
+                      
+                      // Auth Button
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _handleAuth,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                _isSignUp ? 'Create Account' : 'Sign In',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                      
+                      SizedBox(height: 20),
+                      
+                      // Toggle Sign Up/Sign In
                       TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          setState(() => _isSignUp = !_isSignUp);
+                        },
                         child: Text(
-                          'Maybe Later',
+                          _isSignUp 
+                              ? 'Already have an account? Sign In'
+                              : 'Don\'t have an account? Sign Up',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 16,
+                            color: Colors.white70,
+                            fontSize: 14,
                           ),
                         ),
                       ),
@@ -170,7 +269,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

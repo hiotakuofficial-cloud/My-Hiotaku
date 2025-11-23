@@ -9,17 +9,48 @@ class SupabaseAuthService {
   // Check if user is logged in
   static bool get isLoggedIn => _supabase.auth.currentUser != null;
 
-  // Google Sign In (Web-based OAuth)
+  // Email Sign In
+  static Future<void> signInWithEmail(String email, String password) async {
+    try {
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      
+      if (response.user == null) {
+        throw Exception('Login failed');
+      }
+    } catch (e) {
+      print('Email Sign-In Error: $e');
+      throw Exception('Invalid email or password');
+    }
+  }
+
+  // Email Sign Up
+  static Future<void> signUpWithEmail(String email, String password) async {
+    try {
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+      
+      if (response.user == null) {
+        throw Exception('Sign up failed');
+      }
+    } catch (e) {
+      print('Email Sign-Up Error: $e');
+      throw Exception('Sign up failed. Email may already exist.');
+    }
+  }
+
+  // Demo Google login (fallback)
   static Future<void> signInWithGoogle() async {
     try {
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'hiotaku://auth-callback',
-        authScreenLaunchMode: LaunchMode.externalApplication,
-      );
+      // For now, just simulate login
+      await Future.delayed(Duration(seconds: 1));
+      // In real app, this would be OAuth
     } catch (e) {
-      print('Supabase Google Sign-In Error: $e');
-      throw Exception('Google Sign-In failed: $e');
+      throw Exception('Google login not available');
     }
   }
 
