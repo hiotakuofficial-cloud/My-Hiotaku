@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
+import '../services/api_cache.dart';
 import '../services/auth_service.dart';
 import '../models/api_models.dart';
 import '../widgets/anime_card.dart';
