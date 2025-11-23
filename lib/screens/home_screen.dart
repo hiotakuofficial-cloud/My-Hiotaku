@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../models/api_models.dart';
 import '../widgets/anime_card.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -25,6 +27,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   void initState() {
     super.initState();
     _loadAnime();
+    
+    // Listen to auth state changes
+    AuthService.authStateChanges.listen((user) {
+      if (mounted) {
+        setState(() {
+          isUserLoggedIn = user != null;
+        });
+      }
+    });
   }
 
   Future<void> _loadAnime() async {
@@ -90,12 +101,12 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 40, 20, 20),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Row(
         children: [
           // HIOTAKU Logo
           Container(
-            height: 40,
+            height: 32,
             child: Image.asset(
               'assets/images/header_logo.png',
               fit: BoxFit.contain,
@@ -107,16 +118,19 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             onTap: () {
               HapticFeedback.lightImpact();
               if (!isUserLoggedIn) {
-                // Show login dialog or navigate to login
-                _showLoginDialog();
+                // Navigate to login screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
               } else {
-                // Navigate to profile screen
-                _navigateToProfile();
+                // Show logged in popup
+                _showLoggedInPopup();
               }
             },
             child: Container(
-              width: 40,
-              height: 40,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isUserLoggedIn ? null : Colors.white.withOpacity(0.1),
@@ -127,18 +141,23 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               ),
               child: isUserLoggedIn
                   ? ClipOval(
-                      child: Image.asset(
-                        'assets/images/default_avatar.png', // Default avatar
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(Icons.person, color: Colors.white, size: 20);
-                        },
-                      ),
+                      child: AuthService.userPhotoUrl != null
+                          ? Image.network(
+                              AuthService.userPhotoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(Icons.person, color: Colors.white, size: 18);
+                              },
+                            )
+                          : Icon(Icons.person, color: Colors.white, size: 18),
                     )
-                  : Icon(
-                      Icons.person_outline,
-                      color: Colors.white.withOpacity(0.8),
-                      size: 20,
+                  : Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Image.asset(
+                        'assets/images/login.png',
+                        color: Colors.white,
+                        fit: BoxFit.contain,
+                      ),
                     ),
             ),
           ),
@@ -147,37 +166,75 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     );
   }
 
-  void _showLoginDialog() {
+  void _showLoggedInPopup() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Color(0xFF16213e),
-        title: Text('Login Required', style: TextStyle(color: Colors.white)),
-        content: Text(
-          'Please login to access your profile and personalized features.',
-          style: TextStyle(color: Colors.white70),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Default avatar
+            CircleAvatar(
+              radius: 40,
+              backgroundImage: AuthService.userPhotoUrl != null 
+                  ? NetworkImage(AuthService.userPhotoUrl!) 
+                  : null,
+              child: AuthService.userPhotoUrl == null 
+                  ? Icon(Icons.person, color: Colors.white, size: 40) 
+                  : null,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Logged In',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              AuthService.userName,
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            SizedBox(height: 4),
+            Text(
+              AuthService.userEmail,
+              style: TextStyle(color: Colors.white54, fontSize: 14),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await AuthService.signOut();
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Signed out successfully'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Sign out failed'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+              child: Text('Sign Out'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.white54)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to login screen
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            child: Text('Login'),
-          ),
-        ],
       ),
     );
-  }
-
-  void _navigateToProfile() {
-    // Navigate to profile screen
-    print('Navigate to profile');
   }
 
   Widget _buildContent() {
