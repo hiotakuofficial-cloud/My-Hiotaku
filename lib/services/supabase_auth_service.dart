@@ -20,15 +20,26 @@ class SupabaseAuthService {
       );
       
       print('Sign in response: ${response.user?.id}');
+      print('User confirmed: ${response.user?.emailConfirmedAt}');
       
       if (response.user == null) {
         throw Exception('Login failed - no user returned');
       }
       
+      // Check if email is confirmed
+      if (response.user!.emailConfirmedAt == null) {
+        throw Exception('Please check your email and confirm your account first');
+      }
+      
       print('Sign in successful for user: ${response.user!.email}');
     } catch (e) {
       print('Email Sign-In Error: $e');
-      throw Exception('Invalid email or password');
+      if (e.toString().contains('Invalid login credentials')) {
+        throw Exception('Invalid email or password');
+      } else if (e.toString().contains('Email not confirmed')) {
+        throw Exception('Please confirm your email first');
+      }
+      throw Exception('Login failed: ${e.toString()}');
     }
   }
 
@@ -46,20 +57,35 @@ class SupabaseAuthService {
       
       if (response.user != null) {
         print('Creating user profile in database...');
-        // Create user profile in public.users table
-        await _supabase.from('users').insert({
-          'id': response.user!.id,
-          'email': email,
-          'username': email.split('@')[0],
-          'created_at': DateTime.now().toIso8601String(),
-        });
-        print('User profile created successfully');
+        
+        // Check if user already exists in public.users
+        final existingUser = await _supabase
+            .from('users')
+            .select()
+            .eq('email', email)
+            .maybeSingle();
+        
+        if (existingUser == null) {
+          // Create user profile in public.users table (without password field)
+          await _supabase.from('users').insert({
+            'id': response.user!.id,
+            'email': email,
+            'username': email.split('@')[0],
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          print('User profile created successfully');
+        } else {
+          print('User profile already exists, skipping creation');
+        }
       } else {
         throw Exception('Sign up failed - no user returned');
       }
     } catch (e) {
       print('Email Sign-Up Error: $e');
-      throw Exception('Sign up failed. Email may already exist.');
+      if (e.toString().contains('already registered')) {
+        throw Exception('Email already registered. Try signing in instead.');
+      }
+      throw Exception('Sign up failed. Please try again.');
     }
   }
 
