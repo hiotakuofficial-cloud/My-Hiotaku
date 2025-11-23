@@ -40,11 +40,22 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
   Future<void> _loadAnime() async {
     if (!mounted) return;
-    
-    setState(() {
-      isLoading = true;
-      error = '';
-    });
+
+    // Show cached data immediately if available
+    final cacheKey = 'home_1';
+    final cached = ApiCache.get<HomeResponse>(cacheKey);
+    if (cached != null && cached.data.isNotEmpty) {
+      setState(() {
+        animeList = cached.data;
+        isLoading = false;
+        error = '';
+      });
+    } else {
+      setState(() {
+        isLoading = true;
+        error = '';
+      });
+    }
 
     try {
       final result = await ApiService.getHome();
@@ -52,13 +63,19 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         setState(() {
           animeList = result.data;
           isLoading = false;
+          error = '';
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          error = e.toString();
-          isLoading = false;
+          // Only show error if no cached data
+          if (animeList.isEmpty) {
+            error = e.toString();
+            isLoading = false;
+          } else {
+            isLoading = false;
+          }
         });
       }
     }

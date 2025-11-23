@@ -147,14 +147,24 @@ class _AnimeCardState extends State<AnimeCard>
               ? Image.network(
                   widget.anime.poster!,
                   fit: BoxFit.cover,
+                  cacheWidth: 140, // Optimize image size
+                  cacheHeight: 200,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
                     return Container(
                       color: Colors.grey.withOpacity(0.2),
                       child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.blue),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.blue),
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
                         ),
                       ),
                     );

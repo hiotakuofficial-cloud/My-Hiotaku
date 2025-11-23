@@ -1,6 +1,6 @@
 class ApiCache {
   static final Map<String, CacheItem> _cache = {};
-  static const Duration _cacheExpiry = Duration(minutes: 5);
+  static const Duration _cacheExpiry = Duration(hours: 24);
 
   static void set(String key, dynamic data) {
     _cache[key] = CacheItem(
@@ -27,6 +27,12 @@ class ApiCache {
 
   static void remove(String key) {
     _cache.remove(key);
+  }
+
+  static bool isCached(String key) {
+    final item = _cache[key];
+    if (item == null) return false;
+    return DateTime.now().difference(item.timestamp) <= _cacheExpiry;
   }
 }
 
