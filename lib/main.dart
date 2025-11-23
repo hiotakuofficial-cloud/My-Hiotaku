@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'services/api_service.dart';
 import 'models/api_models.dart';
+import 'screens/splash_screen.dart';
 
 void main() => runApp(MyApp());
 
