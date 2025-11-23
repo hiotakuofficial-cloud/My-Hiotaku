@@ -30,12 +30,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     super.initState();
     
     _controller = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: Duration(milliseconds: 1200),
       vsync: this,
     );
     
     _formController = AnimationController(
-      duration: Duration(milliseconds: 800),
+      duration: Duration(milliseconds: 600),
       vsync: this,
     );
     
@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
     
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
     
@@ -60,9 +60,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       CurvedAnimation(parent: _buttonController, curve: Curves.easeInOut),
     );
 
+    // Start animations immediately
     _controller.forward();
-    Future.delayed(Duration(milliseconds: 600), () {
-      _formController.forward();
+    
+    // Start form animation after a short delay
+    Future.delayed(Duration(milliseconds: 400), () {
+      if (mounted) {
+        _formController.forward();
+      }
     });
   }
 
@@ -246,47 +251,70 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     bool obscureText = false,
     Widget? suffixIcon,
     TextInputType? keyboardType,
+    int animationDelay = 0,
   }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+    return AnimatedBuilder(
+      animation: _formController,
+      builder: (context, child) {
+        final delayedAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+            parent: _formController,
+            curve: Interval(
+              animationDelay * 0.1,
+              0.8 + (animationDelay * 0.1),
+              curve: Curves.easeOutCubic,
+            ),
           ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        style: TextStyle(color: Colors.white, fontSize: 16),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: Colors.white70),
-          prefixIcon: Icon(icon, color: Color(0xFF64B5F6), size: 22),
-          suffixIcon: suffixIcon,
-          filled: true,
-          fillColor: Color(0xFF1E1E2E).withOpacity(0.8),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
+        );
+        
+        return Transform.translate(
+          offset: Offset(0, (1 - delayedAnimation.value) * 30),
+          child: Opacity(
+            opacity: delayedAnimation.value,
+            child: Container(
+              margin: EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1 * delayedAnimation.value),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextFormField(
+                controller: controller,
+                obscureText: obscureText,
+                keyboardType: keyboardType,
+                style: TextStyle(color: Colors.white, fontSize: 16),
+                decoration: InputDecoration(
+                  labelText: label,
+                  labelStyle: TextStyle(color: Colors.white70),
+                  prefixIcon: Icon(icon, color: Color(0xFF64B5F6), size: 22),
+                  suffixIcon: suffixIcon,
+                  filled: true,
+                  fillColor: Color(0xFF1E1E2E).withOpacity(0.8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Color(0xFF64B5F6), width: 2),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Color(0xFFE57373), width: 2),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                ),
+                validator: validator,
+              ),
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Color(0xFF64B5F6), width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Color(0xFFE57373), width: 2),
-          ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        ),
-        validator: validator,
-      ),
+        );
+      },
     );
   }
 
@@ -398,6 +426,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               label: 'Email',
                               icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
+                              animationDelay: 0,
                               validator: (value) {
                                 if (value?.isEmpty ?? true) return 'Email required';
                                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
@@ -413,6 +442,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               label: 'Password',
                               icon: Icons.lock_outline,
                               obscureText: !_isPasswordVisible,
+                              animationDelay: 1,
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
