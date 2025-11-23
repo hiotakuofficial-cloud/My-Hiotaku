@@ -110,10 +110,54 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     } catch (e) {
       HapticFeedback.vibrate();
       String errorMsg = e.toString().replaceAll('Exception: ', '');
-      _showErrorToast(errorMsg);
+      
+      if (errorMsg == 'CONFIRMATION_REQUIRED') {
+        _showInfoToast('Please confirm your account via email');
+      } else {
+        _showErrorToast(errorMsg);
+      }
     }
 
     setState(() => _isLoading = false);
+  }
+
+  void _showInfoToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: Color(0xFF1976D2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: EdgeInsets.all(16),
+        duration: Duration(seconds: 4),
+        elevation: 6,
+      ),
+    );
   }
 
   void _showSuccessToast(String message) {

@@ -59,12 +59,19 @@ class SupabaseAuthService {
             'created_at': DateTime.now().toIso8601String(),
           });
         }
+        
+        // Check if email confirmation is required
+        if (response.user!.emailConfirmedAt == null) {
+          throw Exception('CONFIRMATION_REQUIRED');
+        }
       } else {
         throw Exception('Sign up failed');
       }
     } catch (e) {
       if (e.toString().contains('already registered')) {
         throw Exception('Email already registered');
+      } else if (e.toString().contains('CONFIRMATION_REQUIRED')) {
+        throw Exception('CONFIRMATION_REQUIRED');
       }
       throw Exception('Sign up failed');
     }
