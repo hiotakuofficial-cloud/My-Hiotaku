@@ -43,8 +43,50 @@ class ApiService {
       print('DEBUG: Response body (first 100 chars): ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}');
       
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        return HomeResponse.fromJson(jsonData);
+        try {
+          final jsonData = jsonDecode(response.body);
+          print('DEBUG: JSON structure: ${jsonData.runtimeType}');
+          
+          // Handle different response structures
+          if (jsonData is Map<String, dynamic>) {
+            if (jsonData.containsKey('success') && jsonData.containsKey('data')) {
+              // Standard API response with success wrapper
+              return HomeResponse.fromJson(jsonData);
+            } else if (jsonData.containsKey('data')) {
+              // Direct data response
+              return HomeResponse(
+                section: 'home',
+                total: (jsonData['data'] as List?)?.length ?? 0,
+                page: 1,
+                hasMore: false,
+                data: (jsonData['data'] as List?)?.map((e) => AnimeItem.fromJson(e)).toList() ?? []
+              );
+            } else {
+              // Assume the whole response is data
+              return HomeResponse(
+                section: 'home',
+                total: 1,
+                page: 1,
+                hasMore: false,
+                data: [AnimeItem.fromJson(jsonData)]
+              );
+            }
+          } else if (jsonData is List) {
+            // Direct array response
+            return HomeResponse(
+              section: 'home',
+              total: jsonData.length,
+              page: 1,
+              hasMore: false,
+              data: jsonData.map((e) => AnimeItem.fromJson(e)).toList()
+            );
+          }
+          
+          throw Exception('Unknown response structure');
+        } catch (e) {
+          print('DEBUG: JSON parsing error: $e');
+          throw Exception('Invalid JSON response: $e');
+        }
       }
       throw Exception('HTTP ${response.statusCode}: ${response.body}');
     } on SocketException catch (e) {

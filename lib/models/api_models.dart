@@ -82,13 +82,13 @@ class AnimeItem {
 
   factory AnimeItem.fromJson(Map<String, dynamic> json) {
     return AnimeItem(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      poster: json['poster'],
-      type: json['type'],
-      status: json['status'],
-      year: json['year'],
-      description: json['description'],
+      id: json['id'] ?? json['anime_id'] ?? json['animeId'] ?? '',
+      title: json['title'] ?? json['name'] ?? json['anime_title'] ?? '',
+      poster: json['poster'] ?? json['image'] ?? json['thumbnail'] ?? json['cover'],
+      type: json['type'] ?? json['category'] ?? json['genre'],
+      status: json['status'] ?? json['state'],
+      year: json['year'] ?? json['release_year'] ?? json['aired'],
+      description: json['description'] ?? json['synopsis'] ?? json['summary'],
     );
   }
 }
