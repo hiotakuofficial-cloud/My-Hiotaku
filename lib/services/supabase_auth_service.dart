@@ -34,8 +34,14 @@ class SupabaseAuthService {
         password: password,
       );
       
-      if (response.user == null) {
-        throw Exception('Sign up failed');
+      if (response.user != null) {
+        // Create user profile in public.users table
+        await _supabase.from('users').insert({
+          'id': response.user!.id,
+          'email': email,
+          'username': email.split('@')[0],
+          'created_at': DateTime.now().toIso8601String(),
+        });
       }
     } catch (e) {
       print('Email Sign-Up Error: $e');
