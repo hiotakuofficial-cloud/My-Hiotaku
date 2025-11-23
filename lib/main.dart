@@ -281,15 +281,21 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   }
 
   void _handleConfirmation() async {
-    // Wait a moment for auth state to update
-    await Future.delayed(Duration(seconds: 1));
+    // Wait for auth state to settle
+    await Future.delayed(Duration(seconds: 2));
     
-    if (Supabase.instance.client.auth.currentUser != null) {
-      // User is confirmed and logged in
-      Navigator.pushReplacementNamed(context, '/main');
+    final user = Supabase.instance.client.auth.currentUser;
+    
+    if (user != null && user.emailConfirmedAt != null) {
+      // User is confirmed and logged in - go to main app
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/main');
+      }
     } else {
-      // Redirect to login with success message
-      Navigator.pushReplacementNamed(context, '/login');
+      // Not logged in or not confirmed - go to login
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
   }
 
@@ -306,11 +312,40 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: Color(0xFF64B5F6)),
-              SizedBox(height: 20),
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Color(0xFF64B5F6),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              SizedBox(height: 30),
               Text(
-                'Confirming your account...',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                'Account Confirmed',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Redirecting to app...',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 30),
+              CircularProgressIndicator(
+                color: Color(0xFF64B5F6),
+                strokeWidth: 2,
               ),
             ],
           ),
