@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
     
-    _scaleAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
     
