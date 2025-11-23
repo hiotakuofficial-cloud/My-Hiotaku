@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import '../services/auth_service.dart';
+import '../services/supabase_auth_service.dart';
 
 class LoginScreen extends StatelessWidget {
   @override
@@ -83,15 +83,32 @@ class LoginScreen extends StatelessWidget {
                           onPressed: () async {
                             try {
                               HapticFeedback.lightImpact();
-                              await AuthService.signInWithGoogle();
+                              
+                              // Show loading
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => Center(
+                                  child: CircularProgressIndicator(color: Colors.white),
+                                ),
+                              );
+                              
+                              await SupabaseAuthService.signInWithGoogle();
+                              
+                              // Close loading
                               Navigator.pop(context);
+                              Navigator.pop(context);
+                              
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Welcome ${AuthService.userName}!'),
+                                  content: Text('Welcome ${SupabaseAuthService.userName}!'),
                                   backgroundColor: Colors.green,
                                 ),
                               );
                             } catch (e) {
+                              // Close loading if open
+                              if (Navigator.canPop(context)) Navigator.pop(context);
+                              
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Login failed. Please try again.'),

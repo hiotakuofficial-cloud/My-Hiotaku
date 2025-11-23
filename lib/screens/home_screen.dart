@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
 import '../services/api_cache.dart';
-import '../services/auth_service.dart';
+import '../services/supabase_auth_service.dart';
 import '../models/api_models.dart';
 import '../widgets/anime_card.dart';
 import '../widgets/loading_widget.dart';
@@ -30,10 +30,10 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     _loadAnime();
     
     // Listen to auth state changes
-    AuthService.authStateChanges.listen((user) {
+    SupabaseAuthService.authStateChanges.listen((authState) {
       if (mounted) {
         setState(() {
-          isUserLoggedIn = user != null;
+          isUserLoggedIn = authState.session != null;
         });
       }
     });
@@ -149,9 +149,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               height: 24,
               child: isUserLoggedIn
                   ? ClipOval(
-                      child: AuthService.userPhotoUrl != null
+                      child: SupabaseAuthService.userPhotoUrl != null
                           ? Image.network(
-                              AuthService.userPhotoUrl!,
+                              SupabaseAuthService.userPhotoUrl!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Icon(Icons.person, color: Colors.white, size: 20);
@@ -183,10 +183,10 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             // Default avatar
             CircleAvatar(
               radius: 40,
-              backgroundImage: AuthService.userPhotoUrl != null 
-                  ? NetworkImage(AuthService.userPhotoUrl!) 
+              backgroundImage: SupabaseAuthService.userPhotoUrl != null 
+                  ? NetworkImage(SupabaseAuthService.userPhotoUrl!) 
                   : null,
-              child: AuthService.userPhotoUrl == null 
+              child: SupabaseAuthService.userPhotoUrl == null 
                   ? Icon(Icons.person, color: Colors.white, size: 40) 
                   : null,
             ),
@@ -201,19 +201,19 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             ),
             SizedBox(height: 8),
             Text(
-              AuthService.userName,
+              SupabaseAuthService.userName,
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
             SizedBox(height: 4),
             Text(
-              AuthService.userEmail,
+              SupabaseAuthService.userEmail,
               style: TextStyle(color: Colors.white54, fontSize: 14),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await AuthService.signOut();
+                  await SupabaseAuthService.signOut();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
