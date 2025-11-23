@@ -92,6 +92,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    
+    // Hide status bar for immersive experience
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    
     _pageController = PageController();
     _navAnimationController = AnimationController(
       duration: Duration(milliseconds: 300),
