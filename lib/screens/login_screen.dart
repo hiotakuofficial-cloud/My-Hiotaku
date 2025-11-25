@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_auth_service.dart';
+import 'create_account_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -176,12 +177,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   void _toggleMode() {
-    if (_isVerifying) return;
-    HapticFeedback.selectionClick();
-    setState(() => _isSignUp = !_isSignUp);
-    
-    _formController.reset();
-    _formController.forward();
+    if (_isSignUp) {
+      // Navigate to Create Account Screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => CreateAccountScreen()),
+      );
+    } else {
+      HapticFeedback.selectionClick();
+      setState(() => _isSignUp = !_isSignUp);
+    }
   }
 
   Future<void> _handleAuth() async {
@@ -196,36 +201,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     setState(() => _isLoading = true);
 
     try {
-      if (_isSignUp) {
-        await SupabaseAuthService.signUpWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-        // If we reach here, signup was successful but needs confirmation
-        _showSuccessToast('Account created! Please verify your email.');
-        _startVerificationCheck();
-      } else {
-        await SupabaseAuthService.signInWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-        Navigator.pop(context);
-        _showSuccessToast('Welcome back!');
-      }
+      await SupabaseAuthService.signInWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      Navigator.pop(context);
+      _showSuccessToast('Welcome back!');
     } catch (e) {
       HapticFeedback.vibrate();
       String errorMsg = e.toString().replaceAll('Exception: ', '');
-      
-      if (errorMsg.contains('CONFIRMATION_REQUIRED') ||
-          errorMsg.contains('Email not confirmed') || 
-          errorMsg.contains('confirmation')) {
-        _showInfoToast('Please verify your email first.');
-        _startVerificationCheck();
-      } else if (errorMsg.contains('Email already registered')) {
-        _showErrorToast('Email already registered. Try signing in.');
-      } else {
-        _showErrorToast(errorMsg);
-      }
+      _showErrorToast(errorMsg);
     }
 
     setState(() => _isLoading = false);
@@ -616,7 +601,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     ],
                                   ).createShader(bounds),
                                   child: Text(
-                                    _isSignUp ? 'Create Account' : 'Welcome Back',
+                                    'Welcome Back',
                                     style: TextStyle(
                                       fontSize: 36,
                                       fontWeight: FontWeight.bold,
@@ -628,9 +613,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 SizedBox(height: 12),
                                 
                                 Text(
-                                  _isSignUp 
-                                      ? 'Join the anime universe' 
-                                      : 'Sign in to continue watching',
+                                  'Sign in to continue watching',
                                   style: TextStyle(
                                     fontSize: 17,
                                     color: Colors.white.withOpacity(0.8),
@@ -771,13 +754,38 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         ),
                                       )
                                     : Text(
-                                        _isSignUp ? 'Create Account' : 'Sign In',
+                                        'Sign In',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
                                       ),
+                              ),
+                            ),
+                          ),
+                          
+                          SizedBox(height: 20),
+                          
+                          // Forgot Password Link
+                          GestureDetector(
+                            onTap: () {
+                              // TODO: Navigate to forgot password screen
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Forgot password feature coming soon!'),
+                                  backgroundColor: Colors.blue,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: Color(0xFF64B5F6),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -789,13 +797,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                _isSignUp ? 'Already have an account? ' : 'Don\'t have an account? ',
+                                'Don\'t have an account? ',
                                 style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16),
                               ),
                               GestureDetector(
                                 onTap: _toggleMode,
                                 child: Text(
-                                  _isSignUp ? 'Sign In' : 'Sign Up',
+                                  'Sign Up',
                                   style: TextStyle(
                                     color: Color(0xFF64B5F6),
                                     fontWeight: FontWeight.bold,
