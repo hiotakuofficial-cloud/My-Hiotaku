@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -21,6 +22,7 @@ class WaitingVerificationScreen extends StatefulWidget {
 
 class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> with TickerProviderStateMixin {
   late AnimationController _controller;
+  late AnimationController _dotsController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   
@@ -37,6 +39,11 @@ class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> w
       vsync: this,
     );
     
+    _dotsController = AnimationController(
+      duration: Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
@@ -46,6 +53,7 @@ class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> w
     );
     
     _controller.forward();
+    _dotsController.repeat();
     _startVerificationCheck();
   }
 
@@ -130,6 +138,7 @@ class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> w
   void dispose() {
     _stopVerificationCheck();
     _controller.dispose();
+    _dotsController.dispose();
     super.dispose();
   }
 
@@ -218,7 +227,7 @@ class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> w
                       
                       SizedBox(height: 40),
                       
-                      // Status with Animated Dots
+                      // Status with Animated Loading Dots
                       Column(
                         children: [
                           Text(
@@ -232,33 +241,35 @@ class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> w
                           SizedBox(height: 12),
                           
                           // Animated Loading Dots
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(3, (index) {
-                              return AnimatedContainer(
-                                duration: Duration(milliseconds: 600),
-                                margin: EdgeInsets.symmetric(horizontal: 4),
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF64B5F6).withOpacity(0.7),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Color(0xFF64B5F6).withOpacity(0.3),
-                                      blurRadius: 8,
-                                      spreadRadius: 2,
+                          AnimatedBuilder(
+                            animation: _dotsController,
+                            builder: (context, child) {
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(3, (index) {
+                                  double delay = index * 0.3;
+                                  double animValue = (_dotsController.value - delay).clamp(0.0, 1.0);
+                                  double opacity = 0.3 + 0.7 * (0.5 + 0.5 * math.sin(animValue * 2 * math.pi));
+                                  double scale = 0.8 + 0.4 * (0.5 + 0.5 * math.sin(animValue * 2 * math.pi));
+                                  
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(horizontal: 4),
+                                    width: 8 * scale,
+                                    height: 8 * scale,
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF64B5F6).withOpacity(opacity),
+                                      shape: BoxShape.circle,
                                     ),
-                                  ],
-                                ),
+                                  );
+                                }),
                               );
-                            }),
+                            },
                           ),
                           
                           SizedBox(height: 16),
                           
                           Text(
-                            'Auto-checking... ${_formatTime(_remainingTime)}',
+                            'Confirming... ${_formatTime(_remainingTime)}',
                             style: TextStyle(
                               fontSize: 14,
                               color: Color(0xFF64B5F6).withOpacity(0.8),
