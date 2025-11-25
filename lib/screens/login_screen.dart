@@ -274,7 +274,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   ),
                 );
               },
-              },
               child: Text(
                 'Confirm',
                 style: TextStyle(color: Color(0xFF64B5F6), fontWeight: FontWeight.w600),
