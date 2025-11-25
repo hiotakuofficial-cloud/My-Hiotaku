@@ -271,12 +271,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   );
                 } catch (e) {
                   setState(() => _isLoading = false);
-                  // Don't show error for rate limiting - email might still be sent
-                  if (!e.toString().toLowerCase().contains('rate limit')) {
-                    _showErrorToast('Failed to send confirmation email');
-                  } else {
+                  String errorStr = e.toString().toLowerCase();
+                  
+                  // Handle rate limiting - email might still be sent
+                  if (errorStr.contains('rate limit') || 
+                      errorStr.contains('too many requests') ||
+                      errorStr.contains('email_rate_limit_exceeded') ||
+                      errorStr.contains('signup_disabled')) {
                     _showSuccessToast('Confirmation email sent!');
-                    // Navigate anyway - email was likely sent
+                    // Navigate anyway - email was likely sent recently
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -286,6 +289,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         ),
                       ),
                     );
+                  } else {
+                    _showErrorToast('Failed to send confirmation email');
                   }
                 }
               },
