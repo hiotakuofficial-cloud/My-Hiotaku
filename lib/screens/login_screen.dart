@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_auth_service.dart';
 import 'create_account_screen.dart';
 import 'waiting_verification_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -850,13 +851,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           // Forgot Password Link
                           GestureDetector(
                             onTap: () {
-                              // TODO: Navigate to forgot password screen
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Forgot password feature coming soon!'),
-                                  backgroundColor: Colors.blue,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ForgotPasswordScreen(),
                                 ),
                               );
                             },
