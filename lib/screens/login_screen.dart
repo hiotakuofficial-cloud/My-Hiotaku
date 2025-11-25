@@ -204,10 +204,66 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     } catch (e) {
       HapticFeedback.vibrate();
       String errorMsg = e.toString().replaceAll('Exception: ', '');
-      _showErrorToast(errorMsg);
+      
+      if (errorMsg.contains('Email not confirmed') || 
+          errorMsg.contains('confirmation') ||
+          errorMsg.contains('CONFIRMATION_REQUIRED')) {
+        // User exists but not verified - show confirmation dialog
+        _showConfirmationDialog();
+      } else {
+        _showErrorToast(errorMsg);
+      }
     }
 
     setState(() => _isLoading = false);
+  }
+
+  void _showConfirmationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Color(0xFF2A2A2A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Email Not Verified',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'Your email is not verified yet. Would you like to go to the verification page?',
+            style: TextStyle(color: Colors.white.withOpacity(0.8)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WaitingVerificationScreen(
+                      email: _emailController.text.trim(),
+                      password: _passwordController.text,
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'Confirm',
+                style: TextStyle(color: Color(0xFF64B5F6), fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showSuccessToast(String message) {
