@@ -6,6 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_auth_service.dart';
 import 'create_account_screen.dart';
+import 'waiting_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
