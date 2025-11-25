@@ -80,7 +80,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
     final username = _usernameController.text.trim();
     if (username.length >= 2) {
       _suggestionTimer?.cancel();
-      _suggestionTimer = Timer(Duration(milliseconds: 500), () {
+      _suggestionTimer = Timer(Duration(milliseconds: 800), () {
         _getUsernameSuggestions(username);
       });
     } else {
@@ -155,7 +155,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
         _passwordController.text,
       );
       
-      // Navigate to waiting verification screen
+      // This should not reach here if confirmation is required
+      // But if it does, still go to waiting screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -166,9 +167,25 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
         ),
       );
     } catch (e) {
-      HapticFeedback.vibrate();
       String errorMsg = e.toString().replaceAll('Exception: ', '');
-      _showErrorToast(errorMsg);
+      
+      if (errorMsg.contains('CONFIRMATION_REQUIRED') ||
+          errorMsg.contains('Email not confirmed') || 
+          errorMsg.contains('confirmation')) {
+        // Navigate to waiting verification screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WaitingVerificationScreen(
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+            ),
+          ),
+        );
+      } else {
+        HapticFeedback.vibrate();
+        _showErrorToast(errorMsg);
+      }
     }
 
     setState(() => _isLoading = false);
@@ -244,11 +261,35 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
                         children: [
                           Spacer(flex: 1),
                           
-                          // Title Section
+                          // Title Section with Logo
                           ScaleTransition(
                             scale: _scaleAnimation,
                             child: Column(
                               children: [
+                                // App Logo
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0xFF64B5F6).withOpacity(0.4),
+                                        blurRadius: 25,
+                                        spreadRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Image.asset(
+                                      'assets/images/header_logo.png',
+                                      height: 80,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                                
+                                SizedBox(height: 32),
+                                
                                 ShaderMask(
                                   shaderCallback: (bounds) => LinearGradient(
                                     colors: [
@@ -348,9 +389,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
                                               ),
                                               onTap: () {
                                                 _usernameController.text = suggestion;
+                                                _usernameController.selection = TextSelection.fromPosition(
+                                                  TextPosition(offset: suggestion.length),
+                                                );
                                                 setState(() {
                                                   _showSuggestions = false;
+                                                  _usernameSuggestions.clear();
                                                 });
+                                                FocusScope.of(context).unfocus();
                                               },
                                             );
                                           }).toList(),
