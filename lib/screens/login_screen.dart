@@ -584,7 +584,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         systemNavigationBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

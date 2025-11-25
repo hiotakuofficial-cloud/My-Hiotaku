@@ -245,7 +245,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
         systemNavigationBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
