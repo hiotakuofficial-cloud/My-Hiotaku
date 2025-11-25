@@ -263,14 +263,279 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     );
   }
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
+import 'dart:async';
+import 'package:lottie/lottie.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/supabase_auth_service.dart';
+
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late AnimationController _formController;
+  late AnimationController _buttonController;
+  late AnimationController _verificationController;
+  
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _buttonAnimation;
+  late Animation<double> _verificationFadeAnimation;
+  late Animation<Offset> _verificationSlideAnimation;
+  
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  bool _isSignUp = false;
+
+  // Verification variables
+  bool _isVerifying = false;
+  Timer? _verificationTimer;
+  Timer? _timeoutTimer;
+  int _remainingTime = 180;
+  String _verifyingEmail = '';
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    _formController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+    
+    _buttonController = AnimationController(
+      duration: Duration(milliseconds: 100),
+      vsync: this,
+    );
+    
+    _verificationController = AnimationController(
+      duration: Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _formController, curve: Curves.easeOut),
+    );
+    
+    _buttonAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _buttonController, curve: Curves.easeInOut),
+    );
+    
+    _verificationFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _verificationController, curve: Curves.easeOut),
+    );
+    
+    _verificationSlideAnimation = Tween<Offset>(begin: Offset(0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _verificationController, curve: Curves.easeOut),
+    );
+    
+    _controller.forward();
+    _formController.forward();
+  }
+
+  void _startVerificationCheck() {
+    setState(() {
+      _isVerifying = true;
+      _remainingTime = 180;
+      _verifyingEmail = _emailController.text.trim();
+    });
+    
+    _verificationController.forward();
+    
+    // Auto verification check every 3 seconds
+    _verificationTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      if (!_isVerifying) return;
+      
+      try {
+        // Try to login to check if email is verified
+        final response = await Supabase.instance.client.auth.signInWithPassword(
+          email: _verifyingEmail,
+          password: _passwordController.text,
+        );
+        
+        if (response.user != null && response.user!.emailConfirmedAt != null) {
+          // Email verified! Auto-login successful
+          _stopVerificationCheck();
+          _showSuccessToast('Email verified! Welcome! 🎉');
+          
+          await Future.delayed(const Duration(seconds: 1));
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        }
+      } catch (loginError) {
+        final errorStr = loginError.toString().toLowerCase();
+        if (!errorStr.contains('email not confirmed') && 
+            !errorStr.contains('confirmation')) {
+          print('Verification check error: $loginError');
+        }
+        // Continue checking for confirmation errors
+      }
+    });
+    
+    // Timeout timer
+    _timeoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _remainingTime--;
+        });
+        
+        if (_remainingTime <= 0) {
+          _stopVerificationCheck();
+          _showErrorToast('Verification timeout. Please try manual login.');
+        }
+      }
+    });
+  }
+
+  void _stopVerificationCheck() {
+    if (mounted) {
+      setState(() {
+        _isVerifying = false;
+      });
+    }
+    _verificationController.reset();
+    _verificationTimer?.cancel();
+    _timeoutTimer?.cancel();
+  }
+
+  String _formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void dispose() {
+    _verificationTimer?.cancel();
+    _timeoutTimer?.cancel();
+    _controller.dispose();
+    _formController.dispose();
+    _buttonController.dispose();
+    _verificationController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _toggleMode() {
+    if (_isVerifying) return;
+    HapticFeedback.selectionClick();
+    setState(() => _isSignUp = !_isSignUp);
+    
+    _formController.reset();
+    _formController.forward();
+  }
+
+  Future<void> _handleAuth() async {
+    if (!_formKey.currentState!.validate()) {
+      HapticFeedback.vibrate();
+      return;
+    }
+
+    _buttonController.forward().then((_) => _buttonController.reverse());
+    HapticFeedback.lightImpact();
+    
+    setState(() => _isLoading = true);
+
+    try {
+      if (_isSignUp) {
+        await SupabaseAuthService.signUpWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        // If we reach here, signup was successful but needs confirmation
+        _showSuccessToast('Account created! Please verify your email.');
+        _startVerificationCheck();
+      } else {
+        await SupabaseAuthService.signInWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        Navigator.pop(context);
+        _showSuccessToast('Welcome back!');
+      }
+    } catch (e) {
+      HapticFeedback.vibrate();
+      String errorMsg = e.toString().replaceAll('Exception: ', '');
+      
+      if (errorMsg.contains('CONFIRMATION_REQUIRED') ||
+          errorMsg.contains('Email not confirmed') || 
+          errorMsg.contains('confirmation')) {
+        _showInfoToast('Please verify your email first.');
+        _startVerificationCheck();
+      } else if (errorMsg.contains('Email already registered')) {
+        _showErrorToast('Email already registered. Try signing in.');
+      } else {
+        _showErrorToast(errorMsg);
+      }
+    }
+
+    setState(() => _isLoading = false);
+  }
+
+  void _showSuccessToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showErrorToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showInfoToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.blue,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   Widget _buildVerificationScreen() {
     return Scaffold(
-      backgroundColor: Color(0xFF000000),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
               Color(0xFF1a1a2e),
               Color(0xFF16213e),
@@ -285,114 +550,243 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             child: SlideTransition(
               position: _verificationSlideAnimation,
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 40.0),
+                padding: EdgeInsets.symmetric(horizontal: 32.0),
                 child: Column(
                   children: [
-                    Spacer(flex: 3),
+                    Spacer(flex: 2),
                     
-                    // Email Icon
+                    // Lottie Animation with Glassmorphism Background
                     Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Color(0xFF64B5F6).withOpacity(0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Color(0xFF64B5F6).withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.email_outlined,
-                        size: 60,
-                        color: Color(0xFF64B5F6),
+                      width: 200,
+                      height: 200,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Glassmorphism Background
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                              child: Container(
+                                width: 180,
+                                height: 180,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withOpacity(0.15),
+                                      Colors.white.withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.2),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          // Lottie Email Animation
+                          Lottie.asset(
+                            'assets/animations/64757bd3-7f3c-499c-a976-281563ded36c.json',
+                            width: 140,
+                            height: 140,
+                            fit: BoxFit.contain,
+                            repeat: true,
+                            animate: true,
+                          ),
+                        ],
                       ),
                     ),
                     
                     SizedBox(height: 48),
                     
-                    // Title
-                    Text(
-                      'Verify Your Email',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
+                    // Title with Gradient
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          Color(0xFF64B5F6),
+                          Color(0xFF1976D2),
+                        ],
+                      ).createShader(bounds),
+                      child: Text(
+                        'Verify Your Email',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                     
-                    SizedBox(height: 16),
+                    SizedBox(height: 24),
                     
-                    // Description
-                    Text(
-                      'A verification link has been sent to your inbox.\nPlease click the link to continue.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.7),
-                        height: 1.4,
-                        fontWeight: FontWeight.w400,
+                    // Description with Glassmorphism
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.1),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Text(
+                            'A verification link has been sent to your inbox.\nPlease click the link to continue.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.9),
+                              height: 1.5,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
                     
                     SizedBox(height: 32),
                     
-                    // Email Display
-                    Text(
-                      _verifyingEmail,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF64B5F6),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    
-                    SizedBox(height: 48),
-                    
-                    // Status
-                    Text(
-                      'Waiting for confirmation',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.white.withOpacity(0.6),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    
-                    SizedBox(height: 8),
-                    
-                    Text(
-                      'Auto-checking... ${_formatTime(_remainingTime)}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.5),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    
-                    Spacer(flex: 4),
-                    
-                    // Cancel Button
+                    // Email Display with Neumorphism
                     Container(
-                      width: double.infinity,
-                      height: 50,
-                      margin: EdgeInsets.only(bottom: 40),
-                      child: TextButton(
-                        onPressed: _stopVerificationCheck,
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF64B5F6).withOpacity(0.15),
+                            Color(0xFF1976D2).withOpacity(0.1),
+                          ],
                         ),
-                        child: Text(
-                          'Cancel',
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Color(0xFF64B5F6).withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFF64B5F6).withOpacity(0.2),
+                            blurRadius: 15,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        _verifyingEmail,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    
+                    SizedBox(height: 40),
+                    
+                    // Status with Animated Dots
+                    Column(
+                      children: [
+                        Text(
+                          'Waiting for confirmation',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w500,
                             color: Colors.white.withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        
+                        // Animated Loading Dots
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(3, (index) {
+                            return AnimatedContainer(
+                              duration: Duration(milliseconds: 600),
+                              margin: EdgeInsets.symmetric(horizontal: 4),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Color(0xFF64B5F6).withOpacity(0.7),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xFF64B5F6).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                        
+                        SizedBox(height: 16),
+                        
+                        Text(
+                          'Auto-checking... ${_formatTime(_remainingTime)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64B5F6).withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    Spacer(flex: 2),
+                    
+                    // Cancel Button with Glassmorphism
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          width: double.infinity,
+                          height: 56,
+                          margin: EdgeInsets.only(bottom: 40),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.1),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                          ),
+                          child: TextButton(
+                            onPressed: _stopVerificationCheck,
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
                           ),
                         ),
                       ),
