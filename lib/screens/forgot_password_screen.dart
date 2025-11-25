@@ -144,139 +144,165 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: EdgeInsets.symmetric(horizontal: 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: 60),
+                          SizedBox(height: 80),
                           
-                          // Title
-                          Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          
-                          SizedBox(height: 12),
-                          
-                          // Subtitle
-                          Text(
-                            'Enter your email address and we\'ll send you a link to reset your password.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.7),
-                              height: 1.5,
-                            ),
+                          // Title Section
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              
+                              SizedBox(height: 8),
+                              
+                              Text(
+                                'No worries, we\'ll send you reset instructions.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white.withOpacity(0.7),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
                           ),
                           
                           SizedBox(height: 48),
                           
-                          // Form
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                  // Email Field
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.1),
-                                      ),
-                                    ),
-                                    child: TextFormField(
-                                      controller: _emailController,
-                                      style: TextStyle(color: Colors.white, fontSize: 16),
-                                      decoration: InputDecoration(
-                                        hintText: 'Email Address',
-                                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                                        prefixIcon: Icon(
-                                          Icons.email_outlined,
-                                          color: Color(0xFF64B5F6).withOpacity(0.8),
-                                        ),
-                                        border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                                      ),
-                                      validator: (value) {
-                                        if (value?.isEmpty ?? true) return 'Email is required';
-                                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
-                                          return 'Enter a valid email';
-                                        }
-                                        return null;
-                                      },
+                          // Email Field
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Email',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                              
+                              SizedBox(height: 8),
+                              
+                              Form(
+                                key: _formKey,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.12),
                                     ),
                                   ),
-                                  
-                                  SizedBox(height: 24),
-                                  
-                                  // Reset Button
-                                  AnimatedBuilder(
-                                    animation: _buttonAnimation,
-                                    builder: (context, child) {
-                                      return Transform.scale(
-                                        scale: _buttonAnimation.value,
-                                        child: Container(
-                                          width: double.infinity,
-                                          height: 56,
-                                          child: ElevatedButton(
-                                            onPressed: _isLoading ? null : _resetPassword,
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Color(0xFF64B5F6),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(16),
-                                              ),
-                                              elevation: 0,
-                                            ),
-                                            child: _isLoading
-                                                ? SizedBox(
-                                                    width: 24,
-                                                    height: 24,
-                                                    child: CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                                    ),
-                                                  )
-                                                : Text(
-                                                    'Send Reset Link',
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                          ),
-                                        ),
-                                      );
+                                  child: TextFormField(
+                                    controller: _emailController,
+                                    style: TextStyle(color: Colors.white, fontSize: 16),
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter your email',
+                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                      prefixIcon: Icon(
+                                        Icons.email_outlined,
+                                        color: Colors.white.withOpacity(0.6),
+                                        size: 20,
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    ),
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) return 'Email is required';
+                                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                                        return 'Enter a valid email';
+                                      }
+                                      return null;
                                     },
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 32),
+                          
+                          // Reset Button
+                          AnimatedBuilder(
+                            animation: _buttonAnimation,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: _buttonAnimation.value,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton(
+                                    onPressed: _isLoading ? null : _resetPassword,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(0xFF64B5F6),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: _isLoading
+                                        ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          )
+                                        : Text(
+                                            'Send Reset Link',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                           
                           Spacer(),
                           
                           // Back to Login
                           Center(
-                            child: TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(
-                                'Back to Login',
-                                style: TextStyle(
-                                  color: Color(0xFF64B5F6),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.arrow_back_ios,
+                                  color: Colors.white.withOpacity(0.6),
+                                  size: 16,
                                 ),
-                              ),
+                                SizedBox(width: 4),
+                                GestureDetector(
+                                  onTap: () => Navigator.pop(context),
+                                  child: Text(
+                                    'Back to Login',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           
-                          SizedBox(height: 20),
+                          SizedBox(height: 40),
                         ],
                       ),
                     ),
