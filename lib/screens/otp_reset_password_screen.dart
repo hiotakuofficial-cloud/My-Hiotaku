@@ -259,7 +259,7 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
         ),
         SizedBox(height: 8),
         Text(
-          'Check your email for the 6-digit code',
+          'Check your email for the reset code or link',
           style: TextStyle(
             fontSize: 16,
             color: Colors.white.withOpacity(0.7),
@@ -268,7 +268,7 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
         SizedBox(height: 40),
         
         Text(
-          'Reset Code',
+          'Reset Code (if received)',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -294,11 +294,30 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
             keyboardType: TextInputType.number,
             maxLength: 8,
             decoration: InputDecoration(
-              hintText: '123456',
+              hintText: '123456 (if you got a code)',
               hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               counterText: '',
+            ),
+          ),
+        ),
+        
+        SizedBox(height: 20),
+        
+        // Info message about link vs code
+        Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          ),
+          child: Text(
+            '💡 If you received a link instead of a code, click the link in your email first, then return here.',
+            style: TextStyle(
+              color: Colors.blue.shade300,
+              fontSize: 12,
             ),
           ),
         ),
@@ -334,6 +353,30 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
                       color: Colors.white,
                     ),
                   ),
+          ),
+        ),
+        
+        SizedBox(height: 15),
+        
+        // Skip to password if user clicked email link
+        Container(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton(
+            onPressed: () => setState(() => _currentStep = 2),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.white.withOpacity(0.3)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'I clicked the email link - Skip to Password',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
           ),
         ),
         
