@@ -30,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
-  bool _isSignUp = false;
 
   // Verification variables
   bool _isVerifying = false;
@@ -177,16 +176,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   void _toggleMode() {
-    if (_isSignUp) {
-      // Navigate to Create Account Screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => CreateAccountScreen()),
-      );
-    } else {
-      HapticFeedback.selectionClick();
-      setState(() => _isSignUp = !_isSignUp);
-    }
+    // Direct navigation to Create Account Screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CreateAccountScreen()),
+    );
   }
 
   Future<void> _handleAuth() async {
