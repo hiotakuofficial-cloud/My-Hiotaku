@@ -147,6 +147,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
       String errorMsg = e.toString().replaceAll('Exception: ', '');
       
       if (errorMsg.contains('CONFIRMATION_REQUIRED') ||
+          errorMsg.contains('Please confirm your email first') ||
           errorMsg.contains('Email not confirmed') || 
           errorMsg.contains('confirmation')) {
         // User exists but not verified - go to waiting screen
@@ -172,7 +173,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
           _showErrorToast('User already exists and is confirmed. Please login.');
         } catch (loginError) {
           final loginErrorStr = loginError.toString().toLowerCase();
-          if (loginErrorStr.contains('email not confirmed') || 
+          if (loginErrorStr.contains('please confirm your email first') ||
+              loginErrorStr.contains('email not confirmed') || 
               loginErrorStr.contains('confirmation')) {
             // User exists but not confirmed - redirect to waiting screen
             Navigator.pushReplacement(

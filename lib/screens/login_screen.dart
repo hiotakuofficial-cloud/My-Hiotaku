@@ -206,7 +206,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       HapticFeedback.vibrate();
       String errorMsg = e.toString().replaceAll('Exception: ', '');
       
-      if (errorMsg.contains('Email not confirmed') || 
+      if (errorMsg.contains('Please confirm your email first') || 
+          errorMsg.contains('Email not confirmed') || 
           errorMsg.contains('confirmation') ||
           errorMsg.contains('CONFIRMATION_REQUIRED')) {
         // User exists but not verified - show confirmation dialog
