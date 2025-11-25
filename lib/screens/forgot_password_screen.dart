@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'otp_reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   @override
@@ -57,29 +58,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   }
 
   Future<void> _resetPassword() async {
-    if (!_formKey.currentState!.validate()) {
-      HapticFeedback.vibrate();
-      return;
-    }
-
-    _buttonController.forward().then((_) => _buttonController.reverse());
-    HapticFeedback.lightImpact();
-
-    setState(() => _isLoading = true);
-
-    try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(
-        _emailController.text.trim(),
-        redirectTo: 'https://hiotaku.kesug.com/reset-password.php',
-      );
-      
-      _showSuccessToast('Password reset email sent!');
-      Navigator.pop(context);
-    } catch (e) {
-      _showErrorToast('Failed to send reset email');
-    }
-
-    setState(() => _isLoading = false);
+    // Navigate to OTP reset screen instead of sending email
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OtpResetPasswordScreen(),
+      ),
+    );
   }
 
   void _showSuccessToast(String message) {
