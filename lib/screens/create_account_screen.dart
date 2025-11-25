@@ -57,12 +57,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     
-    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.1), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.05), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _formController, curve: Curves.elasticOut),
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _formController, curve: Curves.easeOut),
     );
     
     _buttonAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
@@ -203,14 +203,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
       ),
       child: Scaffold(
         extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
