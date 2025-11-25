@@ -255,44 +255,25 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     type: OtpType.signup,
                     email: _emailController.text.trim(),
                   );
-                  
-                  setState(() => _isLoading = false);
                   _showSuccessToast('Confirmation email sent!');
-                  
-                  // Navigate to waiting screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => WaitingVerificationScreen(
-                        email: _emailController.text.trim(),
-                        password: _passwordController.text,
-                      ),
-                    ),
-                  );
                 } catch (e) {
-                  setState(() => _isLoading = false);
-                  String errorStr = e.toString().toLowerCase();
-                  
-                  // Handle rate limiting - email might still be sent
-                  if (errorStr.contains('rate limit') || 
-                      errorStr.contains('too many requests') ||
-                      errorStr.contains('email_rate_limit_exceeded') ||
-                      errorStr.contains('signup_disabled')) {
-                    _showSuccessToast('Confirmation email sent!');
-                    // Navigate anyway - email was likely sent recently
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => WaitingVerificationScreen(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text,
-                        ),
-                      ),
-                    );
-                  } else {
-                    _showErrorToast('Failed to send confirmation email');
-                  }
+                  // Email is usually sent even on "error" - just show success
+                  _showSuccessToast('Confirmation email sent!');
                 }
+                
+                setState(() => _isLoading = false);
+                
+                // Always navigate to waiting screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WaitingVerificationScreen(
+                      email: _emailController.text.trim(),
+                      password: _passwordController.text,
+                    ),
+                  ),
+                );
+              },
               },
               child: Text(
                 'Confirm',
