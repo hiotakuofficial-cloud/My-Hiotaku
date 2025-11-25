@@ -279,8 +279,8 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
               color: Colors.white, 
               fontSize: 18,
               letterSpacing: 2,
-              textAlign: TextAlign.center,
             ),
+            textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
             maxLength: 8,
             decoration: InputDecoration(
