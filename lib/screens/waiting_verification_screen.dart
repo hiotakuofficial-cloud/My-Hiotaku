@@ -166,144 +166,53 @@ class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> w
                     children: [
                       Spacer(flex: 2),
                       
-                      // Lottie Animation with Glassmorphism Background
-                      Container(
-                        width: 200,
-                        height: 200,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Glassmorphism Background
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(30),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                                child: Container(
-                                  width: 180,
-                                  height: 180,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        Colors.white.withOpacity(0.15),
-                                        Colors.white.withOpacity(0.05),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.2),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            
-                            // Lottie Email Animation
-                            Lottie.asset(
-                              'assets/animations/64757bd3-7f3c-499c-a976-281563ded36c.json',
-                              width: 140,
-                              height: 140,
-                              fit: BoxFit.contain,
-                              repeat: true,
-                              animate: true,
-                            ),
-                          ],
-                        ),
+                      // Clean Lottie Animation
+                      Lottie.asset(
+                        'assets/animations/64757bd3-7f3c-499c-a976-281563ded36c.json',
+                        width: 160,
+                        height: 160,
+                        fit: BoxFit.contain,
+                        repeat: true,
+                        animate: true,
                       ),
                       
                       SizedBox(height: 48),
                       
-                      // Title with Gradient
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [
-                            Color(0xFF64B5F6),
-                            Color(0xFF1976D2),
-                          ],
-                        ).createShader(bounds),
-                        child: Text(
-                          'Verify Your Email',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                          textAlign: TextAlign.center,
+                      // Title
+                      Text(
+                        'Verify Your Email',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       
                       SizedBox(height: 24),
                       
-                      // Description with Glassmorphism
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            padding: EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.1),
-                                  Colors.white.withOpacity(0.05),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                              ),
-                            ),
-                            child: Text(
-                              'A verification link has been sent to your inbox.\nPlease click the link to continue.',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white.withOpacity(0.9),
-                                height: 1.5,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
+                      // Description
+                      Text(
+                        'A verification link has been sent to your inbox.\nPlease click the link to continue.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.9),
+                          height: 1.5,
+                          fontWeight: FontWeight.w400,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       
                       SizedBox(height: 32),
                       
-                      // Email Display with Neumorphism
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF64B5F6).withOpacity(0.15),
-                              Color(0xFF1976D2).withOpacity(0.1),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Color(0xFF64B5F6).withOpacity(0.3),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color(0xFF64B5F6).withOpacity(0.2),
-                              blurRadius: 15,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          widget.email,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      // Email Display
+                      Text(
+                        widget.email,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF64B5F6),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       
@@ -361,43 +270,25 @@ class _WaitingVerificationScreenState extends State<WaitingVerificationScreen> w
                       
                       Spacer(flex: 2),
                       
-                      // Cancel Button with Glassmorphism
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            width: double.infinity,
-                            height: 56,
-                            margin: EdgeInsets.only(bottom: 40),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.1),
-                                  Colors.white.withOpacity(0.05),
-                                ],
-                              ),
+                      // Clean Cancel Button
+                      Container(
+                        width: double.infinity,
+                        height: 56,
+                        margin: EdgeInsets.only(bottom: 40),
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                              ),
                             ),
-                            child: TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              style: TextButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
-                              ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withOpacity(0.9),
                             ),
                           ),
                         ),

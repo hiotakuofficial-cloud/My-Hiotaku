@@ -30,8 +30,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  List<String> _usernameSuggestions = [];
-  bool _showSuggestions = false;
+  bool _isCheckingUsername = false;
+  bool? _isUsernameAvailable;
   Timer? _suggestionTimer;
 
   @override
@@ -78,63 +78,41 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
 
   void _onUsernameChanged() {
     final username = _usernameController.text.trim();
-    if (username.length >= 2) {
+    if (username.length >= 3) {
       _suggestionTimer?.cancel();
       _suggestionTimer = Timer(Duration(milliseconds: 800), () {
-        _getUsernameSuggestions(username);
+        _checkUsernameAvailability(username);
       });
     } else {
       setState(() {
-        _showSuggestions = false;
-        _usernameSuggestions.clear();
+        _isUsernameAvailable = null;
+        _isCheckingUsername = false;
       });
     }
   }
 
-  Future<void> _getUsernameSuggestions(String username) async {
+  Future<void> _checkUsernameAvailability(String username) async {
+    setState(() {
+      _isCheckingUsername = true;
+      _isUsernameAvailable = null;
+    });
+
     try {
-      // Check if username exists in database
       final response = await Supabase.instance.client
           .from('users')
           .select('username')
-          .ilike('username', '$username%')
-          .limit(5);
-      
-      List<String> existingUsernames = (response as List)
-          .map((user) => user['username'] as String)
-          .toList();
-      
-      // Generate suggestions
-      List<String> suggestions = [];
-      
-      // Add original if not taken
-      if (!existingUsernames.contains(username)) {
-        suggestions.add(username);
-      }
-      
-      // Add variations
-      for (int i = 1; i <= 3; i++) {
-        String suggestion = '$username$i';
-        if (!existingUsernames.contains(suggestion)) {
-          suggestions.add(suggestion);
-        }
-      }
-      
-      // Add random suffix suggestions
-      List<String> suffixes = ['_official', '_pro', '_user', '123', '456'];
-      for (String suffix in suffixes) {
-        String suggestion = '$username$suffix';
-        if (!existingUsernames.contains(suggestion) && suggestions.length < 5) {
-          suggestions.add(suggestion);
-        }
-      }
+          .eq('username', username)
+          .maybeSingle();
       
       setState(() {
-        _usernameSuggestions = suggestions.take(5).toList();
-        _showSuggestions = suggestions.isNotEmpty;
+        _isUsernameAvailable = response == null;
+        _isCheckingUsername = false;
       });
     } catch (e) {
-      print('Username suggestion error: $e');
+      setState(() {
+        _isUsernameAvailable = null;
+        _isCheckingUsername = false;
+      });
     }
   }
 
@@ -328,81 +306,59 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
                             key: _formKey,
                             child: Column(
                               children: [
-                                // Username Field with Suggestions
-                                Column(
-                                  children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(18),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.15),
-                                        ),
-                                      ),
-                                      child: TextFormField(
-                                        controller: _usernameController,
-                                        style: TextStyle(color: Colors.white, fontSize: 16),
-                                        decoration: InputDecoration(
-                                          hintText: 'Username',
-                                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                                          prefixIcon: Icon(
-                                            Icons.person_outline,
-                                            color: Color(0xFF64B5F6).withOpacity(0.8),
-                                          ),
-                                          border: InputBorder.none,
-                                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                                        ),
-                                        validator: (value) {
-                                          if (value?.isEmpty ?? true) return 'Username is required';
-                                          if (value!.length < 3) return 'Username must be at least 3 characters';
-                                          return null;
-                                        },
-                                      ),
+                                // Username Field with Availability Check
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.15),
                                     ),
-                                    
-                                    // Username Suggestions
-                                    if (_showSuggestions && _usernameSuggestions.isNotEmpty)
-                                      Container(
-                                        margin: EdgeInsets.only(top: 8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.05),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: Colors.white.withOpacity(0.1),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          children: _usernameSuggestions.map((suggestion) {
-                                            return ListTile(
-                                              dense: true,
-                                              title: Text(
-                                                suggestion,
-                                                style: TextStyle(
-                                                  color: Colors.white.withOpacity(0.9),
-                                                  fontSize: 14,
+                                  ),
+                                  child: TextFormField(
+                                    controller: _usernameController,
+                                    style: TextStyle(color: Colors.white, fontSize: 16),
+                                    decoration: InputDecoration(
+                                      hintText: 'Username',
+                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                                      prefixIcon: Icon(
+                                        Icons.person_outline,
+                                        color: Color(0xFF64B5F6).withOpacity(0.8),
+                                      ),
+                                      suffixIcon: _isCheckingUsername
+                                          ? SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(12),
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                                    Color(0xFF64B5F6),
+                                                  ),
                                                 ),
                                               ),
-                                              leading: Icon(
-                                                Icons.lightbulb_outline,
-                                                color: Color(0xFF64B5F6).withOpacity(0.7),
-                                                size: 16,
-                                              ),
-                                              onTap: () {
-                                                _usernameController.text = suggestion;
-                                                _usernameController.selection = TextSelection.fromPosition(
-                                                  TextPosition(offset: suggestion.length),
-                                                );
-                                                setState(() {
-                                                  _showSuggestions = false;
-                                                  _usernameSuggestions.clear();
-                                                });
-                                                FocusScope.of(context).unfocus();
-                                              },
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ),
-                                  ],
+                                            )
+                                          : _isUsernameAvailable != null
+                                              ? Icon(
+                                                  _isUsernameAvailable!
+                                                      ? Icons.check_circle
+                                                      : Icons.cancel,
+                                                  color: _isUsernameAvailable!
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                )
+                                              : null,
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                                    ),
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) return 'Username is required';
+                                      if (value!.length < 3) return 'Username must be at least 3 characters';
+                                      if (_isUsernameAvailable == false) return 'Username is not available';
+                                      return null;
+                                    },
+                                  ),
                                 ),
                                 
                                 SizedBox(height: 20),
