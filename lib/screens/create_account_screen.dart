@@ -160,9 +160,35 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> with TickerPr
           ),
         );
       } else if (errorMsg.contains('already registered') || 
-                 errorMsg.contains('User already registered')) {
-        // User already exists - show iOS style alert
-        _showAlreadyExistsAlert();
+                 errorMsg.contains('User already registered') ||
+                 errorMsg.contains('already exists')) {
+        // Check if user exists but not confirmed
+        try {
+          final response = await Supabase.instance.client.auth.signInWithPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+          // If login succeeds, user is confirmed
+          _showErrorToast('User already exists and is confirmed. Please login.');
+        } catch (loginError) {
+          final loginErrorStr = loginError.toString().toLowerCase();
+          if (loginErrorStr.contains('email not confirmed') || 
+              loginErrorStr.contains('confirmation')) {
+            // User exists but not confirmed - redirect to waiting screen
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WaitingVerificationScreen(
+                  email: _emailController.text.trim(),
+                  password: _passwordController.text,
+                ),
+              ),
+            );
+          } else {
+            // User exists and confirmed - show toast
+            _showErrorToast('User already exists. Please login instead.');
+          }
+        }
       } else {
         HapticFeedback.vibrate();
         _showErrorToast(errorMsg);

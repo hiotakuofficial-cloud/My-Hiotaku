@@ -228,11 +228,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           backgroundColor: Color(0xFF2A2A2A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            'Email Not Verified',
+            'Email Not Confirmed',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           content: Text(
-            'Your email is not verified yet. Would you like to go to the verification page?',
+            'Your email is not confirmed to login. Would you like to resend confirmation email?',
             style: TextStyle(color: Colors.white.withOpacity(0.8)),
           ),
           actions: [
@@ -244,17 +244,28 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WaitingVerificationScreen(
-                      email: _emailController.text.trim(),
-                      password: _passwordController.text,
+                // Resend confirmation email
+                try {
+                  await Supabase.instance.client.auth.resend(
+                    type: OtpType.signup,
+                    email: _emailController.text.trim(),
+                  );
+                  _showSuccessToast('Confirmation email sent!');
+                  // Navigate to waiting screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => WaitingVerificationScreen(
+                        email: _emailController.text.trim(),
+                        password: _passwordController.text,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } catch (e) {
+                  _showErrorToast('Failed to send confirmation email');
+                }
               },
               child: Text(
                 'Confirm',
