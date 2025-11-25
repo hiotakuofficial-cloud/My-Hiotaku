@@ -276,32 +276,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                           
                           Spacer(),
                           
-                          // Back to Login
-                          Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.arrow_back_ios,
-                                  color: Colors.white.withOpacity(0.6),
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                GestureDetector(
-                                  onTap: () => Navigator.pop(context),
-                                  child: Text(
-                                    'Back to Login',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
                           SizedBox(height: 40),
                         ],
                       ),
