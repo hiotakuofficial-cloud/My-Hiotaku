@@ -37,8 +37,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     
-    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.15), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.05), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     
     _buttonAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
@@ -178,17 +178,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                           // Form
                           Form(
                             key: _formKey,
-                            child: Container(
-                              padding: EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
-                                ),
-                              ),
-                              child: Column(
-                                children: [
+                            child: Column(
+                              children: [
                                   // Email Field
                                   Container(
                                     decoration: BoxDecoration(
