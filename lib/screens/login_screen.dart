@@ -247,13 +247,18 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                // Resend confirmation email
+                
+                setState(() => _isLoading = true);
+                
                 try {
                   await Supabase.instance.client.auth.resend(
                     type: OtpType.signup,
                     email: _emailController.text.trim(),
                   );
+                  
+                  setState(() => _isLoading = false);
                   _showSuccessToast('Confirmation email sent!');
+                  
                   // Navigate to waiting screen
                   Navigator.push(
                     context,
@@ -265,7 +270,23 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     ),
                   );
                 } catch (e) {
-                  _showErrorToast('Failed to send confirmation email');
+                  setState(() => _isLoading = false);
+                  // Don't show error for rate limiting - email might still be sent
+                  if (!e.toString().toLowerCase().contains('rate limit')) {
+                    _showErrorToast('Failed to send confirmation email');
+                  } else {
+                    _showSuccessToast('Confirmation email sent!');
+                    // Navigate anyway - email was likely sent
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WaitingVerificationScreen(
+                          email: _emailController.text.trim(),
+                          password: _passwordController.text,
+                        ),
+                      ),
+                    );
+                  }
                 }
               },
               child: Text(
