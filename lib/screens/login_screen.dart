@@ -200,6 +200,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           _emailController.text.trim(),
           _passwordController.text,
         );
+        // If we reach here, signup was successful but needs confirmation
         _showSuccessToast('Account created! Please verify your email.');
         _startVerificationCheck();
       } else {
@@ -214,10 +215,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       HapticFeedback.vibrate();
       String errorMsg = e.toString().replaceAll('Exception: ', '');
       
-      if (errorMsg.contains('Email not confirmed') || 
+      if (errorMsg.contains('CONFIRMATION_REQUIRED') ||
+          errorMsg.contains('Email not confirmed') || 
           errorMsg.contains('confirmation')) {
         _showInfoToast('Please verify your email first.');
         _startVerificationCheck();
+      } else if (errorMsg.contains('Email already registered')) {
+        _showErrorToast('Email already registered. Try signing in.');
       } else {
         _showErrorToast(errorMsg);
       }
