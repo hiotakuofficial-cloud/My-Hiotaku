@@ -99,8 +99,9 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
         type: OtpType.recovery,
       );
       
-      if (response.error != null) {
-        throw response.error!;
+      // Check if user is returned (success)
+      if (response.user == null) {
+        throw Exception('Invalid OTP code');
       }
       
       setState(() => _currentStep = 2);
@@ -128,12 +129,13 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
     HapticFeedback.lightImpact();
 
     try {
-      final response = await Supabase.instance.client.auth.update(
+      final response = await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: _passwordController.text),
       );
       
-      if (response.error != null) {
-        throw response.error!;
+      // Check if user is returned (success)
+      if (response.user == null) {
+        throw Exception('Failed to update password');
       }
       
       _showMessage('Password updated successfully!');
