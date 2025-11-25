@@ -93,11 +93,15 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
     HapticFeedback.lightImpact();
 
     try {
-      await Supabase.instance.client.auth.verifyOtp(
+      final response = await Supabase.instance.client.auth.verifyOTP(
         email: _emailController.text.trim(),
         token: _otpController.text.trim(),
         type: OtpType.recovery,
       );
+      
+      if (response.error != null) {
+        throw response.error!;
+      }
       
       setState(() => _currentStep = 2);
       _showMessage('OTP verified! Set your new password');
@@ -124,9 +128,13 @@ class _OtpResetPasswordScreenState extends State<OtpResetPasswordScreen> with Ti
     HapticFeedback.lightImpact();
 
     try {
-      await Supabase.instance.client.auth.updateUser(
+      final response = await Supabase.instance.client.auth.update(
         UserAttributes(password: _passwordController.text),
       );
+      
+      if (response.error != null) {
+        throw response.error!;
+      }
       
       _showMessage('Password updated successfully!');
       
