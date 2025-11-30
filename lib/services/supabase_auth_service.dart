@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../supa.dart';
 
 class SupabaseAuthService {
   static final SupabaseClient _supabase = Supabase.instance.client;
@@ -12,80 +13,101 @@ class SupabaseAuthService {
   // Email Sign In
   static Future<void> signInWithEmail(String email, String password) async {
     try {
+      // Validate input
+      if (!SupaConfig.isValidEmail(email)) {
+        throw Exception('Invalid email format');
+      }
+      if (!SupaConfig.isValidPassword(password)) {
+        throw Exception(SupaConfig.getErrorMessage('weak_password'));
+      }
+
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
       
       if (response.user == null) {
-        throw Exception('Login failed');
+        throw Exception(SupaConfig.getErrorMessage('invalid_credentials'));
       }
       
-      if (response.user!.emailConfirmedAt == null) {
-        throw Exception('Please confirm your email first');
+      if (SupaConfig.requireEmailConfirmation && response.user!.emailConfirmedAt == null) {
+        throw Exception(SupaConfig.getErrorMessage('email_not_confirmed'));
       }
     } catch (e) {
       if (e.toString().contains('Invalid login credentials')) {
-        throw Exception('Invalid email or password');
+        throw Exception(SupaConfig.getErrorMessage('invalid_credentials'));
       } else if (e.toString().contains('Email not confirmed')) {
-        throw Exception('Please confirm your email first');
+        throw Exception(SupaConfig.getErrorMessage('email_not_confirmed'));
       }
-      throw Exception('Login failed');
+      throw Exception(SupaConfig.getErrorMessage('unknown_error'));
     }
   }
 
   // Email Sign Up
   static Future<void> signUpWithEmail(String email, String password) async {
     try {
+      // Validate input
+      if (!SupaConfig.isValidEmail(email)) {
+        throw Exception('Invalid email format');
+      }
+      if (!SupaConfig.isValidPassword(password)) {
+        throw Exception(SupaConfig.getErrorMessage('weak_password'));
+      }
+
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
-        emailRedirectTo: 'https://hiotaku.kesug.com/confirm.php', // Your web domain
+        emailRedirectTo: SupaConfig.emailConfirmRedirect,
       );
       
       if (response.user != null) {
-        // Check if user already exists in public.users
+        // Check if user already exists in users table
         final existingUser = await _supabase
-            .from('users')
+            .from(SupaConfig.usersTable)
             .select()
             .eq('email', email)
             .maybeSingle();
         
         if (existingUser == null) {
-          // Create user profile in public.users table
-          await _supabase.from('users').insert({
+          // Create user profile
+          await _supabase.from(SupaConfig.usersTable).insert({
             'id': response.user!.id,
             'email': email,
-            'username': email.split('@')[0],
+            'username': SupaConfig.generateUsername(email),
             'created_at': DateTime.now().toIso8601String(),
           });
         }
         
         // Check if email confirmation is required
-        if (response.user!.emailConfirmedAt == null) {
+        if (SupaConfig.requireEmailConfirmation && response.user!.emailConfirmedAt == null) {
           throw Exception('CONFIRMATION_REQUIRED');
         }
       } else {
-        throw Exception('Sign up failed');
+        throw Exception(SupaConfig.getErrorMessage('unknown_error'));
       }
     } catch (e) {
       if (e.toString().contains('already registered')) {
-        throw Exception('Email already registered');
+        throw Exception(SupaConfig.getErrorMessage('email_already_exists'));
       } else if (e.toString().contains('CONFIRMATION_REQUIRED')) {
         throw Exception('CONFIRMATION_REQUIRED');
       }
-      throw Exception('Sign up failed');
+      throw Exception(SupaConfig.getErrorMessage('unknown_error'));
     }
   }
 
-  // Demo Google login (fallback)
-  static Future<void> signInWithGoogle() async {
+  // Reset Password
+  static Future<void> resetPassword(String email) async {
     try {
-      // For now, just simulate login
-      await Future.delayed(Duration(seconds: 1));
-      // In real app, this would be OAuth
+      if (!SupaConfig.isValidEmail(email)) {
+        throw Exception('Invalid email format');
+      }
+
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: SupaConfig.passwordResetRedirect,
+      );
     } catch (e) {
-      throw Exception('Google login not available');
+      throw Exception(SupaConfig.getErrorMessage('unknown_error'));
     }
   }
 

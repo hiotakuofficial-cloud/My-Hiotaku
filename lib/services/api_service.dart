@@ -2,28 +2,23 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/api_models.dart';
+import '../config.dart';
 import 'api_cache.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://v1-w3sc.onrender.com';
   static final http.Client _client = http.Client();
-  
-  static Map<String, String> get _headers => {
-    'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0.4472.120 Mobile Safari/537.36',
-    'Accept': 'application/json, text/plain, */*',
-    'Connection': 'keep-alive',
-  };
 
   static Future<HomeResponse> getHome([int page = 1]) async {
     final cacheKey = 'home_$page';
     final cached = ApiCache.get<HomeResponse>(cacheKey);
     if (cached != null) return cached;
 
-    final url = '$baseUrl/api.php?action=home&page=$page';
+    // Build URL with token authentication
+    final url = AppConfig.buildUrl('home', {'page': page});
     
     try {
-      final response = await _client.get(Uri.parse(url), headers: _headers)
-          .timeout(Duration(seconds: 30));
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
       
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -38,6 +33,56 @@ class ApiService {
       throw Exception('Invalid response format');
     } catch (e) {
       throw Exception('Request failed: $e');
+    }
+  }
+
+  // Search anime with token
+  static Future<HomeResponse> searchAnime(String query, [int page = 1]) async {
+    final cacheKey = 'search_${query}_$page';
+    final cached = ApiCache.get<HomeResponse>(cacheKey);
+    if (cached != null) return cached;
+
+    final url = AppConfig.buildUrl('search', {
+      'query': query,
+      'page': page,
+    });
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final result = _parseHomeResponse(jsonData);
+        ApiCache.set(cacheKey, result);
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Search failed: $e');
+    }
+  }
+
+  // Get anime details with token
+  static Future<Map<String, dynamic>> getAnimeDetails(String animeId) async {
+    final cacheKey = 'details_$animeId';
+    final cached = ApiCache.get<Map<String, dynamic>>(cacheKey);
+    if (cached != null) return cached;
+
+    final url = AppConfig.buildUrl('details', {'id': animeId});
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        ApiCache.set(cacheKey, jsonData);
+        return jsonData;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Details failed: $e');
     }
   }
 
