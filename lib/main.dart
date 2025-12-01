@@ -4,11 +4,31 @@ import 'dart:ui';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'config.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Initialize Firebase with comprehensive error handling
+  try {
+    print('🔥 Initializing Firebase...');
+    await Firebase.initializeApp();
+    print('✅ Firebase initialized successfully');
+  } on FirebaseException catch (e) {
+    print('❌ Firebase initialization failed: ${e.code} - ${e.message}');
+    // App can still run without Firebase, but features will be limited
+  } catch (e) {
+    print('❌ Unexpected Firebase error: ${e.toString()}');
+  }
+  
+  // Set orientation
+  try {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    print('✅ Orientation set to portrait');
+  } catch (e) {
+    print('⚠️ Failed to set orientation: ${e.toString()}');
+  }
+  
   runApp(MyApp());
 }
 

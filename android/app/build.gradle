@@ -23,6 +23,7 @@ if (flutterVersionName == null) {
 
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.google.gms.google-services'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
@@ -42,6 +43,22 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
+    // Custom signing config for Hiotaku
+    signingConfigs {
+        debug {
+            keyAlias 'hiotaku'
+            keyPassword 'android123'
+            storeFile file(System.getProperty('user.home') + '/.android/hiotaku-debug.keystore')
+            storePassword 'android123'
+        }
+        release {
+            keyAlias 'hiotaku'
+            keyPassword 'android123'
+            storeFile file(System.getProperty('user.home') + '/.android/hiotaku-debug.keystore')
+            storePassword 'android123'
+        }
+    }
+
     defaultConfig {
         applicationId "com.hiotaku.app"
         minSdkVersion flutter.minSdkVersion
@@ -52,6 +69,9 @@ android {
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
+        }
+        debug {
             signingConfig signingConfigs.debug
         }
     }
