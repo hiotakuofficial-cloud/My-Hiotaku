@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "472385734556-n6e4esbg9p5853l3if3a2b1edfpoo515.apps.googleusercontent.com",
+          "client_id": "472385734556-9tmsk803pnkcutr4ouut8a4ee3902j94.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.hiotaku.app",
-            "certificate_hash": "fd0c59891613bbdbe5d20372230f6374f546af8c"
+            "certificate_hash": "86df9e9e70746d43664fe686437a8442146df647"
           }
         },
         {
