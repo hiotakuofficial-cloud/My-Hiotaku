@@ -200,4 +200,87 @@ class FirebaseHandler {
       return false;
     }
   }
+
+  // Email/Password Sign Up
+  Future<User?> signUpWithEmailPassword({
+    required String email,
+    required String password,
+    required String name,
+    BuildContext? context,
+  }) async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      // Update display name
+      await userCredential.user?.updateDisplayName(name);
+      
+      if (userCredential.user != null) {
+        _showSuccess(context, 'Account created successfully!');
+        return userCredential.user;
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Sign up failed: ';
+      switch (e.code) {
+        case 'weak-password':
+          errorMessage += 'Password is too weak';
+          break;
+        case 'email-already-in-use':
+          errorMessage += 'Email already registered';
+          break;
+        case 'invalid-email':
+          errorMessage += 'Invalid email address';
+          break;
+        default:
+          errorMessage += e.message ?? 'Unknown error';
+      }
+      _showError(context, errorMessage);
+      return null;
+    } catch (e) {
+      _showError(context, 'Sign up error: ${e.toString()}');
+      return null;
+    }
+  }
+
+  // Email/Password Sign In
+  Future<User?> signInWithEmailPassword({
+    required String email,
+    required String password,
+    BuildContext? context,
+  }) async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      if (userCredential.user != null) {
+        _showSuccess(context, 'Welcome back!');
+        return userCredential.user;
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Login failed: ';
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage += 'No account found with this email';
+          break;
+        case 'wrong-password':
+          errorMessage += 'Incorrect password';
+          break;
+        case 'invalid-email':
+          errorMessage += 'Invalid email address';
+          break;
+        case 'user-disabled':
+          errorMessage += 'Account has been disabled';
+          break;
+        default:
+          errorMessage += e.message ?? 'Unknown error';
+      }
+      _showError(context, errorMessage);
+      return null;
+    } catch (e) {
+      _showError(context, 'Login error: ${e.toString()}');
+      return null;
+    }
+  }
 }
