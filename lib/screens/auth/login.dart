@@ -11,6 +11,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isLoginMode = true; // true for Login, false for Sign Up
 
   @override
   void dispose() {
@@ -21,95 +22,128 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-      child: Scaffold(
-        backgroundColor: Color(0xFF0F0F23),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF0F0F23), Color(0xFF1A1A2E)],
-            ),
+    return Scaffold(
+      backgroundColor: Color(0xFF1a1f3a),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1a1f3a),
+              Color(0xFF2d3561),
+            ],
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Food icons decoration
-                  _buildFoodIcons(),
-                  SizedBox(height: 40),
-                  
-                  // Chef hat icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      Icons.restaurant_menu,
-                      size: 40,
-                      color: Color(0xFF0F0F23),
-                    ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                SizedBox(height: 60),
+                
+                // Floating food icons background
+                _buildFloatingIcons(),
+                
+                SizedBox(height: 40),
+                
+                // Chef hat icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  SizedBox(height: 40),
-                  
-                  // Login/Sign up tabs
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Icon(
+                    Icons.restaurant_menu,
+                    size: 40,
+                    color: Color(0xFF1a1f3a),
+                  ),
+                ),
+                
+                SizedBox(height: 40),
+                
+                // Login/Sign Up toggle
+                Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFF2d3561),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        'Login',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _isLoginMode = true),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _isLoginMode ? Color(0xFFFF4444) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: Text(
+                              'Login',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: _isLoginMode ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      SizedBox(width: 40),
-                      Text(
-                        'Sign up',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 18,
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _isLoginMode = false),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: !_isLoginMode ? Color(0xFFFF4444) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: Text(
+                              'Sign up',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: !_isLoginMode ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 40),
-                  
-                  // Email field
-                  _buildTextField(
-                    controller: _emailController,
-                    label: 'Email Address',
-                    hint: 'hiotakuofficial@gmail.com',
-                    keyboardType: TextInputType.emailAddress,
-                  ),
+                ),
+                
+                SizedBox(height: 40),
+                
+                // Form fields
+                if (!_isLoginMode) ...[
+                  _buildInputField('Full Name', 'Enter Name for Display', false),
                   SizedBox(height: 20),
-                  
-                  // Password field
-                  _buildTextField(
-                    controller: _passwordController,
-                    label: 'Password',
-                    hint: '••••••••',
-                    isPassword: true,
-                  ),
+                ],
+                
+                _buildInputField('Email Address', 'hiotakuofficial@gmail.com', false),
+                SizedBox(height: 20),
+                
+                _buildInputField('Password', '••••••••', true),
+                
+                if (_isLoginMode) ...[
                   SizedBox(height: 16),
-                  
-                  // Forgot password
                   Align(
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, '/forgot-password');
+                        // Navigate to forgot password
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Forgot password feature coming soon!'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
                       },
                       child: Text(
                         'Forgot password',
@@ -120,35 +154,38 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 40),
-                  
-                  // Login button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFF4444),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              'Login',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                  ),
                 ],
-              ),
+                
+                SizedBox(height: 40),
+                
+                // Action button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleAction,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFF4444),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isLoading
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            _isLoginMode ? 'Login' : 'Sign up',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+                
+                Spacer(),
+              ],
             ),
           ),
         ),
@@ -156,67 +193,41 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildFoodIcons() {
-    return Stack(
-      children: [
-        Positioned(
-          top: 0,
-          left: 20,
-          child: _buildFoodIcon('🍎', Colors.red),
-        ),
-        Positioned(
-          top: 20,
-          right: 30,
-          child: _buildFoodIcon('🍊', Colors.orange),
-        ),
-        Positioned(
-          top: 60,
-          left: 60,
-          child: _buildFoodIcon('🍌', Colors.yellow),
-        ),
-        Positioned(
-          top: 40,
-          right: 80,
-          child: _buildFoodIcon('🥕', Colors.orange),
-        ),
-        Positioned(
-          top: 80,
-          right: 20,
-          child: _buildFoodIcon('🥬', Colors.green),
-        ),
-        Positioned(
-          top: 100,
-          left: 30,
-          child: _buildFoodIcon('🍓', Colors.red),
-        ),
-      ],
+  Widget _buildFloatingIcons() {
+    return Container(
+      height: 120,
+      child: Stack(
+        children: [
+          // Floating food icons
+          Positioned(top: 10, left: 20, child: _buildFloatingIcon('🍎', Colors.red)),
+          Positioned(top: 30, right: 30, child: _buildFloatingIcon('🍌', Colors.yellow)),
+          Positioned(top: 60, left: 60, child: _buildFloatingIcon('🥕', Colors.orange)),
+          Positioned(top: 20, left: 100, child: _buildFloatingIcon('🍇', Colors.purple)),
+          Positioned(top: 80, right: 80, child: _buildFloatingIcon('🍓', Colors.red)),
+          Positioned(top: 50, right: 150, child: _buildFloatingIcon('🥬', Colors.green)),
+        ],
+      ),
     );
   }
 
-  Widget _buildFoodIcon(String emoji, Color color) {
+  Widget _buildFloatingIcon(String emoji, Color color) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 24,
+      height: 24,
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
         child: Text(
           emoji,
-          style: TextStyle(fontSize: 20),
+          style: TextStyle(fontSize: 12),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    bool isPassword = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
+  Widget _buildInputField(String label, String hint, bool isPassword) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -231,17 +242,23 @@ class _LoginScreenState extends State<LoginScreen> {
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Color(0xFF2d3561),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+              width: 1,
+            ),
           ),
           child: TextField(
-            controller: controller,
+            controller: isPassword ? _passwordController : _emailController,
             obscureText: isPassword && !_isPasswordVisible,
-            keyboardType: keyboardType,
             style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+              hintStyle: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 14,
+              ),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               suffixIcon: isPassword
@@ -264,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _handleLogin() async {
+  void _handleAction() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -277,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     
-    // Simulate login delay
+    // Simulate API call
     await Future.delayed(Duration(seconds: 2));
     
     setState(() => _isLoading = false);
