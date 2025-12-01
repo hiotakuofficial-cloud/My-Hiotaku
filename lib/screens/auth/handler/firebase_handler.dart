@@ -17,6 +17,51 @@ class FirebaseHandler {
     }
   }
 
+  // Show professional iOS-style success message
+  static void _showSuccess(BuildContext? context, String message) {
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check,
+                  color: Colors.green,
+                  size: 14,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.black87,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.all(16),
+        ),
+      );
+    }
+  }
+
   // Google Sign In with clean error handling
   Future<User?> signInWithGoogle({BuildContext? context}) async {
     try {
@@ -50,6 +95,7 @@ class FirebaseHandler {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
       if (userCredential.user != null) {
+        _showSuccess(context, 'Welcome back, ${userCredential.user!.displayName?.split(' ')[0] ?? 'User'}');
         return userCredential.user;
       } else {
         _showError(context, 'Firebase authentication failed');
