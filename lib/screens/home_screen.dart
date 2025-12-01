@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
+import '../services/supabase_auth_service.dart';
 import '../models/api_models.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -16,11 +18,21 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AnimeItem> trendingAnime = [];
   List<AnimeItem> popularAnime = [];
   bool isLoading = true;
+  bool isUserLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
     _loadHomeData();
+    
+    // Listen to auth state changes
+    SupabaseAuthService.authStateChanges.listen((authState) {
+      if (mounted) {
+        setState(() {
+          isUserLoggedIn = authState.session != null;
+        });
+      }
+    });
   }
 
   Future<void> _loadHomeData() async {
@@ -83,18 +95,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHeader() {
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: EdgeInsets.all(20),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildLogo(),
-            Row(
-              children: [
-                _buildHeaderIcon(Icons.search, () {}),
-                SizedBox(width: 16),
-                _buildHeaderIcon(Icons.person, () {}),
-              ],
+            // HIOTAKU Logo - bigger size
+            Container(
+              height: 45,
+              child: Image.asset(
+                'assets/images/header_logo.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+            Spacer(),
+            // Profile Section - no background
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                if (!isUserLoggedIn) {
+                  // Navigate to login screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                } else {
+                  // Show logged in popup
+                  _showLoggedInPopup();
+                }
+              },
+              child: Container(
+                width: 24,
+                height: 24,
+                child: isUserLoggedIn
+                    ? ClipOval(
+                        child: SupabaseAuthService.userPhotoUrl != null
+                            ? Image.network(
+                                SupabaseAuthService.userPhotoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(Icons.person, color: Colors.white, size: 20);
+                                },
+                              )
+                            : Icon(Icons.person, color: Colors.white, size: 20),
+                      )
+                    : Image.asset(
+                        'assets/images/login.png',
+                        color: Colors.white,
+                        fit: BoxFit.contain,
+                      ),
+              ),
             ),
           ],
         ),
@@ -102,37 +151,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLogo() {
-    return ShaderMask(
-      shaderCallback: (bounds) => LinearGradient(
-        colors: [
-          Color(0xFF4A90E2), // Blue
-          Color(0xFF9B59B6), // Purple
-          Color(0xFFE91E63), // Pink
-        ],
-      ).createShader(bounds),
-      child: Text(
-        'HIOTAKU',
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          letterSpacing: 2,
+  void _showLoggedInPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Color(0xFF16213e),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Logged In',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                await SupabaseAuthService.signOut();
+                Navigator.pop(context);
+              },
+              child: Text('Sign Out'),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderIcon(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white, size: 24),
       ),
     );
   }
