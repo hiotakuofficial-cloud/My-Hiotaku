@@ -36,12 +36,9 @@ jobs:
           flutter-version: '3.19.6'
           channel: 'stable'
 
-      - name: Setup Keystore
+      - name: Decode Keystore
         run: |
-          mkdir -p /home/runner/.android
-          echo "${{ secrets.HIOTAKU_KEYSTORE }}" | base64 -d > /home/runner/.android/hiotaku-debug.keystore
-          chmod 600 /home/runner/.android/hiotaku-debug.keystore
-          ls -la /home/runner/.android/
+          echo "$HIOTAKU_KEYSTORE" | base64 --decode > android/app/hiotaku-release.keystore
 
       - name: Verify Dart SDK Version
         run: |

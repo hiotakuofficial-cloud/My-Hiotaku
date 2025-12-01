@@ -48,13 +48,13 @@ android {
         debug {
             keyAlias 'hiotaku'
             keyPassword 'android123'
-            storeFile file(System.getProperty('user.home') + '/.android/hiotaku-debug.keystore')
+            storeFile file('hiotaku-release.keystore')
             storePassword 'android123'
         }
         release {
             keyAlias 'hiotaku'
             keyPassword 'android123'
-            storeFile file(System.getProperty('user.home') + '/.android/hiotaku-debug.keystore')
+            storeFile file('hiotaku-release.keystore')
             storePassword 'android123'
         }
     }
