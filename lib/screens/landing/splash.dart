@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../services/api_cache.dart';
 
@@ -50,8 +51,17 @@ class _SplashScreenState extends State<SplashScreen>
     
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     
-    // Navigate to onboarding screen
-    Navigator.of(context).pushReplacementNamed('/onboarding');
+    // Check if first time user
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isFirstTime = prefs.getBool('first_time') ?? true;
+    
+    if (isFirstTime) {
+      // First time user - show onboarding
+      Navigator.of(context).pushReplacementNamed('/onboarding');
+    } else {
+      // Returning user - go directly to main app
+      Navigator.of(context).pushReplacementNamed('/main');
+    }
   }
 
   Future<void> _preloadData() async {

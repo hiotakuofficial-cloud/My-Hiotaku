@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
 
 class OnboardingScreen extends StatefulWidget {
@@ -76,13 +77,23 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     super.dispose();
   }
 
-  void _navigateToLogin() {
+  void _navigateToLogin() async {
     HapticFeedback.lightImpact();
+    
+    // Mark user as not first-time
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('first_time', false);
+    
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-  void _skipOnboarding() {
+  void _skipOnboarding() async {
     HapticFeedback.selectionClick();
+    
+    // Mark user as not first-time
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('first_time', false);
+    
     Navigator.pushReplacementNamed(context, '/login');
   }
 
