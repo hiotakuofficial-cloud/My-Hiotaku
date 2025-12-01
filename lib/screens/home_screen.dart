@@ -17,6 +17,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AnimeItem> featuredAnime = [];
   List<AnimeItem> trendingAnime = [];
   List<AnimeItem> popularAnime = [];
+  List<AnimeItem> topMovies = [];
+  List<AnimeItem> recentlyUpdated = [];
   bool isLoading = true;
   bool isUserLoggedIn = false;
 
@@ -45,9 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         // Split home data into different sections
         final allAnime = homeData.data;
-        featuredAnime = allAnime.take(5).toList();
-        trendingAnime = allAnime.skip(5).take(10).toList();
-        popularAnime = allAnime.skip(15).take(10).toList();
+        featuredAnime = allAnime.take(4).toList(); // Reduced from 5 to 4
+        trendingAnime = allAnime.skip(4).take(10).toList();
+        popularAnime = allAnime.skip(14).take(10).toList();
+        topMovies = allAnime.skip(24).take(10).toList();
+        recentlyUpdated = allAnime.skip(34).take(10).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -81,13 +85,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildContent() {
     return CustomScrollView(
+      physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
         _buildHeader(),
         _buildFeaturedCarousel(),
-        _buildSectionTitle('Trending'),
+        _buildSectionTitle('Trending', () => _navigateToSeeAll('trending')),
         _buildHorizontalList(trendingAnime),
-        _buildSectionTitle('Popular'),
+        _buildSectionTitle('Popular', () => _navigateToSeeAll('popular')),
         _buildHorizontalList(popularAnime),
+        _buildSectionTitle('Top Movies', () => _navigateToSeeAll('movies')),
+        _buildHorizontalList(topMovies),
+        _buildSectionTitle('Recently Updated', () => _navigateToSeeAll('recent')),
+        _buildHorizontalList(recentlyUpdated),
         SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
@@ -181,11 +190,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildFeaturedCarousel() {
     return SliverToBoxAdapter(
       child: Container(
-        height: 400,
+        height: 300, // Reduced from 400 to 300
         child: Column(
           children: [
             Expanded(
               child: PageView.builder(
+                physics: BouncingScrollPhysics(),
                 controller: _pageController,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
@@ -293,7 +303,9 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         featuredAnime.length,
-        (index) => Container(
+        (index) => AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
           margin: EdgeInsets.symmetric(horizontal: 4),
           width: _currentPage == index ? 24 : 8,
           height: 8,
@@ -308,17 +320,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, VoidCallback? onSeeAll) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, 30, 20, 16),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (onSeeAll != null)
+              GestureDetector(
+                onTap: onSeeAll,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'See All',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.blue,
+                        size: 12,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -329,6 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         height: 200,
         child: ListView.builder(
+          physics: BouncingScrollPhysics(),
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: 20),
           itemCount: animeList.length,
@@ -341,52 +390,79 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAnimeCard(AnimeItem anime) {
-    return Container(
-      width: 140,
-      margin: EdgeInsets.only(right: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        // TODO: Navigate to anime details
+      },
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        curve: Curves.elasticOut,
+        width: 140,
+        margin: EdgeInsets.only(right: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Hero(
+                tag: 'anime_${anime.id}',
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  anime.poster ?? '',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[800],
-                      child: Icon(Icons.image, color: Colors.white54),
-                    );
-                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      anime.poster ?? '',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[800],
+                          child: Icon(Icons.image, color: Colors.white54),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            anime.title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+            SizedBox(height: 8),
+            Text(
+              anime.title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToSeeAll(String section) {
+    HapticFeedback.lightImpact();
+    // TODO: Navigate to see all screen with section type
+    print('Navigate to see all: $section');
+    
+    // Show snackbar for now
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('See All $section - Coming Soon!'),
+        backgroundColor: Colors.blue,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
