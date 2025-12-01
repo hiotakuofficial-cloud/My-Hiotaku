@@ -1,28 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:ui';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/login_screen.dart';
 import 'config.dart';
-import 'supa.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Supabase with config
-  await Supabase.initialize(
-    url: SupaConfig.supabaseUrl,
-    anonKey: SupaConfig.supabaseAnonKey,
-  );
-
-  // Listen for deep links
-  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-    if (data.event == AuthChangeEvent.signedIn) {
-      print('User signed in via deep link: ${data.session?.user?.email}');
-    }
-  });
   
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(MyApp());
@@ -46,8 +30,6 @@ class MyApp extends StatelessWidget {
       home: SplashScreen(),
       routes: {
         '/main': (context) => MainScreen(),
-        '/login': (context) => LoginScreen(),
-        '/confirm': (context) => ConfirmationScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
@@ -86,18 +68,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   final List<Widget> _screens = [
     HomeScreen(),
-    _PlaceholderScreen('Search'),
-    _PlaceholderScreen('Favorites'),
-    _PlaceholderScreen('Profile'),
+    SearchPage(),
+    FavoritesPage(),
+    ProfilePage(),
   ];
 
   @override
   void initState() {
     super.initState();
-    
-    // Set transparent status bar
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    
     _pageController = PageController();
     _navAnimationController = AnimationController(
       duration: Duration(milliseconds: 300),
@@ -113,24 +91,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _onPageChanged(int index) {
-    if (_currentIndex != index) {
-      _navAnimationController.reset();
-      setState(() => _currentIndex = index);
-      _navAnimationController.forward();
-    }
-  }
-
   void _onNavTap(int index) {
     HapticFeedback.lightImpact();
-    _navAnimationController.reset();
     setState(() => _currentIndex = index);
     _pageController.animateToPage(
       index,
       duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-    _navAnimationController.forward();
   }
 
   @override
@@ -142,12 +110,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         systemNavigationBarColor: Colors.transparent,
       ),
       child: Scaffold(
+        backgroundColor: Colors.black,
         extendBodyBehindAppBar: true,
         body: Stack(
           children: [
             PageView(
               controller: _pageController,
-              onPageChanged: _onPageChanged,
+              onPageChanged: (index) => setState(() => _currentIndex = index),
               children: _screens,
             ),
             _buildBottomNav(),
@@ -168,14 +137,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 20,
               offset: Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 40,
-              offset: Offset(0, 16),
             ),
           ],
         ),
@@ -190,14 +154,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 border: Border.all(
                   color: Colors.white.withOpacity(0.2),
                   width: 1.5,
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.15),
-                    Colors.white.withOpacity(0.05),
-                  ],
                 ),
               ),
               child: Row(
@@ -221,137 +177,72 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     
     return GestureDetector(
       onTap: () => _onNavTap(index),
-      child: AnimatedBuilder(
-        animation: _navAnimationController,
-        builder: (context, child) {
-          return AnimatedContainer(
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            padding: EdgeInsets.symmetric(
-              horizontal: isSelected ? 16 : 12,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.white.withOpacity(_navAnimationController.value) : Colors.transparent,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Transform.scale(
-                  scale: isSelected ? (1.0 + 0.1 * _navAnimationController.value) : 1.0,
-                  child: Icon(
-                    icon,
-                    color: isSelected 
-                        ? Color.lerp(Colors.white.withOpacity(0.6), Colors.black, _navAnimationController.value)
-                        : Colors.white.withOpacity(0.6),
-                    size: 24,
-                  ),
-                ),
-                if (isSelected) ...[
-                  SizedBox(width: 8 * _navAnimationController.value),
-                  Opacity(
-                    opacity: _navAnimationController.value,
-                    child: Transform.translate(
-                      offset: Offset((1 - _navAnimationController.value) * 10, 0),
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+          size: 24,
+        ),
       ),
     );
   }
 }
 
-class ConfirmationScreen extends StatefulWidget {
-  @override
-  _ConfirmationScreenState createState() => _ConfirmationScreenState();
-}
-
-class _ConfirmationScreenState extends State<ConfirmationScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _handleConfirmation();
-  }
-
-  void _handleConfirmation() async {
-    // Wait for auth state to settle
-    await Future.delayed(Duration(seconds: 2));
-    
-    final user = Supabase.instance.client.auth.currentUser;
-    
-    if (user != null && user.emailConfirmedAt != null) {
-      // User is confirmed and logged in - go to main app
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/main');
-      }
-    } else {
-      // Not logged in or not confirmed - go to login
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    }
-  }
-
+// Placeholder pages
+class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F0F23), Color(0xFF1A1A2E)],
-          ),
-        ),
-        child: Center(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        extendBodyBehindAppBar: true,
+        body: Container(
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Color(0xFF64B5F6),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-              SizedBox(height: 30),
               Text(
-                'Account Confirmed',
+                'Search',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 10),
-              Text(
-                'Redirecting to app...',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
+              SizedBox(height: 20),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TextField(
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Search anime...',
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                    border: InputBorder.none,
+                    prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.6)),
+                  ),
                 ),
               ),
-              SizedBox(height: 30),
-              CircularProgressIndicator(
-                color: Color(0xFF64B5F6),
-                strokeWidth: 2,
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Search functionality coming soon!',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                ),
               ),
             ],
           ),
@@ -361,16 +252,135 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   }
 }
 
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const _PlaceholderScreen(this.title);
-
+class FavoritesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text('$title Screen', style: TextStyle(color: Colors.white, fontSize: 24)),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        extendBodyBehindAppBar: true,
+        body: Container(
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
+          child: Column(
+            children: [
+              Text(
+                'Favorites',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.favorite_outline, color: Colors.white.withOpacity(0.3), size: 80),
+                      SizedBox(height: 20),
+                      Text(
+                        'No favorites yet',
+                        style: TextStyle(color: Colors.white70, fontSize: 18),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Add anime to your favorites to see them here',
+                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
+
+class ProfilePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        extendBodyBehindAppBar: true,
+        body: Container(
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
+          child: Column(
+            children: [
+              Text(
+                'Profile',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 40),
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.person, color: Colors.white.withOpacity(0.6), size: 50),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Guest User',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Login to sync your data',
+                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+              ),
+              SizedBox(height: 40),
+              _buildProfileOption(Icons.settings, 'Settings'),
+              _buildProfileOption(Icons.download, 'Downloads'),
+              _buildProfileOption(Icons.history, 'Watch History'),
+              _buildProfileOption(Icons.info_outline, 'About'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileOption(IconData icon, String title) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white.withOpacity(0.7), size: 24),
+          SizedBox(width: 16),
+          Text(
+            title,
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          Spacer(),
+          Icon(Icons.arrow_forward_ios, color: Colors.white.withOpacity(0.4), size: 16),
+        ],
+      ),
+    );
+  }
+}
+
+

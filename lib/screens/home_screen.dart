@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+import 'dart:async';
 import '../services/api_service.dart';
-import '../services/supabase_auth_service.dart';
 import '../models/api_models.dart';
-import 'login_screen.dart';
 import 'pages/popular.dart';
 import 'pages/upcoming.dart';
 import 'pages/anime_movies.dart';
@@ -17,8 +16,9 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   PageController _pageController = PageController();
+  Timer? _autoSlideTimer;
   int _currentPage = 0;
   List<AnimeItem> featuredAnime = [];
   List<AnimeItem> trendingAnime = [];
@@ -27,21 +27,50 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AnimeItem> recentlyUpdated = [];
   List<AnimeItem> hindiAnime = [];
   bool isLoading = true;
-  bool isUserLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadHomeData();
-    
-    // Listen to auth state changes
-    SupabaseAuthService.authStateChanges.listen((authState) {
-      if (mounted) {
-        setState(() {
-          isUserLoggedIn = authState.session != null;
-        });
+    _startAutoSlide();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        _stopAutoSlide();
+        break;
+      case AppLifecycleState.resumed:
+        _startAutoSlide();
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _startAutoSlide() {
+    _autoSlideTimer = Timer.periodic(Duration(seconds: 4), (timer) {
+      if (featuredAnime.isNotEmpty && mounted) {
+        int nextPage = (_currentPage + 1) % featuredAnime.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: Duration(milliseconds: 800),
+          curve: Curves.easeInOutCubic,
+        );
       }
     });
+  }
+
+  void _stopAutoSlide() {
+    _autoSlideTimer?.cancel();
+  }
+
+  void _restartAutoSlide() {
+    _stopAutoSlide();
+    _startAutoSlide();
   }
 
   Future<void> _loadHomeData() async {
@@ -57,8 +86,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final hindiData = await ApiService.getHindiAnime(1);
       
       setState(() {
-        // Use real API data for each section
-        featuredAnime = homeData.data.take(4).toList();
+        // Use real API data for each section - 6 featured items
+        featuredAnime = homeData.data.take(6).toList();
         trendingAnime = popularData.data.take(10).toList();
         popularAnime = topUpcomingData.data.take(10).toList();
         topMovies = moviesData.data.take(10).toList();
@@ -146,66 +175,21 @@ class _HomeScreenState extends State<HomeScreen> {
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  if (!isUserLoggedIn) {
-                    // Navigate to login screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                    );
-                  } else {
-                    // Show logged in popup
-                    _showLoggedInPopup();
-                  }
+                  // TODO: Navigate to profile/settings
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Profile functionality coming soon!'),
+                      backgroundColor: Colors.blue,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                 },
                 child: Container(
                   width: 24,
                   height: 24,
-                  child: isUserLoggedIn
-                      ? ClipOval(
-                          child: SupabaseAuthService.userPhotoUrl != null
-                              ? Image.network(
-                                  SupabaseAuthService.userPhotoUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(Icons.person, color: Colors.white, size: 20);
-                                  },
-                                )
-                              : Icon(Icons.person, color: Colors.white, size: 20),
-                        )
-                      : Image.asset(
-                          'assets/images/login.png',
-                          color: Colors.white,
-                          fit: BoxFit.contain,
-                        ),
+                  child: Icon(Icons.person, color: Colors.white, size: 20),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLoggedInPopup() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Color(0xFF16213e),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Logged In',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                await SupabaseAuthService.signOut();
-                Navigator.pop(context);
-              },
-              child: Text('Sign Out'),
             ),
           ],
         ),
@@ -225,10 +209,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 controller: _pageController,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
+                  _restartAutoSlide(); // Restart timer when user manually swipes
                 },
                 itemCount: featuredAnime.length,
                 itemBuilder: (context, index) {
-                  return _buildFeaturedCard(featuredAnime[index]);
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _stopAutoSlide();
+                      // TODO: Navigate to anime details
+                      Future.delayed(Duration(seconds: 2), () {
+                        _startAutoSlide();
+                      });
+                    },
+                    child: _buildFeaturedCard(featuredAnime[index]),
+                  );
                 },
               ),
             ),
@@ -541,6 +536,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _autoSlideTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }

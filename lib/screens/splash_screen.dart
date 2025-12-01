@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
 import '../services/api_cache.dart';
@@ -49,18 +48,10 @@ class _SplashScreenState extends State<SplashScreen>
     // Wait for minimum splash duration
     await Future.delayed(Duration(milliseconds: 2500));
     
-    // Check if user is logged in
-    final user = Supabase.instance.client.auth.currentUser;
-    
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     
-    if (user != null && user.emailConfirmedAt != null) {
-      // User is logged in and confirmed - go to main app
-      Navigator.of(context).pushReplacementNamed('/main');
-    } else {
-      // Not logged in - go to main (which will show login option)
-      Navigator.of(context).pushReplacementNamed('/main');
-    }
+    // Navigate directly to main app
+    Navigator.of(context).pushReplacementNamed('/main');
   }
 
   Future<void> _preloadData() async {
