@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import 'screens/splash_screen.dart';
+import 'screens/landing/splash.dart';
 import 'screens/home_screen.dart';
 import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
