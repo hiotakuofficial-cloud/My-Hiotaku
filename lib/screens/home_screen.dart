@@ -10,6 +10,7 @@ import 'pages/anime_movies.dart';
 import 'pages/hindi_dubbed.dart';
 import 'pages/recently_added.dart';
 import 'pages/continue_watching.dart';
+import 'auth/login.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -175,12 +176,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  // TODO: Navigate to login screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Login functionality coming soon!'),
-                      backgroundColor: Colors.blue,
-                      behavior: SnackBarBehavior.floating,
+                  // Navigate to login screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginScreen(),
                     ),
                   );
                 },
