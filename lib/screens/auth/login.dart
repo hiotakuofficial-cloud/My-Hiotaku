@@ -102,171 +102,173 @@ class _LoginScreenState extends State<LoginScreen>
                     scale: _elasticAnimation,
                     child: Column(
                       children: [
-                      SizedBox(height: 80),
-                      
-                      // App Logo/Title with elastic bounce
-                      AnimatedBuilder(
-                        animation: _elasticAnimation,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: 0.8 + (_elasticAnimation.value * 0.2),
-                            child: Text(
-                              'Hiotaku',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    
-                    SizedBox(height: 60),
-                    
-                    // Sign In Title
-                    Text(
-                      _isLoginMode ? 'Sign In' : 'Sign Up',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    
-                    SizedBox(height: 40),
-                    
-                    // Google Login Button
-                    _buildGoogleLoginButton(),
-                    
-                    SizedBox(height: 30),
-                    
-                    // Divider
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: Colors.white.withOpacity(0.2),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Text(
-                            'OR',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: Colors.white.withOpacity(0.2),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    SizedBox(height: 30),
-                    
-                    // Name Field (only for signup)
-                    if (!_isLoginMode) ...[
-                      _buildInputField(
-                        label: 'Full Name',
-                        hint: 'Enter your full name',
-                        controller: _nameController,
-                        icon: Icons.person_outline,
-                      ),
-                      SizedBox(height: 20),
-                    ],
-                    
-                    // Email Field
-                    _buildInputField(
-                      label: 'Email address',
-                      hint: 'Enter your email address',
-                      controller: _emailController,
-                      icon: Icons.email_outlined,
-                    ),
-                    
-                    SizedBox(height: 20),
-                    
-                    // Password Field
-                    _buildInputField(
-                      label: 'Password',
-                      hint: '••••••••',
-                      controller: _passwordController,
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ),
-                    
-                    if (_isLoginMode) ...[
-                      SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Forgot password feature coming soon!'),
-                                backgroundColor: Colors.orange,
-                                behavior: SnackBarBehavior.floating,
+                        SizedBox(height: 80),
+                        
+                        // App Logo/Title with elastic bounce
+                        AnimatedBuilder(
+                          animation: _elasticAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: 0.8 + (_elasticAnimation.value * 0.2),
+                              child: Text(
+                                'Hiotaku',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
                               ),
                             );
                           },
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 14,
-                            ),
-                          ),
                         ),
-                      ),
-                    ],
-                    
-                    SizedBox(height: 40),
-                    
-                    // Sign In Button
-                    _buildSignInButton(),
-                    
-                    SizedBox(height: 30),
-                    
-                    // Toggle Login/Signup
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                        
+                        SizedBox(height: 60),
+                        
+                        // Sign In Title
                         Text(
-                          _isLoginMode ? "Don't have an account? " : "Already have an account? ",
+                          _isLoginMode ? 'Sign In' : 'Sign Up',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 14,
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            setState(() {
-                              _isLoginMode = !_isLoginMode;
-                            });
-                          },
-                          child: Text(
-                            _isLoginMode ? 'Sign Up' : 'Sign In',
-                            style: TextStyle(
-                              color: Color(0xFFFF8C00),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                        
+                        SizedBox(height: 40),
+                        
+                        // Google Login Button
+                        _buildGoogleLoginButton(),
+                        
+                        SizedBox(height: 30),
+                        
+                        // Divider
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                color: Colors.white.withOpacity(0.2),
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(
+                                'OR',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                color: Colors.white.withOpacity(0.2),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        SizedBox(height: 30),
+                        
+                        // Name Field (only for signup)
+                        if (!_isLoginMode) ...[
+                          _buildInputField(
+                            label: 'Full Name',
+                            hint: 'Enter your full name',
+                            controller: _nameController,
+                            icon: Icons.person_outline,
+                          ),
+                          SizedBox(height: 20),
+                        ],
+                        
+                        // Email Field
+                        _buildInputField(
+                          label: 'Email address',
+                          hint: 'Enter your email address',
+                          controller: _emailController,
+                          icon: Icons.email_outlined,
+                        ),
+                        
+                        SizedBox(height: 20),
+                        
+                        // Password Field
+                        _buildInputField(
+                          label: 'Password',
+                          hint: '••••••••',
+                          controller: _passwordController,
+                          icon: Icons.lock_outline,
+                          isPassword: true,
+                        ),
+                        
+                        if (_isLoginMode) ...[
+                          SizedBox(height: 16),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Forgot password feature coming soon!'),
+                                    backgroundColor: Colors.orange,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
                             ),
                           ),
+                        ],
+                        
+                        SizedBox(height: 40),
+                        
+                        // Sign In Button
+                        _buildSignInButton(),
+                        
+                        SizedBox(height: 30),
+                        
+                        // Toggle Login/Signup
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _isLoginMode ? "Don't have an account? " : "Already have an account? ",
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                setState(() {
+                                  _isLoginMode = !_isLoginMode;
+                                });
+                              },
+                              child: Text(
+                                _isLoginMode ? 'Sign Up' : 'Sign In',
+                                style: TextStyle(
+                                  color: Color(0xFFFF8C00),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        
+                        SizedBox(height: 40),
                       ],
                     ),
-                    
-                    SizedBox(height: 40),
-                  ],
+                  ),
                 ),
               ),
             ),
