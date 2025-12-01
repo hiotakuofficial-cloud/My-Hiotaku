@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
-class AuthService {
+class FirebaseHandler {
   // Show toast message
   static void _showToast(BuildContext? context, String message, {bool isError = false}) {
     if (context != null) {

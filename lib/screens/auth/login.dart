@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
-import '../../services/auth_service.dart';
+import 'handler/firebase_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -628,21 +628,21 @@ class _LoginScreenState extends State<LoginScreen>
     
     try {
       // Check Firebase connection first
-      bool firebaseOK = await AuthService().checkFirebaseConnection(context: context);
+      bool firebaseOK = await FirebaseHandler().checkFirebaseConnection(context: context);
       if (!firebaseOK) {
         setState(() => _isLoading = false);
         return;
       }
 
       // Check Google Play Services
-      bool googleOK = await AuthService().checkGooglePlayServices(context: context);
+      bool googleOK = await FirebaseHandler().checkGooglePlayServices(context: context);
       if (!googleOK) {
         setState(() => _isLoading = false);
         return;
       }
 
-      // Use AuthService for Google Sign-in with context
-      User? user = await AuthService().signInWithGoogle(context: context);
+      // Use FirebaseHandler for Google Sign-in with context
+      User? user = await FirebaseHandler().signInWithGoogle(context: context);
       
       setState(() => _isLoading = false);
       
@@ -653,7 +653,7 @@ class _LoginScreenState extends State<LoginScreen>
         // Navigate to main app
         Navigator.pushReplacementNamed(context, '/main');
       }
-      // Error messages already handled by AuthService
+      // Error messages already handled by FirebaseHandler
       
     } catch (e) {
       setState(() => _isLoading = false);
