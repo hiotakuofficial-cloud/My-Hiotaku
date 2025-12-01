@@ -5,6 +5,12 @@ import '../services/api_service.dart';
 import '../services/supabase_auth_service.dart';
 import '../models/api_models.dart';
 import 'login_screen.dart';
+import 'pages/popular.dart';
+import 'pages/upcoming.dart';
+import 'pages/anime_movies.dart';
+import 'pages/hindi_dubbed.dart';
+import 'pages/recently_added.dart';
+import 'pages/continue_watching.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -78,9 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         extendBodyBehindAppBar: true,
-        body: SafeArea(
-          child: isLoading ? _buildLoading() : _buildContent(),
-        ),
+        body: isLoading ? _buildLoading() : _buildContent(),
       ),
     );
   }
@@ -104,6 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
       slivers: [
         _buildHeader(),
         _buildFeaturedCarousel(),
+        _buildSectionTitle('Continue Watching', () => _navigateToSeeAll('continue')),
+        _buildHorizontalList(featuredAnime.take(5).toList()), // Show some as continue watching
         _buildSectionTitle('Popular Now', () => _navigateToSeeAll('popular')),
         _buildHorizontalList(trendingAnime),
         _buildSectionTitle('Top Upcoming', () => _navigateToSeeAll('upcoming')),
@@ -122,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader() {
     return SliverToBoxAdapter(
       child: Container(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
+        padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 16),
         child: Row(
           children: [
             // HIOTAKU Logo - bigger size
@@ -473,16 +479,62 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToSeeAll(String section) {
     HapticFeedback.lightImpact();
-    // TODO: Navigate to see all screen with section type
-    print('Navigate to see all: $section');
     
-    // Show snackbar for now
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('See All $section - Coming Soon!'),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    Widget targetPage;
+    switch (section) {
+      case 'popular':
+        targetPage = PopularPage();
+        break;
+      case 'upcoming':
+        targetPage = UpcomingPage();
+        break;
+      case 'movies':
+        targetPage = AnimeMoviesPage();
+        break;
+      case 'hindi':
+        targetPage = HindiDubbedPage();
+        break;
+      case 'recent':
+        targetPage = RecentlyAddedPage();
+        break;
+      case 'continue':
+        targetPage = ContinueWatchingPage();
+        break;
+      default:
+        // Show snackbar for unimplemented sections
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$section - Coming Soon!'),
+            backgroundColor: Colors.blue,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+        return;
+    }
+
+    // iOS-style smooth transition
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => targetPage,
+        transitionDuration: Duration(milliseconds: 400),
+        reverseTransitionDuration: Duration(milliseconds: 300),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // iOS-style slide transition
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+
+          var tween = Tween(begin: begin, end: end).chain(
+            CurveTween(curve: curve),
+          );
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
       ),
     );
   }
