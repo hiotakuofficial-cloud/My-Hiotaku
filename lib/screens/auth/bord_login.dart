@@ -22,6 +22,12 @@ class _BordLoginScreenState extends State<BordLoginScreen>
   void initState() {
     super.initState();
     
+    // Make status bar transparent
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ));
+    
     _fadeController = AnimationController(
       duration: Duration(milliseconds: 1500),
       vsync: this,
@@ -71,41 +77,31 @@ class _BordLoginScreenState extends State<BordLoginScreen>
     setState(() => _isLoading = true);
     
     try {
-      // Check Firebase connection first
       bool firebaseOK = await FirebaseHandler().checkFirebaseConnection(context: context);
       if (!firebaseOK) {
         setState(() => _isLoading = false);
         return;
       }
 
-      // Check Google Play Services
       bool googleOK = await FirebaseHandler().checkGooglePlayServices(context: context);
       if (!googleOK) {
         setState(() => _isLoading = false);
         return;
       }
 
-      // Use FirebaseHandler for Google Sign-in with context
       User? user = await FirebaseHandler().signInWithGoogle(context: context);
       
       setState(() => _isLoading = false);
       
       if (user != null) {
-        // Success feedback
         HapticFeedback.heavyImpact();
-        
-        // Mark onboarding as completed after successful login
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('first_time', false);
-        
-        // Navigate to main app
         Navigator.pushReplacementNamed(context, '/main');
       }
-      // Error messages already handled by FirebaseHandler
       
     } catch (e) {
       setState(() => _isLoading = false);
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Login failed: ${e.toString()}'),
@@ -115,26 +111,13 @@ class _BordLoginScreenState extends State<BordLoginScreen>
     }
   }
 
-  void _handleAppleLogin() {
-    HapticFeedback.lightImpact();
-    // Apple login implementation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Apple login coming soon!'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
   void _handlePasswordLogin() {
     HapticFeedback.lightImpact();
-    // Navigate to password login
     Navigator.pushNamed(context, '/login');
   }
 
   void _handleSignUp() {
     HapticFeedback.lightImpact();
-    // Navigate to sign up
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Sign up coming soon!'),
@@ -147,9 +130,9 @@ class _BordLoginScreenState extends State<BordLoginScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // Background Image
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -172,49 +155,11 @@ class _BordLoginScreenState extends State<BordLoginScreen>
             ),
           ),
           
-          // Content
           SafeArea(
             child: Column(
               children: [
-                // Top Status Bar Area
-                Container(
-                  height: 60,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(left: 20),
-                          child: Text(
-                            '9:41',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(right: 20),
-                          child: Row(
-                            children: [
-                              Icon(Icons.signal_cellular_4_bar, color: Colors.white, size: 16),
-                              SizedBox(width: 4),
-                              Icon(Icons.wifi, color: Colors.white, size: 16),
-                              SizedBox(width: 4),
-                              Icon(Icons.battery_full, color: Colors.white, size: 16),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
                 Spacer(),
                 
-                // Login Buttons Section
                 SlideTransition(
                   position: _slideAnimation,
                   child: FadeTransition(
@@ -227,15 +172,15 @@ class _BordLoginScreenState extends State<BordLoginScreen>
                           Container(
                             width: double.infinity,
                             height: 56,
-                            margin: EdgeInsets.only(bottom: 16),
+                            margin: EdgeInsets.only(bottom: 24),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(28),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 15,
+                                  offset: Offset(0, 6),
                                 ),
                               ],
                             ),
@@ -279,77 +224,64 @@ class _BordLoginScreenState extends State<BordLoginScreen>
                             ),
                           ),
                           
-                          // Apple Login Button
+                          // Smooth OR Divider
                           Container(
-                            width: double.infinity,
-                            height: 56,
-                            margin: EdgeInsets.only(bottom: 24),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(28),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 1,
-                              ),
-                            ),
-                            child: ElevatedButton(
-                              onPressed: _handleAppleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
+                            margin: EdgeInsets.symmetric(vertical: 16),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    height: 1,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.white.withOpacity(0.3),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.apple, size: 20),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'Continue with Apple',
+                                Container(
+                                  margin: EdgeInsets.symmetric(horizontal: 16),
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Or',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    height: 1,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.white.withOpacity(0.3),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           
-                          // Or Divider
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  height: 1,
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  'Or',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  height: 1,
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          SizedBox(height: 24),
-                          
-                          // Password Login Button
+                          // Password Login Button with Enhanced Shadow
                           Container(
                             width: double.infinity,
                             height: 56,
@@ -364,9 +296,16 @@ class _BordLoginScreenState extends State<BordLoginScreen>
                               borderRadius: BorderRadius.circular(28),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Color(0xFF8B5CF6).withOpacity(0.3),
-                                  blurRadius: 20,
-                                  offset: Offset(0, 8),
+                                  color: Color(0xFF8B5CF6).withOpacity(0.4),
+                                  blurRadius: 25,
+                                  offset: Offset(0, 12),
+                                  spreadRadius: 2,
+                                ),
+                                BoxShadow(
+                                  color: Color(0xFF8B5CF6).withOpacity(0.2),
+                                  blurRadius: 40,
+                                  offset: Offset(0, 20),
+                                  spreadRadius: 4,
                                 ),
                               ],
                             ),
