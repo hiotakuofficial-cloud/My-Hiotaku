@@ -39,6 +39,8 @@ jobs:
       - name: Decode Keystore
         run: |
           echo "$HIOTAKU_KEYSTORE" | base64 --decode > android/app/hiotaku-v2-release.keystore
+          ls -la android/app/hiotaku-v2-release.keystore
+          file android/app/hiotaku-v2-release.keystore
 
       - name: Verify Dart SDK Version
         run: |
