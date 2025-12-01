@@ -24,231 +24,104 @@ class SupabaseHandler {
     return _client!;
   }
   
-  // Custom table-based authentication methods
+  // Generic database operations
   
-  /// Login using custom users table
-  static Future<Map<String, dynamic>?> loginWithTable({
-    required String email,
-    required String password,
+  /// Insert data into any table
+  static Future<Map<String, dynamic>?> insertData({
+    required String table,
+    required Map<String, dynamic> data,
   }) async {
     try {
       final response = await client
-          .from('users')
-          .select('*')
-          .eq('email', email)
-          .eq('password', password)
-          .single();
-      
-      return response;
-    } catch (e) {
-      print('Login error: $e');
-      return null;
-    }
-  }
-  
-  /// Register new user in custom table
-  static Future<Map<String, dynamic>?> registerWithTable({
-    required String email,
-    required String password,
-    required String fullName,
-  }) async {
-    try {
-      final response = await client
-          .from('users')
-          .insert({
-            'email': email,
-            'password': password,
-            'full_name': fullName,
-            'created_at': DateTime.now().toIso8601String(),
-          })
+          .from(table)
+          .insert(data)
           .select()
           .single();
       
       return response;
     } catch (e) {
-      print('Registration error: $e');
+      print('Insert error: $e');
       return null;
     }
   }
   
-  /// Check if email exists in users table
-  static Future<bool> emailExists(String email) async {
-    try {
-      final response = await client
-          .from('users')
-          .select('email')
-          .eq('email', email);
-      
-      return response.isNotEmpty;
-    } catch (e) {
-      print('Email check error: $e');
-      return false;
-    }
-  }
-  
-  /// Update password in users table
-  static Future<bool> updatePassword({
-    required String email,
-    required String oldPassword,
-    required String newPassword,
+  /// Get data from any table
+  static Future<List<Map<String, dynamic>>?> getData({
+    required String table,
+    String? select,
+    Map<String, dynamic>? filters,
   }) async {
     try {
-      // First verify old password
-      final user = await loginWithTable(email: email, password: oldPassword);
-      if (user == null) return false;
+      var query = client.from(table);
       
-      // Update password
-      await client
-          .from('users')
-          .update({'password': newPassword})
-          .eq('email', email);
+      if (select != null) {
+        query = query.select(select);
+      } else {
+        query = query.select('*');
+      }
       
-      return true;
+      if (filters != null) {
+        filters.forEach((key, value) {
+          query = query.eq(key, value);
+        });
+      }
+      
+      final response = await query;
+      return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Password update error: $e');
-      return false;
-    }
-  }
-  
-  /// Reset password (for forgot password)
-  static Future<bool> resetPassword({
-    required String email,
-    required String newPassword,
-  }) async {
-    try {
-      await client
-          .from('users')
-          .update({'password': newPassword})
-          .eq('email', email);
-      
-      return true;
-    } catch (e) {
-      print('Password reset error: $e');
-      return false;
-    }
-  }
-  
-  /// Get user profile by email
-  static Future<Map<String, dynamic>?> getUserProfile(String email) async {
-    try {
-      final response = await client
-          .from('users')
-          .select('id, email, full_name, created_at')
-          .eq('email', email)
-          .single();
-      
-      return response;
-    } catch (e) {
-      print('Get profile error: $e');
+      print('Get data error: $e');
       return null;
     }
   }
   
-  /// Update user profile
-  static Future<bool> updateUserProfile({
-    required String email,
-    String? fullName,
-    String? profilePicture,
+  /// Update data in any table
+  static Future<bool> updateData({
+    required String table,
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> filters,
   }) async {
     try {
-      Map<String, dynamic> updates = {};
-      if (fullName != null) updates['full_name'] = fullName;
-      if (profilePicture != null) updates['profile_picture'] = profilePicture;
+      var query = client.from(table).update(data);
       
-      if (updates.isEmpty) return false;
+      filters.forEach((key, value) {
+        query = query.eq(key, value);
+      });
       
-      await client
-          .from('users')
-          .update(updates)
-          .eq('email', email);
-      
+      await query;
       return true;
     } catch (e) {
-      print('Profile update error: $e');
+      print('Update error: $e');
       return false;
     }
   }
   
-  /// Delete user account
-  static Future<bool> deleteAccount(String email) async {
+  /// Delete data from any table
+  static Future<bool> deleteData({
+    required String table,
+    required Map<String, dynamic> filters,
+  }) async {
     try {
-      await client
-          .from('users')
-          .delete()
-          .eq('email', email);
+      var query = client.from(table).delete();
       
+      filters.forEach((key, value) {
+        query = query.eq(key, value);
+      });
+      
+      await query;
       return true;
     } catch (e) {
-      print('Account deletion error: $e');
+      print('Delete error: $e');
       return false;
     }
   }
   
   // Utility methods
   
-  /// Validate email format
-  static bool isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
-  }
+  /// Check if Supabase is initialized
+  static bool get isInitialized => _client != null;
   
-  /// Validate password strength
-  static bool isValidPassword(String password) {
-    return password.length >= 6;
-  }
-  
-  /// Hash password (basic implementation)
-  static String hashPassword(String password) {
-    // In production, use proper hashing like bcrypt
-    // This is just a placeholder
-    return password; // TODO: Implement proper hashing
-  }
-  
-  /// Generate random token for password reset
-  static String generateResetToken() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = DateTime.now().millisecondsSinceEpoch;
-    return chars[(random % chars.length)] + 
-           chars[((random ~/ 10) % chars.length)] +
-           chars[((random ~/ 100) % chars.length)] +
-           chars[((random ~/ 1000) % chars.length)] +
-           chars[((random ~/ 10000) % chars.length)] +
-           chars[((random ~/ 100000) % chars.length)];
-  }
-}
-
-// User model for type safety
-class UserModel {
-  final int id;
-  final String email;
-  final String fullName;
-  final String? profilePicture;
-  final DateTime createdAt;
-  
-  UserModel({
-    required this.id,
-    required this.email,
-    required this.fullName,
-    this.profilePicture,
-    required this.createdAt,
-  });
-  
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'],
-      email: json['email'],
-      fullName: json['full_name'],
-      profilePicture: json['profile_picture'],
-      createdAt: DateTime.parse(json['created_at']),
-    );
-  }
-  
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'email': email,
-      'full_name': fullName,
-      'profile_picture': profilePicture,
-      'created_at': createdAt.toIso8601String(),
-    };
+  /// Get current timestamp
+  static String getCurrentTimestamp() {
+    return DateTime.now().toIso8601String();
   }
 }
