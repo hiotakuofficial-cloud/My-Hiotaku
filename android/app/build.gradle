@@ -61,7 +61,7 @@ android {
 
     defaultConfig {
         applicationId "com.hiotaku.app"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
