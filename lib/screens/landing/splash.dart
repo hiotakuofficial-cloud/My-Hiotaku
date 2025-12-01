@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../services/api_cache.dart';
+import '../../services/permission_service.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -43,6 +44,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initializeApp() async {
+    // Request permissions first
+    await _requestPermissions();
+    
     // Preload data during splash
     await _preloadData();
     
@@ -61,6 +65,23 @@ class _SplashScreenState extends State<SplashScreen>
     } else {
       // Returning user - go directly to main app
       Navigator.of(context).pushReplacementNamed('/main');
+    }
+  }
+
+  Future<void> _requestPermissions() async {
+    try {
+      // Request notification permission silently
+      await PermissionService.requestNotificationPermission();
+      
+      // Request storage permissions silently
+      await PermissionService.requestStoragePermissions();
+      
+      // Request media permissions silently (Android 13+)
+      await PermissionService.requestMediaPermissions();
+      
+      print('Permissions requested during splash');
+    } catch (e) {
+      print('Permission request failed: $e');
     }
   }
 
