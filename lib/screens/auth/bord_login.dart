@@ -224,9 +224,9 @@ class _BordLoginScreenState extends State<BordLoginScreen>
                             ),
                           ),
                           
-                          // Smooth OR Divider
+                          // Clean OR Divider with Gradient Lines
                           Container(
-                            margin: EdgeInsets.symmetric(vertical: 16),
+                            margin: EdgeInsets.symmetric(vertical: 20),
                             child: Row(
                               children: [
                                 Expanded(
@@ -234,32 +234,25 @@ class _BordLoginScreenState extends State<BordLoginScreen>
                                     height: 1,
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
                                         colors: [
                                           Colors.transparent,
-                                          Colors.white.withOpacity(0.3),
-                                          Colors.transparent,
+                                          Colors.white.withOpacity(0.2),
+                                          Colors.white.withOpacity(0.4),
                                         ],
                                       ),
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 16),
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.2),
-                                      width: 1,
-                                    ),
-                                  ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
                                   child: Text(
                                     'Or',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.white.withOpacity(0.6),
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                   ),
                                 ),
@@ -268,9 +261,11 @@ class _BordLoginScreenState extends State<BordLoginScreen>
                                     height: 1,
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
                                         colors: [
-                                          Colors.transparent,
-                                          Colors.white.withOpacity(0.3),
+                                          Colors.white.withOpacity(0.4),
+                                          Colors.white.withOpacity(0.2),
                                           Colors.transparent,
                                         ],
                                       ),
