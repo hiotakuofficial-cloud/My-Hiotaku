@@ -83,26 +83,16 @@ class _ContinueWatchingPageState extends State<ContinueWatchingPage> with Ticker
               child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
             ),
           ),
-          SizedBox(width: 16),
           Expanded(
-            child: Text(
-              'Continue Watching',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            child: Center(
+              child: Text(
+                'Continue Watching',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => HapticFeedback.lightImpact(),
-            child: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.search, color: Colors.white, size: 24),
             ),
           ),
         ],

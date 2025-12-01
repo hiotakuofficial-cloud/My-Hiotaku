@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../models/api_models.dart';
+import 'handler/search_handler.dart';
 
 class RecentlyAddedPage extends StatefulWidget {
   @override
@@ -10,9 +11,14 @@ class RecentlyAddedPage extends StatefulWidget {
 
 class _RecentlyAddedPageState extends State<RecentlyAddedPage> with TickerProviderStateMixin {
   List<AnimeItem> animeList = [];
+  List<AnimeItem> searchResults = [];
   bool isLoading = true;
+  bool isSearching = false;
   late AnimationController _animationController;
+  late AnimationController _searchAnimationController;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _searchAnimation;
+  TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -21,8 +27,15 @@ class _RecentlyAddedPageState extends State<RecentlyAddedPage> with TickerProvid
       duration: Duration(milliseconds: 800),
       vsync: this,
     );
+    _searchAnimationController = AnimationController(
+      duration: Duration(milliseconds: 400),
+      vsync: this,
+    );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _searchAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _searchAnimationController, curve: Curves.easeInOutCubic),
     );
     _loadData();
   }
@@ -66,47 +79,110 @@ class _RecentlyAddedPageState extends State<RecentlyAddedPage> with TickerProvid
   Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 10, 20, 10),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.pop(context);
-            },
-            child: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
+      child: AnimatedBuilder(
+        animation: _searchAnimation,
+        builder: (context, child) {
+          return Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  if (isSearching) {
+                    _closeSearch();
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                ),
               ),
-              child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              'Recently Added',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+              SizedBox(width: 16),
+              Expanded(
+                child: isSearching
+                    ? SlideTransition(
+                        position: Tween<Offset>(
+                          begin: Offset(1.0, 0.0),
+                          end: Offset.zero,
+                        ).animate(_searchAnimation),
+                        child: SearchHandler.buildSearchBox(
+                          controller: _searchController,
+                          hintText: 'Search in Recently Added...',
+                          onClose: _closeSearch,
+                          onChanged: _onSearchChanged,
+                        ),
+                      )
+                    : SlideTransition(
+                        position: Tween<Offset>(
+                          begin: Offset.zero,
+                          end: Offset(-1.0, 0.0),
+                        ).animate(_searchAnimation),
+                        child: Center(
+                          child: Text(
+                            'Recently Added',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
               ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => HapticFeedback.lightImpact(),
-            child: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.search, color: Colors.white, size: 24),
-            ),
-          ),
-        ],
+              SizedBox(width: 16),
+              if (!isSearching)
+                GestureDetector(
+                  onTap: _openSearch,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.search, color: Colors.white, size: 24),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  void _openSearch() {
+    HapticFeedback.lightImpact();
+    setState(() => isSearching = true);
+    _searchAnimationController.forward();
+  }
+
+  void _closeSearch() {
+    HapticFeedback.lightImpact();
+    _searchAnimationController.reverse().then((_) {
+      setState(() {
+        isSearching = false;
+        searchResults.clear();
+        _searchController.clear();
+      });
+    });
+  }
+
+  void _onSearchChanged(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() => searchResults.clear());
+      return;
+    }
+
+    final results = await SearchHandler.searchInSection(
+      query: query,
+      section: 'recent',
+    );
+    
+    setState(() => searchResults = results);
   }
 
   Widget _buildLoading() {
@@ -123,6 +199,15 @@ class _RecentlyAddedPageState extends State<RecentlyAddedPage> with TickerProvid
   }
 
   Widget _buildContent() {
+    if (isSearching) {
+      return SearchHandler.buildSearchResults(
+        results: searchResults,
+        query: _searchController.text,
+        section: 'recent',
+        itemBuilder: _buildAnimeCard,
+      );
+    }
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: GridView.builder(
@@ -280,6 +365,8 @@ class _RecentlyAddedPageState extends State<RecentlyAddedPage> with TickerProvid
   @override
   void dispose() {
     _animationController.dispose();
+    _searchAnimationController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 }

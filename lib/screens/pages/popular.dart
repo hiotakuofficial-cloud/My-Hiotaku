@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../models/api_models.dart';
+import 'handler/search_handler.dart';
 
 class PopularPage extends StatefulWidget {
   @override
@@ -10,9 +11,18 @@ class PopularPage extends StatefulWidget {
 
 class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin {
   List<AnimeItem> animeList = [];
+  List<AnimeItem> searchResults = [];
   bool isLoading = true;
+  bool isLoadingMore = false;
+  bool isSearching = false;
+  int currentPage = 1;
+  bool hasMore = true;
   late AnimationController _animationController;
+  late AnimationController _searchAnimationController;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _searchAnimation;
+  ScrollController _scrollController = ScrollController();
+  TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -21,10 +31,26 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
       duration: Duration(milliseconds: 800),
       vsync: this,
     );
+    _searchAnimationController = AnimationController(
+      duration: Duration(milliseconds: 400),
+      vsync: this,
+    );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    _searchAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _searchAnimationController, curve: Curves.easeInOutCubic),
+    );
+    _scrollController.addListener(_onScroll);
     _loadData();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (!isLoadingMore && hasMore) {
+        _loadMoreData();
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -33,11 +59,30 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
       final data = await ApiService.getPopular(1);
       setState(() {
         animeList = data.data;
+        currentPage = 1;
+        hasMore = data.data.length >= 20; // Assume 20 items per page
         isLoading = false;
       });
       _animationController.forward();
     } catch (e) {
       setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _loadMoreData() async {
+    if (isLoadingMore || !hasMore) return;
+    
+    try {
+      setState(() => isLoadingMore = true);
+      final data = await ApiService.getPopular(currentPage + 1);
+      setState(() {
+        animeList.addAll(data.data);
+        currentPage++;
+        hasMore = data.data.length >= 20;
+        isLoadingMore = false;
+      });
+    } catch (e) {
+      setState(() => isLoadingMore = false);
     }
   }
 
@@ -66,47 +111,114 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
   Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 10, 20, 10),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.pop(context);
-            },
-            child: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
+      child: AnimatedBuilder(
+        animation: _searchAnimation,
+        builder: (context, child) {
+          return Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  if (isSearching) {
+                    _closeSearch();
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isSearching ? Icons.arrow_back : Icons.arrow_back,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
               ),
-              child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              'Popular Now',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+              SizedBox(width: 16),
+              Expanded(
+                child: isSearching
+                    ? SlideTransition(
+                        position: Tween<Offset>(
+                          begin: Offset(1.0, 0.0),
+                          end: Offset.zero,
+                        ).animate(_searchAnimation),
+                        child: SearchHandler.buildSearchBox(
+                          controller: _searchController,
+                          hintText: 'Search in Popular Now...',
+                          onClose: _closeSearch,
+                          onChanged: _onSearchChanged,
+                        ),
+                      )
+                    : SlideTransition(
+                        position: Tween<Offset>(
+                          begin: Offset.zero,
+                          end: Offset(-1.0, 0.0),
+                        ).animate(_searchAnimation),
+                        child: Center(
+                          child: Text(
+                            'Popular Now',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
               ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => HapticFeedback.lightImpact(),
-            child: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.search, color: Colors.white, size: 24),
-            ),
-          ),
-        ],
+              SizedBox(width: 16),
+              if (!isSearching)
+                GestureDetector(
+                  onTap: _openSearch,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.search, color: Colors.white, size: 24),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  void _openSearch() {
+    HapticFeedback.lightImpact();
+    setState(() => isSearching = true);
+    _searchAnimationController.forward();
+  }
+
+  void _closeSearch() {
+    HapticFeedback.lightImpact();
+    _searchAnimationController.reverse().then((_) {
+      setState(() {
+        isSearching = false;
+        searchResults.clear();
+        _searchController.clear();
+      });
+    });
+  }
+
+  void _onSearchChanged(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() => searchResults.clear());
+      return;
+    }
+
+    final results = await SearchHandler.searchInSection(
+      query: query,
+      section: 'popular',
+    );
+    
+    setState(() => searchResults = results);
   }
 
   Widget _buildLoading() {
@@ -123,21 +235,77 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
   }
 
   Widget _buildContent() {
+    if (isSearching) {
+      return SearchHandler.buildSearchResults(
+        results: searchResults,
+        query: _searchController.text,
+        section: 'popular',
+        itemBuilder: _buildAnimeCard,
+      );
+    }
+
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: GridView.builder(
-        physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.all(20),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+      child: Column(
+        children: [
+          Expanded(
+            child: GridView.builder(
+              controller: _scrollController,
+              physics: BouncingScrollPhysics(),
+              padding: EdgeInsets.all(20),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: animeList.length + (isLoadingMore ? 2 : 0),
+              itemBuilder: (context, index) {
+                if (index >= animeList.length) {
+                  return _buildLoadingCard();
+                }
+                return _buildAnimeCard(animeList[index], index);
+              },
+            ),
+          ),
+          if (isLoadingMore)
+            Container(
+              padding: EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Loading more...',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[800],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: CircularProgressIndicator(
+          color: Colors.blue,
+          strokeWidth: 2,
         ),
-        itemCount: animeList.length,
-        itemBuilder: (context, index) {
-          return _buildAnimeCard(animeList[index], index);
-        },
       ),
     );
   }
@@ -280,6 +448,9 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
   @override
   void dispose() {
     _animationController.dispose();
+    _searchAnimationController.dispose();
+    _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 }
