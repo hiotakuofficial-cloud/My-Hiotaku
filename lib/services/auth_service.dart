@@ -25,7 +25,7 @@ class AuthService {
       
       // Initialize GoogleSignIn with explicit scopes
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
+        scopes: ['email', 'profile', 'openid'],
       );
 
       // Step 1: Google Login Popup
