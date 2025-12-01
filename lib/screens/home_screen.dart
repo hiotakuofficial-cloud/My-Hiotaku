@@ -41,17 +41,21 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       setState(() => isLoading = true);
       
-      // Load home data (contains trending/popular anime)
+      // Load different sections with real API calls
       final homeData = await ApiService.getHome();
+      final popularData = await ApiService.getPopular(1);
+      final moviesData = await ApiService.getMovies(1);
+      final topUpcomingData = await ApiService.getTopUpcoming(1);
+      final subbedData = await ApiService.getSubbed(1);
+      final dubbedData = await ApiService.getDubbed(1);
       
       setState(() {
-        // Split home data into different sections
-        final allAnime = homeData.data;
-        featuredAnime = allAnime.take(4).toList(); // Reduced from 5 to 4
-        trendingAnime = allAnime.skip(4).take(10).toList();
-        popularAnime = allAnime.skip(14).take(10).toList();
-        topMovies = allAnime.skip(24).take(10).toList();
-        recentlyUpdated = allAnime.skip(34).take(10).toList();
+        // Use real API data for each section
+        featuredAnime = homeData.data.take(4).toList();
+        trendingAnime = popularData.data.take(10).toList();
+        popularAnime = topUpcomingData.data.take(10).toList();
+        topMovies = moviesData.data.take(10).toList();
+        recentlyUpdated = subbedData.data.take(10).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -62,10 +66,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: isLoading ? _buildLoading() : _buildContent(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        extendBodyBehindAppBar: true,
+        body: SafeArea(
+          child: isLoading ? _buildLoading() : _buildContent(),
+        ),
       ),
     );
   }
@@ -89,13 +102,13 @@ class _HomeScreenState extends State<HomeScreen> {
       slivers: [
         _buildHeader(),
         _buildFeaturedCarousel(),
-        _buildSectionTitle('Trending', () => _navigateToSeeAll('trending')),
+        _buildSectionTitle('Popular Now', () => _navigateToSeeAll('popular')),
         _buildHorizontalList(trendingAnime),
-        _buildSectionTitle('Popular', () => _navigateToSeeAll('popular')),
+        _buildSectionTitle('Top Upcoming', () => _navigateToSeeAll('upcoming')),
         _buildHorizontalList(popularAnime),
-        _buildSectionTitle('Top Movies', () => _navigateToSeeAll('movies')),
+        _buildSectionTitle('Anime Movies', () => _navigateToSeeAll('movies')),
         _buildHorizontalList(topMovies),
-        _buildSectionTitle('Recently Updated', () => _navigateToSeeAll('recent')),
+        _buildSectionTitle('Recently Added', () => _navigateToSeeAll('recent')),
         _buildHorizontalList(recentlyUpdated),
         SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
@@ -116,8 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 fit: BoxFit.contain,
               ),
             ),
-            Spacer(),
-            // Profile Section - no background
+            SizedBox(width: 16), // Add spacing between logo and login icon
+            // Profile Section - moved to left side
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -154,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
               ),
             ),
+            Spacer(), // Push everything else to the right
           ],
         ),
       ),
