@@ -66,6 +66,19 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _preloadData() async {
     try {
+      // Add timeout to prevent splash from getting stuck
+      await Future.any([
+        Future.delayed(Duration(milliseconds: 1500)), // Max 1.5s for preload
+        _loadDataWithTimeout(),
+      ]);
+    } catch (e) {
+      print('Preload failed: $e');
+      // Continue to main screen even if preload fails
+    }
+  }
+  
+  Future<void> _loadDataWithTimeout() async {
+    try {
       // Check if data is already cached
       final cacheKey = 'home_1';
       final cached = ApiCache.get(cacheKey);
@@ -78,8 +91,7 @@ class _SplashScreenState extends State<SplashScreen>
         print('Using cached data for main screen');
       }
     } catch (e) {
-      print('Preload failed: $e');
-      // Continue to main screen even if preload fails
+      print('Data load failed: $e');
     }
   }
 
