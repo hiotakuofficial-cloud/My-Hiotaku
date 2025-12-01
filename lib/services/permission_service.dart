@@ -29,47 +29,28 @@ class PermissionService {
     }
   }
 
-  // Request media permissions (Android 13+)
-  static Future<bool> requestMediaPermissions() async {
-    try {
-      Map<Permission, PermissionStatus> statuses = await [
-        Permission.photos,
-        Permission.videos,
-        Permission.audio,
-      ].request();
-
-      return statuses.values.any((status) => status == PermissionStatus.granted);
-    } catch (e) {
-      print('Media permission error: $e');
-      return false;
-    }
-  }
-
-  // Request all app permissions
-  static Future<void> requestAllPermissions(BuildContext context) async {
+  // Request essential app permissions
+  static Future<void> requestEssentialPermissions(BuildContext context) async {
     try {
       // Request notification permission
       bool notificationGranted = await requestNotificationPermission();
       
       // Request storage permissions
       bool storageGranted = await requestStoragePermissions();
-      
-      // Request media permissions (Android 13+)
-      bool mediaGranted = await requestMediaPermissions();
 
       // Show result to user
       String message = 'Permissions: ';
       if (notificationGranted) message += 'Notifications ✓ ';
-      if (storageGranted || mediaGranted) message += 'Storage ✓';
+      if (storageGranted) message += 'Storage ✓';
       
-      if (!notificationGranted && !storageGranted && !mediaGranted) {
+      if (!notificationGranted && !storageGranted) {
         message = 'Some permissions were denied. You can enable them in Settings.';
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: (notificationGranted && (storageGranted || mediaGranted)) 
+          backgroundColor: (notificationGranted && storageGranted) 
               ? Colors.green 
               : Colors.orange,
           duration: Duration(seconds: 3),

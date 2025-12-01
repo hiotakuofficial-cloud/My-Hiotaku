@@ -76,10 +76,7 @@ class _SplashScreenState extends State<SplashScreen>
       // Request storage permissions silently
       await PermissionService.requestStoragePermissions();
       
-      // Request media permissions silently (Android 13+)
-      await PermissionService.requestMediaPermissions();
-      
-      print('Permissions requested during splash');
+      print('Essential permissions requested during splash');
     } catch (e) {
       print('Permission request failed: $e');
     }
