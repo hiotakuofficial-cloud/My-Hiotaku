@@ -23,7 +23,10 @@ class AuthService {
     try {
       _showToast(context, 'Initializing Google Sign-in...');
       
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      // Initialize GoogleSignIn with explicit scopes
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
 
       // Step 1: Google Login Popup
       _showToast(context, 'Opening Google login...');
