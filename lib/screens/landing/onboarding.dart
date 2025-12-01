@@ -183,7 +183,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 32),
                       child: Column(
-                          children: [
+                        children: [
                             // Welcome Text
                             Text(
                               'Welcome to Hiotaku',
