@@ -50,8 +50,8 @@ class _SplashScreenState extends State<SplashScreen>
     
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     
-    // Navigate directly to main app
-    Navigator.of(context).pushReplacementNamed('/main');
+    // Navigate to onboarding screen
+    Navigator.of(context).pushReplacementNamed('/onboarding');
   }
 
   Future<void> _preloadData() async {
