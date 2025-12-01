@@ -377,13 +377,12 @@ class ApiService {
   // Parse Hindi API response (different structure)
   static HomeResponse _parseHindiResponse(dynamic jsonData, String section) {
     if (jsonData is List) {
-      final animeList = jsonData.map((item) {
+      final List<AnimeItem> animeList = jsonData.map((item) {
         return AnimeItem(
           id: item['id']?.toString() ?? '',
           title: item['title'] ?? 'Unknown',
           poster: item['thumbnail'] ?? '',
           type: item['type'] ?? 'Hindi Dubbed',
-          href: '',
           description: item['description'] ?? '',
         );
       }).toList();
