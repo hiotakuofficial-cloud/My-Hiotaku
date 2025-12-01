@@ -43,19 +43,19 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-    // Custom signing config for Hiotaku
+    // Custom signing config for Hiotaku V2
     signingConfigs {
         debug {
-            keyAlias 'hiotaku'
-            keyPassword 'android123'
-            storeFile file('hiotaku-release.keystore')
-            storePassword 'android123'
+            keyAlias 'hiotaku-v2'
+            keyPassword 'mypass456'
+            storeFile file('hiotaku-v2-release.keystore')
+            storePassword 'mypass456'
         }
         release {
-            keyAlias 'hiotaku'
-            keyPassword 'android123'
-            storeFile file('hiotaku-release.keystore')
-            storePassword 'android123'
+            keyAlias 'hiotaku-v2'
+            keyPassword 'mypass456'
+            storeFile file('hiotaku-v2-release.keystore')
+            storePassword 'mypass456'
         }
     }
 
