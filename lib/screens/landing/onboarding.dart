@@ -19,19 +19,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void initState() {
     super.initState();
     
-    // Fade animation controller
     _fadeController = AnimationController(
       duration: Duration(milliseconds: 1500),
       vsync: this,
     );
     
-    // Slide animation controller
     _slideController = AnimationController(
       duration: Duration(milliseconds: 1200),
       vsync: this,
     );
     
-    // Fade animation
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -40,16 +37,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       curve: Curves.easeInOut,
     ));
     
-    // Smooth slide animation from bottom
     _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 1.0), // Start from bottom
+      begin: Offset(0, 1.0),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
     
-    // Start animations
     _startAnimations();
   }
   
@@ -69,18 +64,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _navigateToLogin() async {
     HapticFeedback.lightImpact();
-    
-    // Don't mark as completed yet - only after successful login
     Navigator.pushReplacementNamed(context, '/bord_login');
   }
 
   void _skipOnboarding() async {
     HapticFeedback.selectionClick();
-    
-    // Skip button goes to home and marks as completed
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('first_time', false);
-    
     Navigator.pushReplacementNamed(context, '/main');
   }
 
@@ -90,7 +80,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Background Image with Blur Effect
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -116,17 +105,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
           ),
           
-          // Safe Area Content
           SafeArea(
             child: Column(
               children: [
-                // Top Section with App Name and Skip Button
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // App Name
                       FadeTransition(
                         opacity: _fadeAnimation,
                         child: Text(
@@ -140,7 +126,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         ),
                       ),
                       
-                      // Skip Button
                       FadeTransition(
                         opacity: _fadeAnimation,
                         child: GestureDetector(
@@ -175,7 +160,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 
                 Spacer(),
                 
-                // Main Content
                 SlideTransition(
                   position: _slideAnimation,
                   child: FadeTransition(
@@ -184,76 +168,72 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       padding: EdgeInsets.symmetric(horizontal: 32),
                       child: Column(
                         children: [
-                            // Welcome Text
-                            Text(
-                              'Welcome to Hiotaku',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                height: 1.2,
-                              ),
-                              textAlign: TextAlign.center,
+                          Text(
+                            'Welcome to Hiotaku',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
                             ),
-                            
-                            SizedBox(height: 16),
-                            
-                            // Description
-                            Text(
-                              'The best anime streaming app of the century to make your days great!',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 18,
-                                height: 1.4,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              textAlign: TextAlign.center,
+                            textAlign: TextAlign.center,
+                          ),
+                          
+                          SizedBox(height: 16),
+                          
+                          Text(
+                            'The best anime streaming app of the century to make your days great!',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 18,
+                              height: 1.4,
+                              fontWeight: FontWeight.w400,
                             ),
-                            
-                            SizedBox(height: 48),
-                            
-                            // Login Button
-                            Container(
-                              width: double.infinity,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(28),
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFFFF6B6B),
-                                    Color(0xFFFF8E8E),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Color(0xFFFF6B6B).withOpacity(0.3),
-                                    blurRadius: 20,
-                                    offset: Offset(0, 8),
-                                  ),
+                            textAlign: TextAlign.center,
+                          ),
+                          
+                          SizedBox(height: 48),
+                          
+                          Container(
+                            width: double.infinity,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(28),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFFFF6B6B),
+                                  Color(0xFFFF8E8E),
                                 ],
                               ),
-                              child: ElevatedButton(
-                                onPressed: _navigateToLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(28),
-                                  ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0xFFFF6B6B).withOpacity(0.3),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 8),
                                 ),
-                                child: Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
-                                  ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _navigateToLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                              ),
+                              child: Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
