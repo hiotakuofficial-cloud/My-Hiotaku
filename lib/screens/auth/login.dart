@@ -29,12 +29,12 @@ class _LoginScreenState extends State<LoginScreen>
     super.initState();
     
     _fadeController = AnimationController(
-      duration: Duration(milliseconds: 800),
+      duration: Duration(milliseconds: 600),
       vsync: this,
     );
     
     _elasticController = AnimationController(
-      duration: Duration(milliseconds: 1200),
+      duration: Duration(milliseconds: 800),
       vsync: this,
     );
     
@@ -43,19 +43,28 @@ class _LoginScreenState extends State<LoginScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _fadeController,
-      curve: Curves.easeInOut,
+      curve: Curves.fastOutSlowIn,
     ));
     
     _elasticAnimation = Tween<double>(
-      begin: 0.0,
+      begin: 0.9,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _elasticController,
       curve: Curves.elasticOut,
     ));
     
-    _fadeController.forward();
-    _elasticController.forward();
+    // Smooth iOS-style opening with delay
+    Future.delayed(Duration(milliseconds: 150), () {
+      if (mounted) {
+        _fadeController.forward();
+        Future.delayed(Duration(milliseconds: 200), () {
+          if (mounted) {
+            _elasticController.forward();
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -68,6 +77,49 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
+  // iOS-style error toast
+  void _showErrorToast(String message, IconData icon) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.red,
+                size: 16,
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.black87,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: EdgeInsets.all(16),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -78,18 +130,11 @@ class _LoginScreenState extends State<LoginScreen>
         systemNavigationBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Color(0xFF0a0e27),
+        backgroundColor: Color(0xFF121212),
         extendBodyBehindAppBar: true,
         body: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF0a0e27),
-                Color(0xFF1a1f3a),
-              ],
-            ),
+            color: Color(0xFF121212),
           ),
           child: SafeArea(
             child: SingleChildScrollView(
@@ -104,23 +149,19 @@ class _LoginScreenState extends State<LoginScreen>
                       children: [
                         SizedBox(height: 80),
                         
-                        // App Logo/Title with elastic bounce
-                        AnimatedBuilder(
-                          animation: _elasticAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: 0.8 + (_elasticAnimation.value * 0.2),
-                              child: Text(
-                                'Hiotaku',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 2,
-                                ),
+                        // App Logo with smooth zoom
+                        Transform.scale(
+                          scale: _elasticAnimation.value,
+                          child: Container(
+                            width: 120,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage('assets/images/header_logo.png'),
+                                fit: BoxFit.contain,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
                         
                         SizedBox(height: 60),
@@ -302,16 +343,12 @@ class _LoginScreenState extends State<LoginScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Professional Google Icon
             Container(
               width: 20,
               height: 20,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://developers.google.com/identity/images/g-logo.png',
-                  ),
-                  fit: BoxFit.contain,
-                ),
+              child: CustomPaint(
+                painter: GoogleIconPainter(),
               ),
             ),
             SizedBox(width: 12),
@@ -450,37 +487,19 @@ class _LoginScreenState extends State<LoginScreen>
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty ||
         (!_isLoginMode && _nameController.text.isEmpty)) {
       HapticFeedback.heavyImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Please fill all fields'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showErrorToast('Please fill all fields', Icons.warning_rounded);
       return;
     }
 
     // Validate email format
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Please enter a valid email address'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showErrorToast('Please enter a valid email address', Icons.email_outlined);
       return;
     }
 
     // Validate password length
     if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Password must be at least 6 characters'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showErrorToast('Password must be at least 6 characters', Icons.lock_outline);
       return;
     }
 
@@ -518,16 +537,51 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.pushReplacementNamed(context, '/main');
       }
       
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
       setState(() => _isLoading = false);
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Unexpected error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      String message;
+      IconData icon;
+      
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No account found with this email';
+          icon = Icons.person_off_outlined;
+          break;
+        case 'wrong-password':
+          message = 'Incorrect password';
+          icon = Icons.lock_outline;
+          break;
+        case 'email-already-in-use':
+          message = 'Email already registered';
+          icon = Icons.email_outlined;
+          break;
+        case 'weak-password':
+          message = 'Password is too weak';
+          icon = Icons.security_outlined;
+          break;
+        case 'invalid-email':
+          message = 'Invalid email address';
+          icon = Icons.email_outlined;
+          break;
+        case 'user-disabled':
+          message = 'Account has been disabled';
+          icon = Icons.block_outlined;
+          break;
+        case 'network-request-failed':
+          message = 'Network error - check connection';
+          icon = Icons.wifi_off_outlined;
+          break;
+        default:
+          message = e.message ?? 'Authentication failed';
+          icon = Icons.error_outline;
+      }
+      
+      _showErrorToast(message, icon);
+      
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showErrorToast('Unexpected error occurred', Icons.error_outline);
     }
   }
 
@@ -567,14 +621,89 @@ class _LoginScreenState extends State<LoginScreen>
       
     } catch (e) {
       setState(() => _isLoading = false);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google login failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showErrorToast('Google login failed', Icons.g_mobiledata_outlined);
     }
   }
 }
+
+// Professional Google Icon Painter
+class GoogleIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+    
+    // Google "G" background circle
+    paint.color = Colors.white;
+    canvas.drawCircle(Offset(size.width / 2, size.height / 2), size.width / 2, paint);
+    
+    // Google "G" letter
+    final path = Path();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width * 0.35;
+    
+    // Blue part of G
+    paint.color = Color(0xFF4285F4);
+    path.moveTo(center.dx + radius * 0.3, center.dy - radius * 0.7);
+    path.lineTo(center.dx + radius * 0.7, center.dy - radius * 0.7);
+    path.lineTo(center.dx + radius * 0.7, center.dy - radius * 0.2);
+    path.lineTo(center.dx + radius * 0.3, center.dy - radius * 0.2);
+    path.close();
+    canvas.drawPath(path, paint);
+    
+    // Red part of G
+    paint.color = Color(0xFFEA4335);
+    path.reset();
+    path.addArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -1.57, // -90 degrees
+      1.57,  // 90 degrees
+    );
+    path.lineTo(center.dx, center.dy - radius * 0.4);
+    path.arcTo(
+      Rect.fromCircle(center: center, radius: radius * 0.4),
+      -1.57, // -90 degrees
+      -1.57, // -90 degrees
+      false,
+    );
+    path.close();
+    canvas.drawPath(path, paint);
+    
+    // Yellow part of G
+    paint.color = Color(0xFFFBBC05);
+    path.reset();
+    path.addArc(
+      Rect.fromCircle(center: center, radius: radius),
+      0, // 0 degrees
+      1.57, // 90 degrees
+    );
+    path.lineTo(center.dx + radius * 0.4, center.dy);
+    path.arcTo(
+      Rect.fromCircle(center: center, radius: radius * 0.4),
+      0, // 0 degrees
+      -1.57, // -90 degrees
+      false,
+    );
+    path.close();
+    canvas.drawPath(path, paint);
+    
+    // Green part of G
+    paint.color = Color(0xFF34A853);
+    path.reset();
+    path.addArc(
+      Rect.fromCircle(center: center, radius: radius),
+      1.57, // 90 degrees
+      1.57, // 90 degrees
+    );
+    path.lineTo(center.dx - radius * 0.4, center.dy);
+    path.arcTo(
+      Rect.fromCircle(center: center, radius: radius * 0.4),
+      1.57, // 90 degrees
+      1.57, // 90 degrees
+      false,
+    );
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+  
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;

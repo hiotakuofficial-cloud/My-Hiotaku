@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
       title: 'Hiotaku',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Color(0xFF0a0e27),
+        scaffoldBackgroundColor: Color(0xFF121212),
         pageTransitionsTheme: PageTransitionsTheme(
           builders: {
             TargetPlatform.android: _SmoothPageTransition(),
@@ -139,7 +139,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         systemNavigationBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF121212),
         extendBodyBehindAppBar: true,
         body: Stack(
           children: [
@@ -166,7 +166,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Color(0xFF121212).withOpacity(0.3),
               blurRadius: 20,
               offset: Offset(0, 8),
             ),
@@ -234,7 +234,7 @@ class SearchPage extends StatelessWidget {
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF121212),
         extendBodyBehindAppBar: true,
         body: Container(
           padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
@@ -290,7 +290,7 @@ class FavoritesPage extends StatelessWidget {
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF121212),
         extendBodyBehindAppBar: true,
         body: Container(
           padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
@@ -342,7 +342,7 @@ class ProfilePage extends StatelessWidget {
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF121212),
         extendBodyBehindAppBar: true,
         body: Container(
           padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
