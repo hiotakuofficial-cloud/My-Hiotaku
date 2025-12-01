@@ -14,7 +14,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
@@ -41,22 +40,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       curve: Curves.easeInOut,
     ));
     
-    // Slide animation
+    // Smooth slide animation from bottom
     _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.3),
+      begin: Offset(0, 1.0), // Start from bottom
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
       curve: Curves.easeOutCubic,
-    ));
-    
-    // Scale animation
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutBack,
     ));
     
     // Start animations
@@ -80,21 +70,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void _navigateToLogin() async {
     HapticFeedback.lightImpact();
     
-    // Mark user as not first-time
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('first_time', false);
-    
+    // Don't mark as completed yet - only after successful login
     Navigator.pushReplacementNamed(context, '/login');
   }
 
   void _skipOnboarding() async {
     HapticFeedback.selectionClick();
     
-    // Mark user as not first-time
+    // Skip button goes to home and marks as completed
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('first_time', false);
     
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushReplacementNamed(context, '/main');
   }
 
   @override
@@ -191,13 +178,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 // Main Content
                 SlideTransition(
                   position: _slideAnimation,
-                  child: ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 32),
-                        child: Column(
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
                           children: [
                             // Welcome Text
                             Text(

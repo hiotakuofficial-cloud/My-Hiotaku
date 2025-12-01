@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'handler/firebase_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -649,6 +650,10 @@ class _LoginScreenState extends State<LoginScreen>
       if (user != null) {
         // Success feedback
         HapticFeedback.heavyImpact();
+        
+        // Mark onboarding as completed after successful login
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('first_time', false);
         
         // Navigate to main app
         Navigator.pushReplacementNamed(context, '/main');
