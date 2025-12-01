@@ -162,7 +162,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   _buildNavItem(Icons.home_rounded, 0, 'Home'),
                   _buildNavItem(Icons.search_rounded, 1, 'Search'),
                   _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
-                  _buildNavItem(Icons.person_rounded, 3, 'Profile'),
+                  _buildNavItem(Icons.account_circle, 3, 'Profile'),
                 ],
               ),
             ),
@@ -335,7 +335,7 @@ class ProfilePage extends StatelessWidget {
                   color: Colors.white.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.person, color: Colors.white.withOpacity(0.6), size: 50),
+                child: Icon(Icons.account_circle, color: Colors.white.withOpacity(0.6), size: 50),
               ),
               SizedBox(height: 20),
               Text(

@@ -175,10 +175,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  // TODO: Navigate to profile/settings
+                  // TODO: Navigate to login screen
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Profile functionality coming soon!'),
+                      content: Text('Login functionality coming soon!'),
                       backgroundColor: Colors.blue,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -187,7 +187,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: Container(
                   width: 24,
                   height: 24,
-                  child: Icon(Icons.person, color: Colors.white, size: 20),
+                  child: Image.asset(
+                    'assets/images/login.png',
+                    color: Colors.white,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
