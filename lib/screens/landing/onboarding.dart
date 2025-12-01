@@ -71,7 +71,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     HapticFeedback.lightImpact();
     
     // Don't mark as completed yet - only after successful login
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushReplacementNamed(context, '/bord_login');
   }
 
   void _skipOnboarding() async {

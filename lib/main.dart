@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'screens/landing/splash.dart';
 import 'screens/landing/onboarding.dart';
 import 'screens/auth/login.dart';
+import 'screens/auth/bord_login.dart';
 import 'screens/home_screen.dart';
 import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/onboarding': (context) => OnboardingScreen(),
         '/login': (context) => LoginScreen(),
+        '/bord_login': (context) => BordLoginScreen(),
         '/main': (context) => MainScreen(),
       },
       debugShowCheckedModeBanner: false,
