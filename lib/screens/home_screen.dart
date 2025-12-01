@@ -19,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AnimeItem> popularAnime = [];
   List<AnimeItem> topMovies = [];
   List<AnimeItem> recentlyUpdated = [];
+  List<AnimeItem> hindiAnime = [];
   bool isLoading = true;
   bool isUserLoggedIn = false;
 
@@ -47,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final moviesData = await ApiService.getMovies(1);
       final topUpcomingData = await ApiService.getTopUpcoming(1);
       final subbedData = await ApiService.getSubbed(1);
-      final dubbedData = await ApiService.getDubbed(1);
+      final hindiData = await ApiService.getHindiAnime(1);
       
       setState(() {
         // Use real API data for each section
@@ -56,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         popularAnime = topUpcomingData.data.take(10).toList();
         topMovies = moviesData.data.take(10).toList();
         recentlyUpdated = subbedData.data.take(10).toList();
+        hindiAnime = hindiData.data.take(10).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -108,6 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildHorizontalList(popularAnime),
         _buildSectionTitle('Anime Movies', () => _navigateToSeeAll('movies')),
         _buildHorizontalList(topMovies),
+        _buildSectionTitle('Hindi Dubbed', () => _navigateToSeeAll('hindi')),
+        _buildHorizontalList(hindiAnime),
         _buildSectionTitle('Recently Added', () => _navigateToSeeAll('recent')),
         _buildHorizontalList(recentlyUpdated),
         SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -129,45 +133,47 @@ class _HomeScreenState extends State<HomeScreen> {
                 fit: BoxFit.contain,
               ),
             ),
-            SizedBox(width: 16), // Add spacing between logo and login icon
-            // Profile Section - moved to left side
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                if (!isUserLoggedIn) {
-                  // Navigate to login screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  );
-                } else {
-                  // Show logged in popup
-                  _showLoggedInPopup();
-                }
-              },
-              child: Container(
-                width: 24,
-                height: 24,
-                child: isUserLoggedIn
-                    ? ClipOval(
-                        child: SupabaseAuthService.userPhotoUrl != null
-                            ? Image.network(
-                                SupabaseAuthService.userPhotoUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(Icons.person, color: Colors.white, size: 20);
-                                },
-                              )
-                            : Icon(Icons.person, color: Colors.white, size: 20),
-                      )
-                    : Image.asset(
-                        'assets/images/login.png',
-                        color: Colors.white,
-                        fit: BoxFit.contain,
-                      ),
+            Spacer(),
+            // Profile Section - slightly left from original position
+            Padding(
+              padding: EdgeInsets.only(right: 8), // Move slightly left
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  if (!isUserLoggedIn) {
+                    // Navigate to login screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    );
+                  } else {
+                    // Show logged in popup
+                    _showLoggedInPopup();
+                  }
+                },
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  child: isUserLoggedIn
+                      ? ClipOval(
+                          child: SupabaseAuthService.userPhotoUrl != null
+                              ? Image.network(
+                                  SupabaseAuthService.userPhotoUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(Icons.person, color: Colors.white, size: 20);
+                                  },
+                                )
+                              : Icon(Icons.person, color: Colors.white, size: 20),
+                        )
+                      : Image.asset(
+                          'assets/images/login.png',
+                          color: Colors.white,
+                          fit: BoxFit.contain,
+                        ),
+                ),
               ),
             ),
-            Spacer(), // Push everything else to the right
           ],
         ),
       ),

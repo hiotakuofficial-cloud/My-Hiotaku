@@ -230,4 +230,172 @@ class ApiService {
       throw Exception('Failed to get dubbed anime: $e');
     }
   }
+
+  // Get Hindi anime from hindiv2.php
+  static Future<HomeResponse> getHindiAnime([int page = 1]) async {
+    final cacheKey = 'hindi_home_$page';
+    final cached = ApiCache.get<HomeResponse>(cacheKey);
+    if (cached != null) return cached;
+
+    // Use hindiv2.php endpoint
+    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=home&token=${AppConfig.apiToken}';
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final result = _parseHindiResponse(jsonData, 'home');
+        ApiCache.set(cacheKey, result);
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to get Hindi anime: $e');
+    }
+  }
+
+  // Get Hindi dubbed anime list
+  static Future<HomeResponse> getHindiDubbed([int page = 1]) async {
+    final cacheKey = 'hindi_dubbed_$page';
+    final cached = ApiCache.get<HomeResponse>(cacheKey);
+    if (cached != null) return cached;
+
+    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=hindi&token=${AppConfig.apiToken}';
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final result = _parseHindiResponse(jsonData, 'hindi');
+        ApiCache.set(cacheKey, result);
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to get Hindi dubbed anime: $e');
+    }
+  }
+
+  // Search Hindi anime
+  static Future<HomeResponse> searchHindiAnime(String query) async {
+    final cacheKey = 'hindi_search_$query';
+    final cached = ApiCache.get<HomeResponse>(cacheKey);
+    if (cached != null) return cached;
+
+    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=search&q=${Uri.encodeComponent(query)}&token=${AppConfig.apiToken}';
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final result = _parseHindiResponse(jsonData, 'search');
+        ApiCache.set(cacheKey, result);
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to search Hindi anime: $e');
+    }
+  }
+
+  // Get Hindi anime details
+  static Future<Map<String, dynamic>> getHindiAnimeDetails(String animeId) async {
+    final cacheKey = 'hindi_details_$animeId';
+    final cached = ApiCache.get<Map<String, dynamic>>(cacheKey);
+    if (cached != null) return cached;
+
+    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=info&id=$animeId&token=${AppConfig.apiToken}';
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body) as Map<String, dynamic>;
+        ApiCache.set(cacheKey, result);
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to get Hindi anime details: $e');
+    }
+  }
+
+  // Get Hindi anime episodes
+  static Future<List<Map<String, dynamic>>> getHindiEpisodes(String animeId) async {
+    final cacheKey = 'hindi_episodes_$animeId';
+    final cached = ApiCache.get<List<Map<String, dynamic>>>(cacheKey);
+    if (cached != null) return cached;
+
+    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=getep&id=$animeId&token=${AppConfig.apiToken}';
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as List;
+        final result = jsonData.cast<Map<String, dynamic>>();
+        ApiCache.set(cacheKey, result);
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to get Hindi episodes: $e');
+    }
+  }
+
+  // Get Hindi episode stream URL
+  static Future<Map<String, dynamic>> getHindiStreamUrl(String animeId, String episodeId) async {
+    final cacheKey = 'hindi_stream_${animeId}_$episodeId';
+    final cached = ApiCache.get<Map<String, dynamic>>(cacheKey);
+    if (cached != null) return cached;
+
+    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=playep&id=$animeId&ep=$episodeId&token=${AppConfig.apiToken}';
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body) as Map<String, dynamic>;
+        ApiCache.set(cacheKey, result);
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to get Hindi stream URL: $e');
+    }
+  }
+
+  // Parse Hindi API response (different structure)
+  static HomeResponse _parseHindiResponse(dynamic jsonData, String section) {
+    if (jsonData is List) {
+      final animeList = jsonData.map((item) {
+        return AnimeItem(
+          id: item['id']?.toString() ?? '',
+          title: item['title'] ?? 'Unknown',
+          poster: item['thumbnail'] ?? '',
+          type: item['type'] ?? 'Hindi Dubbed',
+          href: '',
+          description: item['description'] ?? '',
+        );
+      }).toList();
+      
+      return HomeResponse(
+        section: section,
+        total: animeList.length,
+        page: 1,
+        hasMore: false,
+        data: animeList,
+      );
+    }
+    throw Exception('Invalid Hindi API response structure');
+  }
 }
