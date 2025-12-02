@@ -24,7 +24,9 @@ class _LoginScreenState extends State<LoginScreen>
   final FocusNode _nameFocus = FocusNode();
   
   late AnimationController _fadeController;
+  late AnimationController _elasticController;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _elasticAnimation;
 
   @override
   void initState() {
@@ -32,6 +34,11 @@ class _LoginScreenState extends State<LoginScreen>
     
     _fadeController = AnimationController(
       duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+    
+    _elasticController = AnimationController(
+      duration: Duration(milliseconds: 800),
       vsync: this,
     );
     
@@ -43,9 +50,22 @@ class _LoginScreenState extends State<LoginScreen>
       curve: Curves.fastOutSlowIn,
     ));
     
+    _elasticAnimation = Tween<double>(
+      begin: 0.9,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _elasticController,
+      curve: Curves.elasticOut,
+    ));
+    
     Future.delayed(Duration(milliseconds: 150), () {
       if (mounted) {
         _fadeController.forward();
+        Future.delayed(Duration(milliseconds: 200), () {
+          if (mounted) {
+            _elasticController.forward();
+          }
+        });
       }
     });
   }
@@ -59,6 +79,7 @@ class _LoginScreenState extends State<LoginScreen>
     _passwordFocus.dispose();
     _nameFocus.dispose();
     _fadeController.dispose();
+    _elasticController.dispose();
     super.dispose();
   }
 
@@ -297,41 +318,44 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildGoogleLoginButton() {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return ScaleTransition(
+      scale: _elasticAnimation,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(28),
-          onTap: _isLoading ? null : _handleGoogleLogin,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/google.png', width: 24, height: 24),
-                SizedBox(width: 16),
-                Text(
-                  'Continue with Google',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(28),
+            onTap: _isLoading ? null : _handleGoogleLogin,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset('assets/images/google.png', width: 24, height: 24),
+                  SizedBox(width: 16),
+                  Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -340,51 +364,54 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildSignInButton() {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 200),
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _isLoading 
-              ? [Colors.grey.withOpacity(0.5), Colors.grey.withOpacity(0.3)]
-              : [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-        ),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: _isLoading ? [] : [
-          BoxShadow(
-            color: Color(0xFFFF8C00).withOpacity(0.3),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+    return ScaleTransition(
+      scale: _elasticAnimation,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: _isLoading 
+                ? [Colors.grey.withOpacity(0.5), Colors.grey.withOpacity(0.3)]
+                : [Color(0xFFFF8C00), Color(0xFFFF6B00)],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
           borderRadius: BorderRadius.circular(28),
-          onTap: _isLoading ? null : () {
-            HapticFeedback.lightImpact();
-            _handleEmailLogin();
-          },
-          child: Center(
-            child: _isLoading
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          boxShadow: _isLoading ? [] : [
+            BoxShadow(
+              color: Color(0xFFFF8C00).withOpacity(0.3),
+              blurRadius: 20,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(28),
+            onTap: _isLoading ? null : () {
+              HapticFeedback.lightImpact();
+              _handleEmailLogin();
+            },
+            child: Center(
+              child: _isLoading
+                  ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      _isLoginMode ? 'Sign In' : 'Sign Up',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  )
-                : Text(
-                    _isLoginMode ? 'Sign In' : 'Sign Up',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+            ),
           ),
         ),
       ),
@@ -399,76 +426,79 @@ class _LoginScreenState extends State<LoginScreen>
     required IconData icon,
     bool isPassword = false,
   }) {
-    return AnimatedBuilder(
-      animation: focusNode,
-      builder: (context, child) {
-        bool isFocused = focusNode.hasFocus;
-        bool hasText = controller.text.isNotEmpty;
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isFocused 
-                      ? Color(0xFFFF8C00) 
-                      : Colors.white.withOpacity(0.1),
-                  width: 1.5,
+    return ScaleTransition(
+      scale: _elasticAnimation,
+      child: AnimatedBuilder(
+        animation: focusNode,
+        builder: (context, child) {
+          bool isFocused = focusNode.hasFocus;
+          bool hasText = controller.text.isNotEmpty;
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                obscureText: isPassword && !_isPasswordVisible,
-                style: TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
-                    fontSize: 16,
-                  ),
-                  prefixIcon: Icon(
-                    icon,
+              SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
                     color: isFocused 
                         ? Color(0xFFFF8C00) 
-                        : Colors.white.withOpacity(0.6),
-                    size: 20,
+                        : Colors.white.withOpacity(0.1),
+                    width: 1.5,
                   ),
-                  suffixIcon: isPassword
-                      ? IconButton(
-                          icon: Icon(
-                            _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                            color: Colors.white.withOpacity(0.6),
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                child: TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  obscureText: isPassword && !_isPasswordVisible,
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    hintStyle: TextStyle(
+                      color: Colors.white.withOpacity(0.4),
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      icon,
+                      color: isFocused 
+                          ? Color(0xFFFF8C00) 
+                          : Colors.white.withOpacity(0.6),
+                      size: 20,
+                    ),
+                    suffixIcon: isPassword
+                        ? IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                              color: Colors.white.withOpacity(0.6),
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
