@@ -186,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen>
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
-                                'Or',
+                                'OR',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.6),
                                   fontSize: 14,
