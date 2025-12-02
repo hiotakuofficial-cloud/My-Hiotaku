@@ -23,23 +23,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
   
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Force reload when coming back to profile
+    _loadUserData();
+  }
+  
   // TODO: Load user data from Supabase
   Future<void> _loadUserData() async {
+    print('=== PROFILE LOADING START ===');
+    
     try {
       setState(() {
         isLoading = true;
       });
       
+      // Check Firebase first
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      print('Firebase User: ${firebaseUser?.email ?? 'NULL'}');
+      print('Firebase UID: ${firebaseUser?.uid ?? 'NULL'}');
+      
+      if (firebaseUser == null) {
+        print('NO FIREBASE USER - Setting userData to null');
+        setState(() {
+          userData = null;
+          isLoading = false;
+        });
+        return;
+      }
+      
       final data = await ProfileHandler.getCurrentUserData();
-      print('Profile data loaded: ${data != null ? data['email'] : 'null'}');
+      print('Supabase Data: ${data != null ? data.toString() : 'NULL'}');
       
       if (mounted) {
         setState(() {
           userData = data;
+          print('userData set to: ${userData != null ? 'NOT NULL' : 'NULL'}');
           
           if (data != null) {
             displayName = data['display_name'] ?? 'Hiotaku User';
             username = '@${data['username'] ?? 'hiotakuuser'}';
+            print('Display Name: $displayName');
+            print('Username: $username');
             
             // TODO: Handle avatar ID from Supabase
             String? avatarId = data['avatar_url'];
@@ -57,18 +83,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             } else {
               avatarUrl = avatarId ?? 'assets/profile/default/default.png';
             }
+            print('Avatar URL: $avatarUrl');
           } else {
             // No user data - reset to defaults
             displayName = 'Hiotaku User';
             username = '@hiotakuuser';
             avatarUrl = 'assets/profile/default/default.png';
+            print('NO SUPABASE DATA - Using defaults');
           }
           
           isLoading = false;
         });
       }
+      
+      print('=== PROFILE LOADING END ===');
     } catch (e) {
-      print('Load user data error: $e');
+      print('PROFILE LOADING ERROR: $e');
       if (mounted) {
         setState(() {
           userData = null;
