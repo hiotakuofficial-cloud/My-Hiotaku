@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeApp() async {
     // GIF duration + transition time
     await Future.wait([
-      Future.delayed(Duration(milliseconds: 2500)), // 2.5 seconds
+      Future.delayed(Duration(milliseconds: 3500)), // 3.5 seconds
       _preloadData(),
     ]);
     
@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, _) => OnboardingScreen(),
-          transitionDuration: Duration(milliseconds: 500),
+          transitionDuration: Duration(milliseconds: 800),
           transitionsBuilder: (context, animation, _, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, _) => MainScreen(),
-          transitionDuration: Duration(milliseconds: 500),
+          transitionDuration: Duration(milliseconds: 800),
           transitionsBuilder: (context, animation, _, child) {
             return FadeTransition(opacity: animation, child: child);
           },
