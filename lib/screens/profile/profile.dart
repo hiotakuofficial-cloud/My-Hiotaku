@@ -20,137 +20,141 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
         body: SafeArea(
-          child: Column(
-            children: [
-              // Header with settings
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox(width: 48), // Space for alignment
-                    Text(
-                      'My Profile',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(Icons.settings_outlined, color: Colors.white, size: 22),
-                    ),
-                  ],
-                ),
-              ),
-              
-              SizedBox(height: 20),
-              
-              // Profile Avatar and Info
-              Column(
-                children: [
-                  Stack(
+          child: SingleChildScrollView(
+            physics: BouncingScrollPhysics(),
+            padding: EdgeInsets.only(bottom: 100), // Bottom nav padding
+            child: Column(
+              children: [
+                // Header with settings
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'H',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      SizedBox(width: 48),
+                      Text(
+                        'My Profile',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF121212),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                        ),
+                      IconButton(
+                        onPressed: () {},
+                        icon: Icon(Icons.settings_outlined, color: Colors.white, size: 22),
                       ),
                     ],
                   ),
-                  
-                  SizedBox(height: 16),
-                  
-                  Text(
-                    'Hiotaku User',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
+                ),
+                
+                SizedBox(height: 20),
+                
+                // Profile Avatar and Info
+                Column(
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'H',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF121212),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  
-                  SizedBox(height: 4),
-                  
-                  Text(
-                    '@hiotakuuser',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                  
-                  SizedBox(height: 20),
-                  
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Edit Profile',
+                    
+                    SizedBox(height: 16),
+                    
+                    Text(
+                      'Hiotaku User',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 22,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              
-              SizedBox(height: 40),
-              
-              // Profile Options List
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    _buildProfileOption(Icons.favorite_outline, 'Favourites'),
-                    _buildProfileOption(Icons.download_outlined, 'Downloads'),
-                    _buildProfileOption(Icons.language_outlined, 'Language'),
-                    _buildProfileOption(Icons.location_on_outlined, 'Location'),
-                    _buildProfileOption(Icons.subscriptions_outlined, 'Subscription'),
-                    _buildProfileOption(Icons.clear_all_outlined, 'Clear cache'),
-                    _buildProfileOption(Icons.history_outlined, 'Clear history'),
-                    _buildProfileOption(Icons.logout_outlined, 'Log out', isLogout: true),
+                    
+                    SizedBox(height: 4),
+                    
+                    Text(
+                      '@hiotakuuser',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 14,
+                      ),
+                    ),
+                    
+                    SizedBox(height: 20),
+                    
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Edit Profile',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                
+                SizedBox(height: 40),
+                
+                // Profile Options List
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      _buildProfileOption(Icons.favorite_outline, 'Favourites'),
+                      _buildProfileOption(Icons.download_outlined, 'Downloads'),
+                      _buildProfileOption(Icons.language_outlined, 'Language'),
+                      _buildProfileOption(Icons.location_on_outlined, 'Location'),
+                      _buildProfileOption(Icons.subscriptions_outlined, 'Subscription'),
+                      _buildProfileOption(Icons.clear_all_outlined, 'Clear cache'),
+                      _buildProfileOption(Icons.history_outlined, 'Clear history'),
+                      _buildProfileOption(Icons.logout_outlined, 'Log out', isLogout: true),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
