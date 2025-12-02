@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
+import 'supabase.dart';
 
 class FirebaseHandler {
   // Show error message only
@@ -95,6 +96,8 @@ class FirebaseHandler {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
       if (userCredential.user != null) {
+        // TODO: Sync user data with Supabase
+        await _syncUserWithSupabase(userCredential.user!);
         _showSuccess(context, 'Welcome back, ${userCredential.user!.displayName?.split(' ')[0] ?? 'User'}');
         return userCredential.user;
       } else {
@@ -216,6 +219,8 @@ class FirebaseHandler {
       await userCredential.user?.updateDisplayName(name);
       
       if (userCredential.user != null) {
+        // TODO: Create user in Supabase
+        await _syncUserWithSupabase(userCredential.user!);
         _showSuccess(context, 'Account created successfully!');
         return userCredential.user;
       }
@@ -254,6 +259,8 @@ class FirebaseHandler {
           .signInWithEmailAndPassword(email: email, password: password);
 
       if (userCredential.user != null) {
+        // TODO: Sync user data with Supabase
+        await _syncUserWithSupabase(userCredential.user!);
         _showSuccess(context, 'Welcome back!');
         return userCredential.user;
       }
@@ -282,5 +289,50 @@ class FirebaseHandler {
       _showError(context, 'Login error: ${e.toString()}');
       return null;
     }
+  }
+
+  // TODO: Sync Firebase user with Supabase database
+  static Future<void> _syncUserWithSupabase(User firebaseUser) async {
+    try {
+      // Check if user exists in Supabase
+      final existingUser = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      
+      if (existingUser != null) {
+        // User exists, update their data
+        await SupabaseHandler.upsertUser(
+          firebaseUID: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName,
+          avatarUrl: firebaseUser.photoURL,
+          username: _generateUsername(firebaseUser),
+        );
+        print('User updated in Supabase: ${firebaseUser.email}');
+      } else {
+        // New user, create in Supabase
+        await SupabaseHandler.upsertUser(
+          firebaseUID: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName,
+          avatarUrl: firebaseUser.photoURL,
+          username: _generateUsername(firebaseUser),
+        );
+        print('New user created in Supabase: ${firebaseUser.email}');
+      }
+    } catch (e) {
+      print('Supabase sync error: $e');
+    }
+  }
+
+  // TODO: Generate username from display name or email
+  static String? _generateUsername(User firebaseUser) {
+    if (firebaseUser.displayName != null) {
+      return firebaseUser.displayName!
+          .toLowerCase()
+          .replaceAll(' ', '_')
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+    } else if (firebaseUser.email != null) {
+      return firebaseUser.email!.split('@')[0].toLowerCase();
+    }
+    return null;
   }
 }

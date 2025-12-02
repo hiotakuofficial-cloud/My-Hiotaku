@@ -22,10 +22,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
-            padding: EdgeInsets.only(bottom: 100), // Bottom nav padding
+            padding: EdgeInsets.only(bottom: 100), // TODO: Bottom nav padding
             child: Column(
               children: [
-                // Header with settings
+                // TODO: Header section
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
@@ -40,9 +40,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.settings_outlined, color: Colors.white, size: 22),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                          onTap: () {},
+                          child: Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Icon(Icons.settings_outlined, color: Colors.white, size: 22),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -50,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 
                 SizedBox(height: 20),
                 
-                // Profile Avatar and Info
+                // TODO: Profile avatar section
                 Column(
                   children: [
                     Stack(
@@ -115,20 +124,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     
                     SizedBox(height: 20),
                     
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-                        ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Edit Profile',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        onTap: () {},
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Edit Profile',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -137,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 
                 SizedBox(height: 40),
                 
-                // Profile Options List
+                // TODO: Profile options list
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -164,50 +182,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProfileOption(IconData icon, String title, {bool isLogout = false}) {
     return Container(
       margin: EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: isLogout 
-                ? Colors.red.withOpacity(0.1) 
-                : Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            icon,
-            color: isLogout ? Colors.red : Colors.white.withOpacity(0.8),
-            size: 20,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isLogout ? Colors.red : Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          color: Colors.white.withOpacity(0.4),
-          size: 16,
-        ),
-        onTap: () {
-          if (isLogout) {
-            _showLogoutDialog();
-          } else {
-            // Handle other options
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('$title - Coming Soon!'),
-                backgroundColor: Color(0xFFFF8C00),
-                behavior: SnackBarBehavior.floating,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          onTap: () {
+            if (isLogout) {
+              _showLogoutDialog();
+            } else {
+              // TODO: Handle other options
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$title - Coming Soon!'),
+                  backgroundColor: Color(0xFFFF8C00),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isLogout 
+                    ? Colors.red.withOpacity(0.1) 
+                    : Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
               ),
-            );
-          }
-        },
+              child: Icon(
+                icon,
+                color: isLogout ? Colors.red : Colors.white.withOpacity(0.8),
+                size: 20,
+              ),
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                color: isLogout ? Colors.red : Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white.withOpacity(0.4),
+              size: 16,
+            ),
+          ),
+        ),
       ),
     );
   }
