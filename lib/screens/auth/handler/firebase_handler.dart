@@ -297,23 +297,29 @@ class FirebaseHandler {
       // Check if user exists in Supabase
       final existingUser = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
       
+      // Set default avatar if user doesn't have one
+      String? avatarUrl = firebaseUser.photoURL;
+      if (avatarUrl == null || avatarUrl.isEmpty) {
+        avatarUrl = 'assets/profile/default/default.png';
+      }
+      
       if (existingUser != null) {
         // User exists, update their data
         await SupabaseHandler.upsertUser(
           firebaseUID: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName,
-          avatarUrl: firebaseUser.photoURL,
+          avatarUrl: avatarUrl,
           username: _generateUsername(firebaseUser),
         );
         print('User updated in Supabase: ${firebaseUser.email}');
       } else {
-        // New user, create in Supabase
+        // New user, create in Supabase with default avatar
         await SupabaseHandler.upsertUser(
           firebaseUID: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName,
-          avatarUrl: firebaseUser.photoURL,
+          avatarUrl: avatarUrl,
           username: _generateUsername(firebaseUser),
         );
         print('New user created in Supabase: ${firebaseUser.email}');
