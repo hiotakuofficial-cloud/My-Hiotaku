@@ -323,171 +323,174 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // TODO: Show avatar selection bottom sheet
   void _showAvatarSelectionSheet() {
+    String tempSelectedGender = _selectedGender;
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // TODO: Handle bar
-            Container(
-              margin: EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            
-            SizedBox(height: 20),
-            
-            Text(
-              'Choose Avatar',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            
-            SizedBox(height: 30),
-            
-            // TODO: Gender toggle
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedGender = 'male'),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _selectedGender == 'male' 
-                              ? Color(0xFFFF8C00) 
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Male',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedGender = 'female'),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _selectedGender == 'female' 
-                              ? Color(0xFFFF8C00) 
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Female',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            SizedBox(height: 30),
-            
-            // TODO: Avatar grid
-            Expanded(
-              child: GridView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: BoxDecoration(
+            color: Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // TODO: Handle bar
+              Container(
+                margin: EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                itemCount: 6,
-                itemBuilder: (context, index) {
-                  String avatarPath = 'assets/profile/$_selectedGender/${_selectedGender}${index + 1}.png';
-                  
-                  return GestureDetector(
-                    onTap: () => _selectAvatar(avatarPath),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: avatarUrl == avatarPath 
-                              ? Color(0xFFFF8C00) 
-                              : Colors.white.withOpacity(0.2),
-                          width: 3,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          avatarPath,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.grey.withOpacity(0.3),
+              ),
+              
+              SizedBox(height: 20),
+              
+              Text(
+                'Choose Avatar',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              
+              SizedBox(height: 30),
+              
+              // TODO: Gender toggle
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setModalState(() => tempSelectedGender = 'male'),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: tempSelectedGender == 'male' 
+                                ? Color(0xFFFF8C00) 
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Male',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
                               ),
-                              child: Icon(
-                                Icons.person,
-                                color: Colors.white.withOpacity(0.5),
-                                size: 40,
-                              ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  );
-                },
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setModalState(() => tempSelectedGender = 'female'),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: tempSelectedGender == 'female' 
+                                ? Color(0xFFFF8C00) 
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Female',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            
-            SizedBox(height: 20),
-          ],
+              
+              SizedBox(height: 30),
+              
+              // TODO: Avatar grid
+              Expanded(
+                child: GridView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                  ),
+                  itemCount: 6,
+                  itemBuilder: (context, index) {
+                    String avatarId = '${tempSelectedGender}${index + 1}.png';
+                    String avatarPath = 'assets/profile/$tempSelectedGender/$avatarId';
+                    
+                    return GestureDetector(
+                      onTap: () => _selectAvatar(avatarId, avatarPath),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: avatarUrl == avatarPath 
+                                ? Color(0xFFFF8C00) 
+                                : Colors.white.withOpacity(0.2),
+                            width: 3,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            avatarPath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey.withOpacity(0.3),
+                                ),
+                                child: Icon(
+                                  Icons.person,
+                                  color: Colors.white.withOpacity(0.5),
+                                  size: 40,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              
+              SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
   
   // TODO: Select avatar and save to Supabase
-  Future<void> _selectAvatar(String avatarPath) async {
+  Future<void> _selectAvatar(String avatarId, String avatarPath) async {
     try {
-      // Extract avatar filename (e.g., "male1.png")
-      String avatarId = avatarPath.split('/').last;
-      
       final success = await ProfileHandler.updateAvatar(avatarId);
       
       if (success && mounted) {
         setState(() {
           avatarUrl = avatarPath;
+          _selectedGender = avatarId.contains('male') ? 'male' : 'female';
         });
         
         Navigator.pop(context);
