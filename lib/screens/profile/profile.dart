@@ -32,54 +32,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   // TODO: Load user data from Supabase
   Future<void> _loadUserData() async {
-    print('=== PROFILE LOADING START ===');
-    
     try {
       setState(() {
         isLoading = true;
       });
       
-      // Check Firebase first
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      print('Firebase User: ${firebaseUser?.email ?? 'NULL'}');
-      print('Firebase UID: ${firebaseUser?.uid ?? 'NULL'}');
-      
-      if (firebaseUser == null) {
-        print('NO FIREBASE USER - Setting userData to null');
-        setState(() {
-          userData = null;
-          isLoading = false;
-        });
-        return;
-      }
-      
       final data = await ProfileHandler.getCurrentUserData();
-      print('Supabase Data: ${data != null ? data.toString() : 'NULL'}');
       
       if (mounted) {
         setState(() {
           userData = data;
-          print('userData set to: ${userData != null ? 'NOT NULL' : 'NULL'}');
           
           if (data != null) {
             displayName = data['display_name'] ?? 'Hiotaku User';
             username = '@${data['username'] ?? 'hiotakuuser'}';
-            print('Display Name: $displayName');
-            print('Username: $username');
             
             // TODO: Handle avatar ID from Supabase
             String? avatarId = data['avatar_url'];
             
             // DEBUG TOAST for phone
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Avatar from DB: $avatarId'),
-                  duration: Duration(seconds: 2),
-                  backgroundColor: Colors.blue,
-                ),
-              );
-            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Avatar from DB: $avatarId'),
+                duration: Duration(seconds: 2),
+                backgroundColor: Colors.blue,
+              ),
+            );
             
             if (avatarId != null && !avatarId.startsWith('http')) {
               // If avatar_url is just filename (e.g., "male1.png"), construct full path
@@ -89,8 +67,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _selectedGender = gender;
                 
                 // DEBUG TOAST
-                if (mounted) {
-                  Future.delayed(Duration(milliseconds: 500), () {
+                Future.delayed(Duration(milliseconds: 500), () {
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Path: $avatarUrl'),
@@ -98,8 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: Colors.green,
                       ),
                     );
-                  });
-                }
+                  }
+                });
               } else if (avatarId == 'default.png') {
                 avatarUrl = 'assets/profile/default/default.png';
               } else {
@@ -108,24 +86,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             } else {
               avatarUrl = avatarId ?? 'assets/profile/default/default.png';
             }
-              print('Using network/fallback avatar: $avatarUrl');
-            }
-            print('Avatar URL: $avatarUrl');
           } else {
             // No user data - reset to defaults
             displayName = 'Hiotaku User';
             username = '@hiotakuuser';
             avatarUrl = 'assets/profile/default/default.png';
-            print('NO SUPABASE DATA - Using defaults');
           }
           
           isLoading = false;
         });
       }
-      
-      print('=== PROFILE LOADING END ===');
     } catch (e) {
-      print('PROFILE LOADING ERROR: $e');
+      print('Load user data error: $e');
       if (mounted) {
         setState(() {
           userData = null;
@@ -134,6 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -586,6 +559,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('Select avatar error: $e');
     }
   }
+
+  // TODO: Build profile image with fallback handling
   Widget _buildProfileImage() {
     if (isLoading) {
       return Container(
