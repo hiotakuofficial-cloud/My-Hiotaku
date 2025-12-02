@@ -206,8 +206,8 @@ class _BordLoginScreenState extends State<BordLoginScreen>
                                   : Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Image.network(
-                                          'https://developers.google.com/identity/images/g-logo.png',
+                                        Image.asset(
+                                          'assets/images/google.png',
                                           height: 20,
                                           width: 20,
                                         ),

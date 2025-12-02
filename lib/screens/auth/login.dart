@@ -187,35 +187,57 @@ class _LoginScreenState extends State<LoginScreen>
                         
                         SizedBox(height: 32),
                         
-                        // Divider
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 1,
-                                color: Colors.white.withOpacity(0.2),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20),
-                              child: Text(
-                                'OR',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.5),
-                                  fontSize: 14,
+                        // Clean OR Divider with Gradient Lines
+                        Container(
+                          margin: EdgeInsets.symmetric(vertical: 24),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 1,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.white.withOpacity(0.2),
+                                        Colors.white.withOpacity(0.4),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                height: 1,
-                                color: Colors.white.withOpacity(0.2),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  'Or',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.6),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                              Expanded(
+                                child: Container(
+                                  height: 1,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: [
+                                        Colors.white.withOpacity(0.4),
+                                        Colors.white.withOpacity(0.2),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        
-                        SizedBox(height: 30),
                         
                         // Name Field (only for signup)
                         if (!_isLoginMode) ...[
@@ -299,6 +321,10 @@ class _LoginScreenState extends State<LoginScreen>
                                 HapticFeedback.lightImpact();
                                 setState(() {
                                   _isLoginMode = !_isLoginMode;
+                                  // Clear fields when switching modes
+                                  _emailController.clear();
+                                  _passwordController.clear();
+                                  _nameController.clear();
                                 });
                               },
                               child: Text(
@@ -327,18 +353,17 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildGoogleLoginButton() {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 200),
+    return Container(
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 15,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -346,28 +371,25 @@ class _LoginScreenState extends State<LoginScreen>
         color: Colors.transparent,
         child: InkWell(
           onTap: _isLoading ? null : _handleGoogleLogin,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(28),
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Google Icon
-                Container(
-                  width: 24,
-                  height: 24,
-                  child: Image.asset(
-                    'assets/images/google.png',
-                    fit: BoxFit.contain,
-                  ),
+                // Google Icon from assets
+                Image.asset(
+                  'assets/images/google.png',
+                  height: 20,
+                  width: 20,
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: 12),
                 Text(
                   'Continue with Google',
                   style: TextStyle(
                     color: Colors.black87,
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -392,95 +414,66 @@ class _LoginScreenState extends State<LoginScreen>
         bool isFocused = focusNode.hasFocus;
         bool hasText = controller.text.isNotEmpty;
         
-        return AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color: isFocused 
-                ? Colors.white.withOpacity(0.08) 
-                : Colors.white.withOpacity(0.04),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isFocused 
-                  ? Colors.white.withOpacity(0.3)
-                  : Colors.white.withOpacity(0.1),
-              width: isFocused ? 2 : 1,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Label
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            boxShadow: isFocused ? [
-              BoxShadow(
-                color: Colors.white.withOpacity(0.1),
-                blurRadius: 20,
-                offset: Offset(0, 8),
-              ),
-            ] : [],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Floating label
-              AnimatedContainer(
-                duration: Duration(milliseconds: 200),
-                padding: EdgeInsets.only(
-                  left: 16, 
-                  top: (isFocused || hasText) ? 12 : 0,
-                ),
-                child: AnimatedOpacity(
-                  duration: Duration(milliseconds: 200),
-                  opacity: (isFocused || hasText) ? 1.0 : 0.0,
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+            SizedBox(height: 8),
+            
+            // Input Container
+            AnimatedContainer(
+              duration: Duration(milliseconds: 200),
+              height: 50,
+              decoration: BoxDecoration(
+                color: isFocused 
+                    ? Colors.white.withOpacity(0.08) 
+                    : Colors.white.withOpacity(0.04),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isFocused 
+                      ? Colors.white.withOpacity(0.3)
+                      : Colors.white.withOpacity(0.1),
+                  width: isFocused ? 1.5 : 1,
                 ),
               ),
-              
-              // Input field
-              TextField(
+              child: TextField(
                 controller: controller,
                 focusNode: focusNode,
                 obscureText: isPassword && !_isPasswordVisible,
                 style: TextStyle(
                   color: Colors.white, 
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
                 decoration: InputDecoration(
-                  hintText: (isFocused || hasText) ? '' : hint,
+                  hintText: hint,
                   hintStyle: TextStyle(
                     color: Colors.white.withOpacity(0.4),
                     fontSize: 16,
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.fromLTRB(
-                    16, 
-                    (isFocused || hasText) ? 4 : 20, 
-                    16, 
-                    20
-                  ),
-                  prefixIcon: AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    child: Icon(
-                      icon,
-                      color: isFocused 
-                          ? Colors.white.withOpacity(0.8)
-                          : Colors.white.withOpacity(0.5),
-                      size: 22,
-                    ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  prefixIcon: Icon(
+                    icon,
+                    color: isFocused 
+                        ? Colors.white.withOpacity(0.8)
+                        : Colors.white.withOpacity(0.5),
+                    size: 20,
                   ),
                   suffixIcon: isPassword
                       ? IconButton(
-                          icon: AnimatedSwitcher(
-                            duration: Duration(milliseconds: 200),
-                            child: Icon(
-                              _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                              key: ValueKey(_isPasswordVisible),
-                              color: Colors.white.withOpacity(0.6),
-                              size: 22,
-                            ),
+                          icon: Icon(
+                            _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                            color: Colors.white.withOpacity(0.6),
+                            size: 20,
                           ),
                           onPressed: () {
                             HapticFeedback.lightImpact();
@@ -492,8 +485,8 @@ class _LoginScreenState extends State<LoginScreen>
                       : null,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
