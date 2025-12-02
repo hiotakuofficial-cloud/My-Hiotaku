@@ -29,4 +29,8 @@ flutter:
     - assets/images/
     - assets/animations/
     - assets/onboarding/
+    - assets/profile/
+    - assets/profile/default/
+    - assets/profile/male/
+    - assets/profile/female/
     - assets/manifest.json
