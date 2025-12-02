@@ -434,6 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // TODO: Avatar grid
               Expanded(
                 child: GridView.builder(
+                  physics: BouncingScrollPhysics(), // Added elastic physics
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
