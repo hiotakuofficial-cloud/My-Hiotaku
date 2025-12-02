@@ -154,195 +154,195 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Column(
                     children: [
                       SizedBox(height: 120),
-                        
-                        // Sign In Title - Clean and minimal
-                        Text(
-                          _isLoginMode ? 'Sign In' : 'Sign Up',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                          ),
+                      
+                      // Sign In Title - Clean and minimal
+                      Text(
+                        _isLoginMode ? 'Sign In' : 'Sign Up',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
                         ),
-                        
-                        SizedBox(height: 8),
-                        
-                        // Subtitle
-                        Text(
-                          _isLoginMode ? 'Welcome back' : 'Create your account',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        
-                        SizedBox(height: 60),
-                        
-                        // Google Login Button - Enhanced
-                        _buildGoogleLoginButton(),
-                        
-                        SizedBox(height: 32),
-                        
-                        // Clean OR Divider with Gradient Lines
-                        Container(
-                          margin: EdgeInsets.symmetric(vertical: 24),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  height: 1,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                      colors: [
-                                        Colors.transparent,
-                                        Colors.white.withOpacity(0.2),
-                                        Colors.white.withOpacity(0.4),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  'Or',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.6),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  height: 1,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                      colors: [
-                                        Colors.white.withOpacity(0.4),
-                                        Colors.white.withOpacity(0.2),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // Name Field (only for signup)
-                        if (!_isLoginMode) ...[
-                          _buildInputField(
-                            label: 'Full Name',
-                            hint: 'Enter your full name',
-                            controller: _nameController,
-                            focusNode: _nameFocus,
-                            icon: Icons.person_outline_rounded,
-                          ),
-                          SizedBox(height: 24),
-                        ],
-                        
-                        // Email Field
-                        _buildInputField(
-                          label: 'Email address',
-                          hint: 'Enter your email address',
-                          controller: _emailController,
-                          focusNode: _emailFocus,
-                          icon: Icons.email_outlined,
-                        ),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Password Field
-                        _buildInputField(
-                          label: 'Password',
-                          hint: 'Enter your password',
-                          controller: _passwordController,
-                          focusNode: _passwordFocus,
-                          icon: Icons.lock_outline_rounded,
-                          isPassword: true,
-                        ),
-                        
-                        if (_isLoginMode) ...[
-                          SizedBox(height: 16),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Forgot password feature coming soon!'),
-                                    backgroundColor: Colors.orange,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 14,
-                                ),
+                      ),
+                      
+                      SizedBox(height: 8),
+                      
+                      // Subtitle
+                      Text(
+                        _isLoginMode ? 'Welcome back' : 'Create your account',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    
+                    SizedBox(height: 60),
+                    
+                    // Google Login Button - Enhanced
+                    _buildGoogleLoginButton(),
+                    
+                    SizedBox(height: 32),
+                    
+                    // Clean OR Divider with Gradient Lines
+                    Container(
+                      margin: EdgeInsets.symmetric(vertical: 24),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                  Colors.transparent,
+                                  Colors.white.withOpacity(0.2),
+                                  Colors.white.withOpacity(0.4),
+                                ],
                               ),
                             ),
                           ),
-                        ],
-                        
-                        SizedBox(height: 40),
-                        
-                        // Sign In Button
-                        _buildSignInButton(),
-                        
-                        SizedBox(height: 30),
-                        
-                        // Toggle Login/Signup
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _isLoginMode ? "Don't have an account? " : "Already have an account? ",
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 14,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                setState(() {
-                                  _isLoginMode = !_isLoginMode;
-                                  // Clear fields when switching modes
-                                  _emailController.clear();
-                                  _passwordController.clear();
-                                  _nameController.clear();
-                                });
-                              },
-                              child: Text(
-                                _isLoginMode ? 'Sign Up' : 'Sign In',
-                                style: TextStyle(
-                                  color: Color(0xFFFF8C00),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
-                        
-                        SizedBox(height: 40),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Or',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Colors.white.withOpacity(0.4),
+                                  Colors.white.withOpacity(0.2),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                  
+                  // Name Field (only for signup)
+                  if (!_isLoginMode) ...[
+                    _buildInputField(
+                      label: 'Full Name',
+                      hint: 'Enter your full name',
+                      controller: _nameController,
+                      focusNode: _nameFocus,
+                      icon: Icons.person_outline_rounded,
+                    ),
+                    SizedBox(height: 24),
+                ],
+                
+                // Email Field
+                _buildInputField(
+                  label: 'Email address',
+                  hint: 'Enter your email address',
+                  controller: _emailController,
+                  focusNode: _emailFocus,
+                  icon: Icons.email_outlined,
                 ),
+                
+                SizedBox(height: 24),
+                
+                // Password Field
+                _buildInputField(
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  controller: _passwordController,
+                  focusNode: _passwordFocus,
+                  icon: Icons.lock_outline_rounded,
+                  isPassword: true,
+                ),
+                
+                if (_isLoginMode) ...[
+                  SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Forgot password feature coming soon!'),
+                            backgroundColor: Colors.orange,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                
+                SizedBox(height: 40),
+                
+                // Sign In Button
+                _buildSignInButton(),
+                
+                SizedBox(height: 30),
+                
+                // Toggle Login/Signup
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                  Text(
+                    _isLoginMode ? "Don't have an account? " : "Already have an account? ",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() {
+                        _isLoginMode = !_isLoginMode;
+                        // Clear fields when switching modes
+                        _emailController.clear();
+                        _passwordController.clear();
+                        _nameController.clear();
+                      });
+                    },
+                    child: Text(
+                      _isLoginMode ? 'Sign Up' : 'Sign In',
+                      style: TextStyle(
+                        color: Color(0xFFFF8C00),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              
+              SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    ),
             ),
           ),
         ),
