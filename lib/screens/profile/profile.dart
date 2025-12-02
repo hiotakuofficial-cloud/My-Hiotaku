@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'handler/profile_handler.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -7,6 +8,43 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // TODO: User data state
+  Map<String, dynamic>? userData;
+  bool isLoading = true;
+  String displayName = 'Hiotaku User';
+  String username = '@hiotakuuser';
+  String avatarUrl = 'assets/profile/default/default.png';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+  
+  // TODO: Load user data from Supabase
+  Future<void> _loadUserData() async {
+    try {
+      final data = await ProfileHandler.getCurrentUserData();
+      if (data != null && mounted) {
+        setState(() {
+          userData = data;
+          displayName = data['display_name'] ?? 'Hiotaku User';
+          username = '@${data['username'] ?? 'hiotakuuser'}';
+          avatarUrl = data['avatar_url'] ?? 'assets/profile/default/default.png';
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Load user data error: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -69,19 +107,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-                            ),
+                            border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
                           ),
-                          child: Center(
-                            child: Text(
-                              'H',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                          child: ClipOval(
+                            child: _buildProfileImage(),
                           ),
                         ),
                         Positioned(
@@ -104,7 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(height: 16),
                     
                     Text(
-                      'Hiotaku User',
+                      displayName,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -115,7 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(height: 4),
                     
                     Text(
-                      '@hiotakuuser',
+                      username,
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.6),
                         fontSize: 14,
@@ -238,6 +267,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // TODO: Build profile image with fallback handling
+  Widget _buildProfileImage() {
+    if (isLoading) {
+      return Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey.withOpacity(0.3),
+        ),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF8C00),
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+    
+    // Try to load from assets first
+    if (avatarUrl.startsWith('assets/')) {
+      return Image.asset(
+        avatarUrl,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackAvatar();
+        },
+      );
+    }
+    
+    // Try to load from network (Firebase photo URL)
+    if (avatarUrl.startsWith('http')) {
+      return Image.network(
+        avatarUrl,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFFF8C00),
+              strokeWidth: 2,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackAvatar();
+        },
+      );
+    }
+    
+    // Fallback to default avatar
+    return _buildFallbackAvatar();
+  }
+  
+  // TODO: Fallback avatar with user initial
+  Widget _buildFallbackAvatar() {
+    String initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'H';
+    
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+  
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -262,9 +375,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/login');
+                // TODO: Use ProfileHandler for logout
+                final success = await ProfileHandler.logoutUser();
+                if (success && mounted) {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
               },
               child: Text(
                 'Log Out',
