@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeApp() async {
     // GIF duration + transition time
     await Future.wait([
-      Future.delayed(Duration(milliseconds: 3500)), // 3.5 seconds
+      Future.delayed(Duration(milliseconds: 3100)), // 3.1 seconds
       _preloadData(),
     ]);
     
