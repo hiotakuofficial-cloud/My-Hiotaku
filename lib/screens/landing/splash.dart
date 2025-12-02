@@ -16,6 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    // Completely hide status bar and navigation bar
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
     _initializeApp();
   }
