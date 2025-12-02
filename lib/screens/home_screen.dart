@@ -113,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         systemNavigationBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF121212),
         extendBodyBehindAppBar: true,
         body: isLoading ? _buildLoading() : _buildContent(),
       ),
