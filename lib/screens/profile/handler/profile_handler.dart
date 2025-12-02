@@ -50,15 +50,16 @@ class ProfileHandler {
   }
   
   // TODO: Update avatar only
-  static Future<bool> updateAvatar(String avatarUrl) async {
+  static Future<bool> updateAvatar(String avatarId) async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
+      // Save only the avatar filename (e.g., "male1.png") to Supabase
       final success = await SupabaseHandler.updateData(
         table: 'users',
         data: {
-          'avatar_url': avatarUrl,
+          'avatar_url': avatarId,
           'updated_at': SupabaseHandler.getCurrentTimestamp(),
         },
         filters: {'firebase_uid': firebaseUser.uid},

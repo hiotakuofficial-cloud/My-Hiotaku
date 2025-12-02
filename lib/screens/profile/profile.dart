@@ -14,6 +14,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String displayName = 'Hiotaku User';
   String username = '@hiotakuuser';
   String avatarUrl = 'assets/profile/default/default.png';
+  String _selectedGender = 'male'; // TODO: Gender selection state
   
   @override
   void initState() {
@@ -30,7 +31,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           userData = data;
           displayName = data['display_name'] ?? 'Hiotaku User';
           username = '@${data['username'] ?? 'hiotakuuser'}';
-          avatarUrl = data['avatar_url'] ?? 'assets/profile/default/default.png';
+          
+          // TODO: Handle avatar ID from Supabase
+          String? avatarId = data['avatar_url'];
+          if (avatarId != null && !avatarId.startsWith('http')) {
+            // If avatar_url is just filename (e.g., "male1.png"), construct full path
+            if (avatarId.contains('male') || avatarId.contains('female')) {
+              String gender = avatarId.contains('male') ? 'male' : 'female';
+              avatarUrl = 'assets/profile/$gender/$avatarId';
+              _selectedGender = gender;
+            } else {
+              avatarUrl = 'assets/profile/default/default.png';
+            }
+          } else {
+            avatarUrl = avatarId ?? 'assets/profile/default/default.png';
+          }
+          
           isLoading = false;
         });
       } else {
@@ -165,14 +181,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             // User not logged in, redirect to login
                             Navigator.pushReplacementNamed(context, '/login');
                           } else {
-                            // User logged in, show edit profile (coming soon)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Edit Profile - Coming Soon!'),
-                                backgroundColor: Color(0xFFFF8C00),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
+                            // TODO: User logged in, show avatar selection
+                            _showAvatarSelectionSheet();
                           }
                         },
                         child: Container(
@@ -309,7 +319,197 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // TODO: Build profile image with fallback handling
+  // TODO: Show avatar selection bottom sheet
+  void _showAvatarSelectionSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // TODO: Handle bar
+            Container(
+              margin: EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            SizedBox(height: 20),
+            
+            Text(
+              'Choose Avatar',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            
+            SizedBox(height: 30),
+            
+            // TODO: Gender toggle
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedGender = 'male'),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedGender == 'male' 
+                              ? Color(0xFFFF8C00) 
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Male',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedGender = 'female'),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedGender == 'female' 
+                              ? Color(0xFFFF8C00) 
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Female',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            SizedBox(height: 30),
+            
+            // TODO: Avatar grid
+            Expanded(
+              child: GridView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                ),
+                itemCount: 6,
+                itemBuilder: (context, index) {
+                  String avatarPath = 'assets/profile/$_selectedGender/${_selectedGender}${index + 1}.png';
+                  
+                  return GestureDetector(
+                    onTap: () => _selectAvatar(avatarPath),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: avatarUrl == avatarPath 
+                              ? Color(0xFFFF8C00) 
+                              : Colors.white.withOpacity(0.2),
+                          width: 3,
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          avatarPath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.grey.withOpacity(0.3),
+                              ),
+                              child: Icon(
+                                Icons.person,
+                                color: Colors.white.withOpacity(0.5),
+                                size: 40,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // TODO: Select avatar and save to Supabase
+  Future<void> _selectAvatar(String avatarPath) async {
+    try {
+      // Extract avatar filename (e.g., "male1.png")
+      String avatarId = avatarPath.split('/').last;
+      
+      final success = await ProfileHandler.updateAvatar(avatarId);
+      
+      if (success && mounted) {
+        setState(() {
+          avatarUrl = avatarPath;
+        });
+        
+        Navigator.pop(context);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Avatar updated successfully!'),
+            backgroundColor: Color(0xFFFF8C00),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update avatar'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Select avatar error: $e');
+    }
+  }
   Widget _buildProfileImage() {
     if (isLoading) {
       return Container(
