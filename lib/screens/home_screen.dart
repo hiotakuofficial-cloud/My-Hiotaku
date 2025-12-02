@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'dart:async';
 import '../services/api_service.dart';
@@ -124,9 +125,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: Colors.blue),
+          Lottie.asset(
+            'assets/animations/loading.json',
+            width: 120,
+            height: 120,
+            fit: BoxFit.contain,
+          ),
           SizedBox(height: 16),
-          Text('Loading...', style: TextStyle(color: Colors.white)),
+          Text(
+            'Loading...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
