@@ -159,17 +159,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(20),
                         splashColor: Colors.transparent,
                         highlightColor: Colors.transparent,
-                        onTap: () {},
+                        onTap: () {
+                          // TODO: Check if user is logged in
+                          if (userData == null) {
+                            // User not logged in, redirect to login
+                            Navigator.pushReplacementNamed(context, '/login');
+                          } else {
+                            // User logged in, show edit profile (coming soon)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Edit Profile - Coming Soon!'),
+                                backgroundColor: Color(0xFFFF8C00),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
+                              colors: userData == null 
+                                  ? [Colors.blue, Colors.blue.shade700]
+                                  : [Color(0xFFFF8C00), Color(0xFFFF6B00)],
                             ),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'Edit Profile',
+                            userData == null ? 'Login Now' : 'Edit Profile',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -196,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildProfileOption(Icons.subscriptions_outlined, 'Subscription'),
                       _buildProfileOption(Icons.clear_all_outlined, 'Clear cache'),
                       _buildProfileOption(Icons.history_outlined, 'Clear history'),
-                      _buildProfileOption(Icons.logout_outlined, 'Log out', isLogout: true),
+                      _buildProfileOption(Icons.logout_outlined, userData == null ? 'Login' : 'Log out', isLogout: true),
                     ],
                   ),
                 ),
@@ -219,16 +236,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
           highlightColor: Colors.transparent,
           onTap: () {
             if (isLogout) {
-              _showLogoutDialog();
+              if (userData == null) {
+                // User not logged in, redirect to login
+                Navigator.pushReplacementNamed(context, '/login');
+              } else {
+                // User logged in, show logout dialog
+                _showLogoutDialog();
+              }
             } else {
               // TODO: Handle other options
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('$title - Coming Soon!'),
-                  backgroundColor: Color(0xFFFF8C00),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              if (userData == null) {
+                // User not logged in, show login prompt
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Please login to access $title'),
+                    backgroundColor: Colors.blue,
+                    behavior: SnackBarBehavior.floating,
+                    action: SnackBarAction(
+                      label: 'Login',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                    ),
+                  ),
+                );
+              } else {
+                // User logged in, show coming soon
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$title - Coming Soon!'),
+                    backgroundColor: Color(0xFFFF8C00),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             }
           },
           child: ListTile(
