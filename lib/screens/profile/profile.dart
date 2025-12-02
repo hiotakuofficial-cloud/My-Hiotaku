@@ -50,34 +50,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // TODO: Handle avatar ID from Supabase
             String? avatarId = data['avatar_url'];
             
-            // DEBUG TOAST for phone
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Avatar from DB: $avatarId'),
-                duration: Duration(seconds: 2),
-                backgroundColor: Colors.blue,
-              ),
-            );
-            
             if (avatarId != null && !avatarId.startsWith('http')) {
               // If avatar_url is just filename (e.g., "male1.png"), construct full path
               if (avatarId.contains('male') || avatarId.contains('female')) {
                 String gender = avatarId.contains('male') ? 'male' : 'female';
                 avatarUrl = 'assets/profile/$gender/$avatarId';
                 _selectedGender = gender;
-                
-                // DEBUG TOAST
-                Future.delayed(Duration(milliseconds: 500), () {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Path: $avatarUrl'),
-                        duration: Duration(seconds: 3),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                });
               } else if (avatarId == 'default.png') {
                 avatarUrl = 'assets/profile/default/default.png';
               } else {
@@ -529,15 +507,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Select avatar and save to Supabase
   Future<void> _selectAvatar(String avatarId, String avatarPath) async {
     try {
-      // DEBUG TOAST
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Saving: $avatarId'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      
       final success = await ProfileHandler.updateAvatar(avatarId);
       
       if (success && mounted) {
