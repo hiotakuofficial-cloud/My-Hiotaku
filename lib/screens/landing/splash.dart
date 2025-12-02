@@ -121,14 +121,14 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       // Preload essential home screen data
       final futures = <Future>[
+        // Cache home data
+        ApiService.getHome().catchError((e) => null),
+        
         // Cache popular anime data
-        ApiService.getPopularAnime().catchError((e) => null),
+        ApiService.getPopular().catchError((e) => null),
         
-        // Cache trending anime
-        ApiService.getTrendingAnime().catchError((e) => null),
-        
-        // Cache recent episodes
-        ApiService.getRecentEpisodes().catchError((e) => null),
+        // Cache movies
+        ApiService.getMovies().catchError((e) => null),
         
         // Preload user preferences
         SharedPreferences.getInstance(),
