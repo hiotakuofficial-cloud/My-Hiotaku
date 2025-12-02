@@ -6,6 +6,7 @@ import 'screens/landing/onboarding.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/bord_login.dart';
 import 'screens/home_screen.dart';
+import 'screens/profile/profile.dart';
 import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -99,7 +100,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     HomeScreen(),
     SearchPage(),
     FavoritesPage(),
-    ProfilePage(),
+    ProfileScreen(),
   ];
 
   @override
@@ -354,13 +355,16 @@ class _ProfilePageState extends State<ProfilePage> {
         body: SafeArea(
           child: Column(
             children: [
-              // Header with settings
+              // Header with back button and settings
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    SizedBox(width: 48), // Space for alignment
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    ),
                     Text(
                       'My Profile',
                       style: TextStyle(
