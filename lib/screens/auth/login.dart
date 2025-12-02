@@ -151,11 +151,9 @@ class _LoginScreenState extends State<LoginScreen>
                 padding: EdgeInsets.symmetric(horizontal: 32),
                 child: FadeTransition(
                   opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _elasticAnimation,
-                    child: Column(
-                      children: [
-                        SizedBox(height: 120),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 120),
                         
                         // Sign In Title - Clean and minimal
                         Text(
