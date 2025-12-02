@@ -227,10 +227,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     children: [
                       _buildProfileOption(Icons.favorite_outline, 'Favourites'),
-                      _buildProfileOption(Icons.download_outlined, 'Downloads'),
-                      _buildProfileOption(Icons.language_outlined, 'Language'),
-                      _buildProfileOption(Icons.location_on_outlined, 'Location'),
-                      _buildProfileOption(Icons.subscriptions_outlined, 'Subscription'),
+                      _buildProfileOption(Icons.sync_outlined, 'Sync Account'),
+                      _buildProfileOption(Icons.person_add_outlined, 'Requests'),
+                      _buildProfileOption(Icons.chat_outlined, 'Chat'),
                       _buildProfileOption(Icons.clear_all_outlined, 'Clear cache'),
                       _buildProfileOption(Icons.history_outlined, 'Clear history'),
                       _buildProfileOption(Icons.logout_outlined, userData == null ? 'Login' : 'Log out', isLogout: true),
