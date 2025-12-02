@@ -354,16 +354,13 @@ class _ProfilePageState extends State<ProfilePage> {
         body: SafeArea(
           child: Column(
             children: [
-              // Header with back button and settings
+              // Header with settings
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                    ),
+                    SizedBox(width: 48), // Space for alignment
                     Text(
                       'My Profile',
                       style: TextStyle(
