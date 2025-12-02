@@ -349,6 +349,7 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
+  }
 
   Widget _buildGoogleLoginButton() {
     return Container(
