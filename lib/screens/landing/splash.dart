@@ -44,14 +44,36 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initializeApp() async {
-    // Request permissions first
+    final startTime = DateTime.now();
+    
+    // Start preloading home screen data in parallel
+    final preloadFuture = _preloadHomeScreen();
+    
+    // Request permissions
     await _requestPermissions();
     
-    // Preload data during splash
-    await _preloadData();
+    // Wait for preload to complete or timeout
+    await preloadFuture;
     
-    // Wait for minimum splash duration
-    await Future.delayed(Duration(milliseconds: 2500));
+    // Calculate elapsed time
+    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+    
+    // Smart timing: minimum 3s, maximum 5s
+    int remainingTime = 0;
+    if (elapsed < 3000) {
+      // If preload finished quickly, wait until 3s
+      remainingTime = 3000 - elapsed;
+    } else if (elapsed > 5000) {
+      // If taking too long, don't wait more
+      remainingTime = 0;
+    } else {
+      // If between 3-5s, proceed immediately
+      remainingTime = 0;
+    }
+    
+    if (remainingTime > 0) {
+      await Future.delayed(Duration(milliseconds: remainingTime));
+    }
     
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     
@@ -82,34 +104,43 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  Future<void> _preloadData() async {
+  Future<void> _preloadHomeScreen() async {
     try {
-      // Add timeout to prevent splash from getting stuck
+      // Set timeout to prevent splash from hanging
       await Future.any([
-        Future.delayed(Duration(milliseconds: 1500)), // Max 1.5s for preload
-        _loadDataWithTimeout(),
+        Future.delayed(Duration(milliseconds: 5000)), // Max 5s timeout
+        _loadHomeData(),
       ]);
     } catch (e) {
-      print('Preload failed: $e');
-      // Continue to main screen even if preload fails
+      print('Home preload failed: $e');
+      // Continue anyway - better to show app than get stuck
     }
   }
   
-  Future<void> _loadDataWithTimeout() async {
+  Future<void> _loadHomeData() async {
     try {
-      // Check if data is already cached
-      final cacheKey = 'home_1';
-      final cached = ApiCache.get(cacheKey);
+      // Preload essential home screen data
+      final futures = <Future>[
+        // Cache popular anime data
+        ApiService.getPopularAnime().catchError((e) => null),
+        
+        // Cache trending anime
+        ApiService.getTrendingAnime().catchError((e) => null),
+        
+        // Cache recent episodes
+        ApiService.getRecentEpisodes().catchError((e) => null),
+        
+        // Preload user preferences
+        SharedPreferences.getInstance(),
+      ];
       
-      if (cached == null) {
-        // Load fresh data in background during splash
-        await ApiService.getHome();
-        print('Main screen data preloaded during splash');
-      } else {
-        print('Using cached data for main screen');
-      }
+      // Wait for all essential data or timeout after 4s
+      await Future.wait(futures, eagerError: false);
+      
+      print('Home screen data preloaded successfully');
     } catch (e) {
-      print('Data load failed: $e');
+      print('Home data preload error: $e');
+      // Don't throw - let splash continue
     }
   }
 

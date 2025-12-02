@@ -118,12 +118,7 @@ class _BordLoginScreenState extends State<BordLoginScreen>
 
   void _handleSignUp() {
     HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Sign up coming soon!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    Navigator.pushNamed(context, '/login');
   }
 
   @override
