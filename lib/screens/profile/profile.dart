@@ -69,12 +69,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
             
             // TODO: Handle avatar ID from Supabase
             String? avatarId = data['avatar_url'];
+            
+            // DEBUG TOAST for phone
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Avatar from DB: $avatarId'),
+                  duration: Duration(seconds: 2),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            }
+            
             if (avatarId != null && !avatarId.startsWith('http')) {
               // If avatar_url is just filename (e.g., "male1.png"), construct full path
               if (avatarId.contains('male') || avatarId.contains('female')) {
                 String gender = avatarId.contains('male') ? 'male' : 'female';
                 avatarUrl = 'assets/profile/$gender/$avatarId';
                 _selectedGender = gender;
+                
+                // DEBUG TOAST
+                if (mounted) {
+                  Future.delayed(Duration(milliseconds: 500), () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Path: $avatarUrl'),
+                        duration: Duration(seconds: 3),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  });
+                }
               } else if (avatarId == 'default.png') {
                 avatarUrl = 'assets/profile/default/default.png';
               } else {
@@ -82,6 +107,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             } else {
               avatarUrl = avatarId ?? 'assets/profile/default/default.png';
+            }
+              print('Using network/fallback avatar: $avatarUrl');
             }
             print('Avatar URL: $avatarUrl');
           } else {
