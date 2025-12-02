@@ -40,6 +40,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               String gender = avatarId.contains('male') ? 'male' : 'female';
               avatarUrl = 'assets/profile/$gender/$avatarId';
               _selectedGender = gender;
+            } else if (avatarId == 'default.png') {
+              avatarUrl = 'assets/profile/default/default.png';
             } else {
               avatarUrl = 'assets/profile/default/default.png';
             }

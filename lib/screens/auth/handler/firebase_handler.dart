@@ -300,7 +300,7 @@ class FirebaseHandler {
       // Set default avatar if user doesn't have one
       String? avatarUrl = firebaseUser.photoURL;
       if (avatarUrl == null || avatarUrl.isEmpty) {
-        avatarUrl = 'assets/profile/default/default.png';
+        avatarUrl = 'default.png';
       }
       
       if (existingUser != null) {
