@@ -707,3 +707,4 @@ class GoogleIconPainter extends CustomPainter {
   
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
