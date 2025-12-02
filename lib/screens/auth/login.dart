@@ -19,6 +19,11 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isLoading = false;
   bool _isLoginMode = true;
   
+  // Focus nodes for input animations
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+  final FocusNode _nameFocus = FocusNode();
+  
   late AnimationController _fadeController;
   late AnimationController _elasticController;
   late Animation<double> _fadeAnimation;
@@ -72,6 +77,9 @@ class _LoginScreenState extends State<LoginScreen>
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _nameFocus.dispose();
     _fadeController.dispose();
     _elasticController.dispose();
     super.dispose();
@@ -147,41 +155,37 @@ class _LoginScreenState extends State<LoginScreen>
                     scale: _elasticAnimation,
                     child: Column(
                       children: [
-                        SizedBox(height: 80),
+                        SizedBox(height: 120),
                         
-                        // App Logo with smooth zoom
-                        Transform.scale(
-                          scale: _elasticAnimation.value,
-                          child: Container(
-                            width: 120,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage('assets/images/header_logo.png'),
-                                fit: BoxFit.contain,
-                              ),
-                            ),
+                        // Sign In Title - Clean and minimal
+                        Text(
+                          _isLoginMode ? 'Sign In' : 'Sign Up',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        
+                        SizedBox(height: 8),
+                        
+                        // Subtitle
+                        Text(
+                          _isLoginMode ? 'Welcome back' : 'Create your account',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         
                         SizedBox(height: 60),
                         
-                        // Sign In Title
-                        Text(
-                          _isLoginMode ? 'Sign In' : 'Sign Up',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        
-                        SizedBox(height: 40),
-                        
-                        // Google Login Button
+                        // Google Login Button - Enhanced
                         _buildGoogleLoginButton(),
                         
-                        SizedBox(height: 30),
+                        SizedBox(height: 32),
                         
                         // Divider
                         Row(
@@ -219,9 +223,10 @@ class _LoginScreenState extends State<LoginScreen>
                             label: 'Full Name',
                             hint: 'Enter your full name',
                             controller: _nameController,
-                            icon: Icons.person_outline,
+                            focusNode: _nameFocus,
+                            icon: Icons.person_outline_rounded,
                           ),
-                          SizedBox(height: 20),
+                          SizedBox(height: 24),
                         ],
                         
                         // Email Field
@@ -229,17 +234,19 @@ class _LoginScreenState extends State<LoginScreen>
                           label: 'Email address',
                           hint: 'Enter your email address',
                           controller: _emailController,
+                          focusNode: _emailFocus,
                           icon: Icons.email_outlined,
                         ),
                         
-                        SizedBox(height: 20),
+                        SizedBox(height: 24),
                         
                         // Password Field
                         _buildInputField(
                           label: 'Password',
-                          hint: '••••••••',
+                          hint: 'Enter your password',
                           controller: _passwordController,
-                          icon: Icons.lock_outline,
+                          focusNode: _passwordFocus,
+                          icon: Icons.lock_outline_rounded,
                           isPassword: true,
                         ),
                         
@@ -320,47 +327,52 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildGoogleLoginButton() {
-    return Container(
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
       width: double.infinity,
-      height: 50,
+      height: 56,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleGoogleLogin,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Professional Google Icon
-            Container(
-              width: 20,
-              height: 20,
-              child: CustomPaint(
-                painter: GoogleIconPainter(),
-              ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading ? null : _handleGoogleLogin,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Google Icon
+                Container(
+                  width: 24,
+                  height: 24,
+                  child: Image.asset(
+                    'assets/images/google.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text(
+                  'Continue with Google',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(width: 12),
-            Text(
-              'Sign up with Google',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -371,113 +383,174 @@ class _LoginScreenState extends State<LoginScreen>
     required String hint,
     required TextEditingController controller,
     required IconData icon,
+    required FocusNode focusNode,
     bool isPassword = false,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 8),
-        Container(
+    return AnimatedBuilder(
+      animation: focusNode,
+      builder: (context, child) {
+        bool isFocused = focusNode.hasFocus;
+        bool hasText = controller.text.isNotEmpty;
+        
+        return AnimatedContainer(
+          duration: Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
+            color: isFocused 
+                ? Colors.white.withOpacity(0.08) 
+                : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-              width: 1,
+              color: isFocused 
+                  ? Colors.white.withOpacity(0.3)
+                  : Colors.white.withOpacity(0.1),
+              width: isFocused ? 2 : 1,
             ),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword && !_isPasswordVisible,
-            style: TextStyle(color: Colors.white, fontSize: 16),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.4),
-                fontSize: 14,
+            boxShadow: isFocused ? [
+              BoxShadow(
+                color: Colors.white.withOpacity(0.1),
+                blurRadius: 20,
+                offset: Offset(0, 8),
               ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              prefixIcon: Icon(
-                icon,
-                color: Colors.white.withOpacity(0.5),
-                size: 20,
-              ),
-              suffixIcon: isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.white.withOpacity(0.5),
-                        size: 20,
-                      ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    )
-                  : null,
-            ),
+            ] : [],
           ),
-        ),
-      ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Floating label
+              AnimatedContainer(
+                duration: Duration(milliseconds: 200),
+                padding: EdgeInsets.only(
+                  left: 16, 
+                  top: (isFocused || hasText) ? 12 : 0,
+                ),
+                child: AnimatedOpacity(
+                  duration: Duration(milliseconds: 200),
+                  opacity: (isFocused || hasText) ? 1.0 : 0.0,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Input field
+              TextField(
+                controller: controller,
+                focusNode: focusNode,
+                obscureText: isPassword && !_isPasswordVisible,
+                style: TextStyle(
+                  color: Colors.white, 
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: InputDecoration(
+                  hintText: (isFocused || hasText) ? '' : hint,
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.4),
+                    fontSize: 16,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.fromLTRB(
+                    16, 
+                    (isFocused || hasText) ? 4 : 20, 
+                    16, 
+                    20
+                  ),
+                  prefixIcon: AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    child: Icon(
+                      icon,
+                      color: isFocused 
+                          ? Colors.white.withOpacity(0.8)
+                          : Colors.white.withOpacity(0.5),
+                      size: 22,
+                    ),
+                  ),
+                  suffixIcon: isPassword
+                      ? IconButton(
+                          icon: AnimatedSwitcher(
+                            duration: Duration(milliseconds: 200),
+                            child: Icon(
+                              _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                              key: ValueKey(_isPasswordVisible),
+                              color: Colors.white.withOpacity(0.6),
+                              size: 22,
+                            ),
+                          ),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        )
+                      : null,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   Widget _buildSignInButton() {
-    return Container(
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
       width: double.infinity,
-      height: 50,
+      height: 56,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
+          colors: _isLoading 
+              ? [Colors.grey.withOpacity(0.5), Colors.grey.withOpacity(0.3)]
+              : [Color(0xFFFF8C00), Color(0xFFFF6B00)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: _isLoading ? [] : [
           BoxShadow(
-            color: Color(0xFFFF8C00).withOpacity(0.3),
-            blurRadius: 15,
+            color: Color(0xFFFF8C00).withOpacity(0.4),
+            blurRadius: 20,
             offset: Offset(0, 8),
           ),
         ],
       ),
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleAction,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading ? null : () {
+            HapticFeedback.mediumImpact();
+            _handleAction();
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            alignment: Alignment.center,
+            child: _isLoading
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    _isLoginMode ? 'Sign In' : 'Sign Up',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
           ),
         ),
-        child: _isLoading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Text(
-                _isLoginMode ? 'Sign In' : 'Sign Up',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
       ),
     );
   }
