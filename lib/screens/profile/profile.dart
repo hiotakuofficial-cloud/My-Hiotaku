@@ -529,6 +529,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Select avatar and save to Supabase
   Future<void> _selectAvatar(String avatarId, String avatarPath) async {
     try {
+      // DEBUG TOAST
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saving: $avatarId'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      
       final success = await ProfileHandler.updateAvatar(avatarId);
       
       if (success && mounted) {
