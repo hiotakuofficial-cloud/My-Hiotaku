@@ -26,59 +26,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Load user data from Supabase
   Future<void> _loadUserData() async {
     try {
-      // First check if Firebase user is logged in
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      print('Firebase user check: ${firebaseUser?.email ?? 'No user'}');
-      
-      if (firebaseUser == null) {
-        print('No Firebase user, setting userData to null');
-        setState(() {
-          userData = null;
-          isLoading = false;
-        });
-        return;
-      }
+      setState(() {
+        isLoading = true;
+      });
       
       final data = await ProfileHandler.getCurrentUserData();
-      print('Supabase data received: ${data != null ? 'Found' : 'Not found'}');
+      print('Profile data loaded: ${data != null ? data['email'] : 'null'}');
       
-      if (data != null && mounted) {
+      if (mounted) {
         setState(() {
           userData = data;
-          displayName = data['display_name'] ?? 'Hiotaku User';
-          username = '@${data['username'] ?? 'hiotakuuser'}';
           
-          // TODO: Handle avatar ID from Supabase
-          String? avatarId = data['avatar_url'];
-          if (avatarId != null && !avatarId.startsWith('http')) {
-            // If avatar_url is just filename (e.g., "male1.png"), construct full path
-            if (avatarId.contains('male') || avatarId.contains('female')) {
-              String gender = avatarId.contains('male') ? 'male' : 'female';
-              avatarUrl = 'assets/profile/$gender/$avatarId';
-              _selectedGender = gender;
-            } else if (avatarId == 'default.png') {
-              avatarUrl = 'assets/profile/default/default.png';
+          if (data != null) {
+            displayName = data['display_name'] ?? 'Hiotaku User';
+            username = '@${data['username'] ?? 'hiotakuuser'}';
+            
+            // TODO: Handle avatar ID from Supabase
+            String? avatarId = data['avatar_url'];
+            if (avatarId != null && !avatarId.startsWith('http')) {
+              // If avatar_url is just filename (e.g., "male1.png"), construct full path
+              if (avatarId.contains('male') || avatarId.contains('female')) {
+                String gender = avatarId.contains('male') ? 'male' : 'female';
+                avatarUrl = 'assets/profile/$gender/$avatarId';
+                _selectedGender = gender;
+              } else if (avatarId == 'default.png') {
+                avatarUrl = 'assets/profile/default/default.png';
+              } else {
+                avatarUrl = 'assets/profile/default/default.png';
+              }
             } else {
-              avatarUrl = 'assets/profile/default/default.png';
+              avatarUrl = avatarId ?? 'assets/profile/default/default.png';
             }
           } else {
-            avatarUrl = avatarId ?? 'assets/profile/default/default.png';
+            // No user data - reset to defaults
+            displayName = 'Hiotaku User';
+            username = '@hiotakuuser';
+            avatarUrl = 'assets/profile/default/default.png';
           }
           
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          userData = null;
           isLoading = false;
         });
       }
     } catch (e) {
       print('Load user data error: $e');
-      setState(() {
-        userData = null;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          userData = null;
+          isLoading = false;
+        });
+      }
     }
   }
   @override
