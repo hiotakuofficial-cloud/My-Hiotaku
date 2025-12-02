@@ -454,7 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                   ),
-                  itemCount: 6,
+                  itemCount: 12, // Updated to show 12 images
                   itemBuilder: (context, index) {
                     String avatarId = '${tempSelectedGender}${index + 1}.png';
                     String avatarPath = 'assets/profile/$tempSelectedGender/$avatarId';
