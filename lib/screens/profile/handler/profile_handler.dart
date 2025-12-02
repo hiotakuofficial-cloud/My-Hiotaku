@@ -7,9 +7,20 @@ class ProfileHandler {
   static Future<Map<String, dynamic>?> getCurrentUserData() async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return null;
+      if (firebaseUser == null) {
+        print('No Firebase user logged in');
+        return null;
+      }
+      
+      print('Firebase user found: ${firebaseUser.email}');
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      if (userData == null) {
+        print('No Supabase user data found for UID: ${firebaseUser.uid}');
+      } else {
+        print('Supabase user data found: ${userData['email']}');
+      }
+      
       return userData;
     } catch (e) {
       print('Get user data error: $e');

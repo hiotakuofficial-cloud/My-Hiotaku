@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'handler/profile_handler.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -25,7 +26,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Load user data from Supabase
   Future<void> _loadUserData() async {
     try {
+      // First check if Firebase user is logged in
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      print('Firebase user check: ${firebaseUser?.email ?? 'No user'}');
+      
+      if (firebaseUser == null) {
+        print('No Firebase user, setting userData to null');
+        setState(() {
+          userData = null;
+          isLoading = false;
+        });
+        return;
+      }
+      
       final data = await ProfileHandler.getCurrentUserData();
+      print('Supabase data received: ${data != null ? 'Found' : 'Not found'}');
+      
       if (data != null && mounted) {
         setState(() {
           userData = data;
@@ -53,12 +69,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       } else {
         setState(() {
+          userData = null;
           isLoading = false;
         });
       }
     } catch (e) {
       print('Load user data error: $e');
       setState(() {
+        userData = null;
         isLoading = false;
       });
     }
