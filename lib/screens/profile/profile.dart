@@ -153,20 +153,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: _buildProfileImage(),
                           ),
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: Color(0xFF121212),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                          ),
-                        ),
                       ],
                     ),
                     
