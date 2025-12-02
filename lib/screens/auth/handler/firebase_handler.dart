@@ -297,29 +297,35 @@ class FirebaseHandler {
       // Check if user exists in Supabase
       final existingUser = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
       
-      // Set default avatar if user doesn't have one
-      String? avatarUrl = firebaseUser.photoURL;
-      if (avatarUrl == null || avatarUrl.isEmpty) {
-        avatarUrl = 'default.png';
-      }
-      
       if (existingUser != null) {
-        // User exists, update their data
+        // User exists, update only name/email - DON'T touch avatar if custom set
+        String? currentAvatar = existingUser['avatar_url'];
+        
+        // Only update avatar if it's still a Google URL or null
+        String? avatarToUpdate;
+        if (currentAvatar == null || currentAvatar.startsWith('http')) {
+          // User has Google photo or no avatar, can update
+          avatarToUpdate = firebaseUser.photoURL ?? 'default.png';
+        } else {
+          // User has custom avatar (male1.png, female2.png etc), keep it
+          avatarToUpdate = currentAvatar;
+        }
+        
         await SupabaseHandler.upsertUser(
           firebaseUID: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName,
-          avatarUrl: avatarUrl,
+          avatarUrl: avatarToUpdate,
           username: _generateUsername(firebaseUser),
         );
         print('User updated in Supabase: ${firebaseUser.email}');
       } else {
-        // New user, create in Supabase with default avatar
+        // New user, create with default avatar ID
         await SupabaseHandler.upsertUser(
           firebaseUID: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName,
-          avatarUrl: avatarUrl,
+          avatarUrl: 'default.png', // Always default for new users
           username: _generateUsername(firebaseUser),
         );
         print('New user created in Supabase: ${firebaseUser.email}');
