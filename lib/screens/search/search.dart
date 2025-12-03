@@ -1,7 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'dart:io';
 import 'handler/search_handler.dart';
+import '../../services/api_service.dart';
+import '../../models/api_models.dart';
+
+// Simple cancel token for search operations
+class CancelToken {
+  bool _isCancelled = false;
+  
+  bool get isCancelled => _isCancelled;
+  
+  void cancel() {
+    _isCancelled = true;
+  }
+}
 
 class SearchPage extends StatefulWidget {
   @override
@@ -12,25 +26,115 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   Timer? _debounceTimer;
+  CancelToken? _currentSearchToken;
   
   List<SearchResult> _englishResults = [];
   List<SearchResult> _hindiResults = [];
+  List<AnimeItem> _trendingAnime = [];
   bool _isLoading = false;
   bool _hasSearched = false;
+  bool _loadingTrending = true;
+  bool _hasNetworkConnection = true;
   String? _error;
+  String? _trendingError;
+  String _lastValidQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkNetworkAndLoadTrending();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
     _debounceTimer?.cancel();
+    _currentSearchToken?.cancel();
     super.dispose();
+  }
+
+  // Network connectivity check
+  Future<bool> _checkNetworkConnection() async {
+    try {
+      final result = await InternetAddress.lookup('google.com').timeout(Duration(seconds: 5));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> _checkNetworkAndLoadTrending() async {
+    final hasNetwork = await _checkNetworkConnection();
+    setState(() {
+      _hasNetworkConnection = hasNetwork;
+    });
+    
+    if (hasNetwork) {
+      _loadTrendingAnime();
+    } else {
+      setState(() {
+        _loadingTrending = false;
+        _trendingError = 'No internet connection';
+      });
+    }
+  }
+
+  Future<void> _loadTrendingAnime() async {
+    setState(() {
+      _loadingTrending = true;
+      _trendingError = null;
+    });
+
+    try {
+      final response = await ApiService.getPopular(1).timeout(Duration(seconds: 15));
+      
+      if (mounted) {
+        if (response.data.isEmpty) {
+          setState(() {
+            _trendingAnime = [];
+            _loadingTrending = false;
+            _trendingError = 'No trending content available';
+          });
+        } else {
+          setState(() {
+            _trendingAnime = response.data.take(10).toList();
+            _loadingTrending = false;
+            _trendingError = null;
+          });
+        }
+      }
+    } on TimeoutException {
+      if (mounted) {
+        setState(() {
+          _loadingTrending = false;
+          _trendingError = 'Request timeout. Please try again.';
+        });
+      }
+    } on SocketException {
+      if (mounted) {
+        setState(() {
+          _loadingTrending = false;
+          _trendingError = 'No internet connection';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingTrending = false;
+          _trendingError = 'Failed to load trending anime';
+        });
+      }
+    }
   }
 
   void _onSearchChanged(String query) {
     _debounceTimer?.cancel();
     
-    if (query.trim().isEmpty) {
+    // Input validation
+    final trimmedQuery = query.trim();
+    
+    if (trimmedQuery.isEmpty) {
       setState(() {
         _englishResults = [];
         _hindiResults = [];
@@ -40,37 +144,111 @@ class _SearchPageState extends State<SearchPage> {
       return;
     }
 
+    // Minimum character validation
+    if (trimmedQuery.length < 2) {
+      setState(() {
+        _error = 'Please enter at least 2 characters';
+        _hasSearched = true;
+        _englishResults = [];
+        _hindiResults = [];
+      });
+      return;
+    }
+
+    // Special character validation
+    if (RegExp(r'[<>"\';\\]').hasMatch(trimmedQuery)) {
+      setState(() {
+        _error = 'Special characters not allowed';
+        _hasSearched = true;
+        _englishResults = [];
+        _hindiResults = [];
+      });
+      return;
+    }
+
     _debounceTimer = Timer(Duration(milliseconds: 500), () {
-      _performSearch(query.trim());
+      _performSearch(trimmedQuery);
     });
   }
 
   Future<void> _performSearch(String query) async {
     if (!mounted) return;
     
+    // Cancel previous search
+    _currentSearchToken?.cancel();
+    _currentSearchToken = CancelToken();
+    
+    // Network check before search
+    if (!_hasNetworkConnection) {
+      final hasNetwork = await _checkNetworkConnection();
+      if (!hasNetwork) {
+        setState(() {
+          _error = 'No internet connection. Please check your network.';
+          _hasSearched = true;
+          _isLoading = false;
+        });
+        return;
+      } else {
+        setState(() {
+          _hasNetworkConnection = true;
+        });
+      }
+    }
+    
     setState(() {
       _isLoading = true;
       _error = null;
+      _lastValidQuery = query;
     });
 
     try {
-      final response = await SearchHandler.searchAnime(query);
+      final response = await SearchHandler.searchAnime(query).timeout(Duration(seconds: 30));
+      
+      // Check if search was cancelled
+      if (_currentSearchToken?.isCancelled == true) return;
       
       if (mounted) {
+        if (response.success) {
+          setState(() {
+            _englishResults = response.englishResults;
+            _hindiResults = response.hindiResults;
+            _isLoading = false;
+            _hasSearched = true;
+            _error = response.englishResults.isEmpty && response.hindiResults.isEmpty 
+                ? 'No results found for "$query"' 
+                : null;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+            _hasSearched = true;
+            _error = response.error ?? 'Search failed. Please try again.';
+          });
+        }
+      }
+    } on TimeoutException {
+      if (mounted && _currentSearchToken?.isCancelled != true) {
         setState(() {
-          _englishResults = response.englishResults;
-          _hindiResults = response.hindiResults;
           _isLoading = false;
           _hasSearched = true;
-          _error = response.success ? null : response.error;
+          _error = 'Search timeout. Please try again with a shorter query.';
+        });
+      }
+    } on SocketException {
+      if (mounted && _currentSearchToken?.isCancelled != true) {
+        setState(() {
+          _isLoading = false;
+          _hasSearched = true;
+          _error = 'Network error. Please check your connection.';
+          _hasNetworkConnection = false;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && _currentSearchToken?.isCancelled != true) {
         setState(() {
           _isLoading = false;
           _hasSearched = true;
-          _error = 'Search failed: $e';
+          _error = 'Search failed: ${e.toString().contains('FormatException') ? 'Invalid server response' : 'Please try again'}';
         });
       }
     }
@@ -201,32 +379,245 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildInitialState() {
-    return Center(
+    return SingleChildScrollView(
+      physics: BouncingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 100),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.search_rounded,
-            size: 80,
-            color: Colors.white.withOpacity(0.3),
-          ),
-          SizedBox(height: 20),
-          Text(
-            'Search for your favorite anime',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 18,
+          Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  size: 60,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Search for your favorite anime',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 18,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Find both English and Hindi dubbed content',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.4),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            'Find both English and Hindi dubbed content',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
-              fontSize: 14,
+          SizedBox(height: 40),
+          if (!_loadingTrending && _trendingAnime.isNotEmpty) ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.trending_up_rounded,
+                  color: Color(0xFFFF8C00),
+                  size: 24,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Trending Now',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-          ),
+            SizedBox(height: 16),
+            ..._trendingAnime.map((anime) => _buildTrendingCard(anime)),
+          ],
+          if (_loadingTrending) ...[
+            Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    color: Color(0xFFFF8C00),
+                    strokeWidth: 2,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Loading trending anime...',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (_trendingError != null) ...[
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.red[300],
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _trendingError!,
+                          style: TextStyle(
+                            color: Colors.red[300],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_trendingError!.contains('internet') || _trendingError!.contains('connection')) {
+                        _checkNetworkAndLoadTrending();
+                      } else {
+                        _loadTrendingAnime();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFF8C00),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    ),
+                    child: Text(
+                      'Retry',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildTrendingCard(AnimeItem anime) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            // TODO: Navigate to anime details
+            print('Tapped trending: ${anime.title}');
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    anime.poster ?? '',
+                    width: 60,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 60,
+                        height: 80,
+                        color: Colors.grey[800],
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey[600],
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: 60,
+                        height: 80,
+                        color: Colors.grey[800],
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFFFF8C00),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        anime.title,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF8C00).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'TRENDING',
+                          style: TextStyle(
+                            color: Color(0xFFFF8C00),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white.withOpacity(0.3),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -254,14 +645,34 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildErrorState() {
+    IconData errorIcon;
+    Color errorColor;
+    String retryText = 'Retry';
+    
+    if (_error!.contains('internet') || _error!.contains('connection') || _error!.contains('Network')) {
+      errorIcon = Icons.wifi_off_rounded;
+      errorColor = Colors.orange;
+      retryText = 'Check Connection';
+    } else if (_error!.contains('timeout')) {
+      errorIcon = Icons.access_time_rounded;
+      errorColor = Colors.blue;
+    } else if (_error!.contains('characters')) {
+      errorIcon = Icons.edit_rounded;
+      errorColor = Colors.yellow;
+      retryText = 'Clear & Retry';
+    } else {
+      errorIcon = Icons.error_outline_rounded;
+      errorColor = Colors.red;
+    }
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.error_outline_rounded,
+            errorIcon,
             size: 80,
-            color: Colors.red.withOpacity(0.7),
+            color: errorColor.withOpacity(0.7),
           ),
           SizedBox(height: 20),
           Text(
@@ -273,17 +684,50 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
           SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              if (_searchController.text.trim().isNotEmpty) {
-                _performSearch(_searchController.text.trim());
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF8C00),
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Retry'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_error!.contains('characters')) ...[
+                ElevatedButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _hasSearched = false;
+                      _error = null;
+                      _englishResults = [];
+                      _hindiResults = [];
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[700],
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('Clear'),
+                ),
+                SizedBox(width: 12),
+              ],
+              ElevatedButton(
+                onPressed: () {
+                  if (_error!.contains('internet') || _error!.contains('connection')) {
+                    _checkNetworkConnection().then((hasNetwork) {
+                      setState(() {
+                        _hasNetworkConnection = hasNetwork;
+                      });
+                      if (hasNetwork && _lastValidQuery.isNotEmpty) {
+                        _performSearch(_lastValidQuery);
+                      }
+                    });
+                  } else if (_lastValidQuery.isNotEmpty) {
+                    _performSearch(_lastValidQuery);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFF8C00),
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(retryText),
+              ),
+            ],
           ),
         ],
       ),

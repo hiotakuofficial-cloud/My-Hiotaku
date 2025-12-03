@@ -123,13 +123,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   void _onNavTap(int index) {
-    HapticFeedback.lightImpact();
-    setState(() => _currentIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    if (_currentIndex != index) {
+      HapticFeedback.lightImpact();
+      setState(() => _currentIndex = index);
+      _pageController.animateToPage(
+        index,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -164,34 +166,42 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       right: 20,
       child: Container(
         height: 70,
-        decoration: BoxDecoration(
-          color: Color(0xFF1E1E1E).withOpacity(0.95),
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(35),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
-              offset: Offset(0, 10),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Color(0xFF1E1E1E).withOpacity(0.8),
+                borderRadius: BorderRadius.circular(35),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.1),
+                    blurRadius: 30,
+                    offset: Offset(0, 0),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(Icons.home_rounded, 0, 'Home'),
+                  _buildNavItem(Icons.search_rounded, 1, 'Search'),
+                  _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
+                  _buildNavItem(Icons.account_circle_rounded, 3, 'Profile'),
+                ],
+              ),
             ),
-            BoxShadow(
-              color: Colors.white.withOpacity(0.1),
-              blurRadius: 30,
-              offset: Offset(0, 0),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home_rounded, 0, 'Home'),
-            _buildNavItem(Icons.search_rounded, 1, 'Search'),
-            _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
-            _buildNavItem(Icons.account_circle_rounded, 3, 'Profile'),
-          ],
         ),
       ),
     );
