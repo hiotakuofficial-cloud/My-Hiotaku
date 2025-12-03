@@ -358,11 +358,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 title: featuredAnime[index].title,
                                 poster: featuredAnime[index].poster ?? '',
                                 description: featuredAnime[index].description ?? 'No description available.',
-                                genres: featuredAnime[index].type.isNotEmpty ? [featuredAnime[index].type] : ['Unknown'],
+                                genres: (featuredAnime[index].type?.isNotEmpty ?? false) ? [featuredAnime[index].type!] : ['Unknown'],
                                 rating: 0.0,
                                 year: 'Unknown',
                                 animeId: featuredAnime[index].id,
-                                animeType: featuredAnime[index].type,
+                                animeType: featuredAnime[index].type ?? 'Unknown',
                               ),
                             ),
                           ).then((_) {
@@ -731,11 +731,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               title: anime.title,
               poster: anime.poster ?? '',
               description: anime.description ?? 'No description available.',
-              genres: anime.type.isNotEmpty ? [anime.type] : ['Unknown'],
+              genres: (anime.type?.isNotEmpty ?? false) ? [anime.type!] : ['Unknown'],
               rating: 0.0, // Will be fetched by handler
               year: 'Unknown', // Will be fetched by handler
               animeId: anime.id,
-              animeType: anime.type,
+              animeType: anime.type ?? 'Unknown',
             ),
           ),
         );
