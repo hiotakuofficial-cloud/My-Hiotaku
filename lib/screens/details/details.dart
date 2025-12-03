@@ -126,15 +126,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 16),
-                  Text(
-                    'Loading Details...',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -142,77 +133,11 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           
           Expanded(
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Loading animation
-                  Container(
-                    width: 80,
-                    height: 80,
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFFF8C00),
-                      strokeWidth: 4,
-                    ),
-                  ),
-                  
-                  SizedBox(height: 24),
-                  
-                  Text(
-                    'Fetching anime details...',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  
-                  SizedBox(height: 8),
-                  
-                  Text(
-                    'Please wait while we load the information',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                  
-                  SizedBox(height: 32),
-                  
-                  // Show basic info while loading
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 40),
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          widget.title,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Type: ${widget.animeType}',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: Lottie.asset(
+                'assets/animations/loading.json',
+                width: 120,
+                height: 120,
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -527,7 +452,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'IMDB',
+                          'MAL',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -551,7 +476,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          '(1.1M reviews)',
+                          '(MAL Score)',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.8),
                             fontSize: 10,
@@ -609,14 +534,14 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           
           SizedBox(height: 30),
           
-          // Get Reservation Button
+          // Play Now Button
           Container(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
               onPressed: () {
                 HapticFeedback.lightImpact();
-                _showReservationDialog();
+                _showPlayDialog();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFFF8C00),
@@ -627,7 +552,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                 ),
               ),
               child: Text(
-                'Get Reservation',
+                'Play Now',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -640,6 +565,11 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           
           // Additional Info Section
           _buildInfoSection(),
+          
+          SizedBox(height: 30),
+          
+          // Recommendations Section
+          _buildRecommendationsSection(),
           
           SizedBox(height: 100), // Bottom padding for navigation
         ],
@@ -725,7 +655,153 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     );
   }
 
-  void _showReservationDialog() {
+  Widget _buildRecommendationsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recommended for You',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        
+        SizedBox(height: 16),
+        
+        Container(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.only(right: 20),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return _buildRecommendationCard(index);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationCard(int index) {
+    // Sample recommendation data
+    List<Map<String, String>> recommendations = [
+      {
+        'title': 'Attack on Titan',
+        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/bcd84731a3eda4f4a306250769675065.jpg',
+        'rating': '9.0'
+      },
+      {
+        'title': 'Demon Slayer',
+        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/9cbcf87f54194742e7686119089478f8.jpg',
+        'rating': '8.7'
+      },
+      {
+        'title': 'Jujutsu Kaisen',
+        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/bd5ae1d387a59c5abcf5e1a6a616728c.jpg',
+        'rating': '8.9'
+      },
+      {
+        'title': 'My Hero Academia',
+        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/f58b0204c20ae3310f65ae7b8cb9987e.jpg',
+        'rating': '8.5'
+      },
+      {
+        'title': 'Tokyo Ghoul',
+        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/65f92e6e315a931ef872da4b312442b8.jpg',
+        'rating': '8.3'
+      },
+    ];
+
+    final rec = recommendations[index];
+    
+    return Container(
+      width: 120,
+      margin: EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          // TODO: Navigate to recommendation details
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Poster
+            Container(
+              height: 140,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  rec['image']!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[800],
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey[600],
+                        size: 32,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            
+            SizedBox(height: 8),
+            
+            // Title
+            Text(
+              rec['title']!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            
+            SizedBox(height: 4),
+            
+            // Rating
+            Row(
+              children: [
+                Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFFF8C00),
+                  size: 14,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  rec['rating']!,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPlayDialog() {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -748,7 +824,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.movie_outlined,
+                    Icons.play_circle_outline_rounded,
                     color: Color(0xFFFF8C00),
                     size: 48,
                   ),
@@ -767,7 +843,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                   SizedBox(height: 8),
                   
                   Text(
-                    'Reservation feature will be available soon. Stay tuned!',
+                    'Video player feature will be available soon. Stay tuned!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
