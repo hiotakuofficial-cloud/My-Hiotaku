@@ -88,6 +88,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
             : error != null
                 ? _buildErrorState()
                 : SingleChildScrollView(
+                    physics: BouncingScrollPhysics(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -103,46 +104,13 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   Widget _buildLoadingState() {
     return Container(
       color: Color(0xFF121212),
-      child: Column(
-        children: [
-          // Header with back button during loading
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          Expanded(
-            child: Center(
-              child: Lottie.asset(
-                'assets/animations/loading.json',
-                width: 120,
-                height: 120,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ],
+      child: Center(
+        child: Lottie.asset(
+          'assets/animations/loading.json',
+          width: 120,
+          height: 120,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
@@ -571,8 +539,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           
           // Recommendations Section
           _buildRecommendationsSection(),
-          
-          SizedBox(height: 100), // Bottom padding for navigation
+        ],
         ],
       ),
     );
@@ -674,6 +641,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         Container(
           height: 200,
           child: ListView.builder(
+            physics: BouncingScrollPhysics(),
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.only(right: 20),
             itemCount: 5,

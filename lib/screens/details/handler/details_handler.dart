@@ -100,7 +100,7 @@ class DetailsHandler {
       return AnimeDetailsResponse(
         id: animeId,
         title: data['title'] ?? data['name'] ?? fallbackTitle ?? 'Unknown Title',
-        poster: data['thumbnail'] ?? fallbackPoster ?? '',
+        poster: (data['thumbnail']?.isNotEmpty == true) ? data['thumbnail'] : (fallbackPoster ?? ''),
         description: data['synopsis'] ?? data['description'] ?? 'No description available.',
         genres: _parseGenres(data['genres']),
         rating: 0.0, // Hindi API doesn't provide rating
