@@ -61,10 +61,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             
             if (avatarId != null && avatarId.isNotEmpty && !avatarId.startsWith('http')) {
               // If avatar_url is just filename (e.g., "male1.png", "female3.png"), construct full path
-              if (avatarId.contains('male')) {
+              if (avatarId.startsWith('male')) {
                 avatarUrl = 'assets/profile/male/$avatarId';
                 _selectedGender = 'male';
-              } else if (avatarId.contains('female')) {
+              } else if (avatarId.startsWith('female')) {
                 avatarUrl = 'assets/profile/female/$avatarId';
                 _selectedGender = 'female';
               } else if (avatarId == 'default.png') {
