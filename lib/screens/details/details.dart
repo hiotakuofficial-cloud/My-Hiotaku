@@ -1,0 +1,569 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
+import 'handler/details_handler.dart';
+
+class AnimeDetailsPage extends StatefulWidget {
+  final String title;
+  final String poster;
+  final String description;
+  final List<String> genres;
+  final double rating;
+  final String year;
+  final String animeId;
+  final String animeType;
+
+  const AnimeDetailsPage({
+    Key? key,
+    required this.title,
+    required this.poster,
+    required this.description,
+    required this.genres,
+    required this.rating,
+    required this.year,
+    required this.animeId,
+    required this.animeType,
+  }) : super(key: key);
+
+  @override
+  _AnimeDetailsPageState createState() => _AnimeDetailsPageState();
+}
+
+class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
+  bool isBookmarked = false;
+  bool isLoading = true;
+  AnimeDetailsResponse? animeDetails;
+  String? error;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadAnimeDetails();
+  }
+
+  Future<void> _loadAnimeDetails() async {
+    try {
+      setState(() {
+        isLoading = true;
+        error = null;
+      });
+
+      final details = await DetailsHandler.getAnimeDetails(
+        animeId: widget.animeId,
+        animeType: widget.animeType,
+        title: widget.title,
+        poster: widget.poster,
+      );
+
+      if (mounted) {
+        setState(() {
+          animeDetails = details;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          error = e.toString();
+          isLoading = false;
+        });
+      }
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFF121212),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: isLoading
+            ? _buildLoadingState()
+            : error != null
+                ? _buildErrorState()
+                : SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeroSection(),
+                        _buildContentSection(),
+                      ],
+                    ),
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: Color(0xFFFF8C00),
+            strokeWidth: 3,
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Loading details...',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: 64,
+            color: Colors.red.withOpacity(0.7),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Failed to load details',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            error ?? 'Unknown error occurred',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 14,
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _loadAnimeDetails,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF8C00),
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroSection() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: Stack(
+        children: [
+          // Background Poster Image
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            child: Image.network(
+              animeDetails?.poster ?? widget.poster,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey[800],
+                  child: Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: Colors.grey[600],
+                      size: 64,
+                    ),
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: Colors.grey[800],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF8C00),
+                      strokeWidth: 3,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Gradient Overlay
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.3),
+                  Colors.black.withOpacity(0.7),
+                  Color(0xFF121212),
+                ],
+                stops: [0.0, 0.4, 0.8, 1.0],
+              ),
+            ),
+          ),
+          
+          // Top Navigation
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back Button
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  
+                  // Bookmark Button
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() {
+                        isBookmarked = !isBookmarked;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                        color: isBookmarked ? Color(0xFFFF8C00) : Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Bottom Content
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // IMDB Rating
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF8C00),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'IMDB',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Icon(
+                          Icons.star,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          (animeDetails?.rating ?? widget.rating).toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          '(1.1M reviews)',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: 16),
+                  
+                  // Title
+                  Text(
+                    animeDetails?.title ?? widget.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentSection() {
+    return Padding(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Genre Tags
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: (animeDetails?.genres ?? widget.genres).map((genre) => _buildGenreChip(genre)).toList(),
+          ),
+          
+          SizedBox(height: 20),
+          
+          // Description
+          Text(
+            animeDetails?.description ?? widget.description,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          
+          SizedBox(height: 30),
+          
+          // Get Reservation Button
+          Container(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                _showReservationDialog();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFF8C00),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                'Get Reservation',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          
+          SizedBox(height: 20),
+          
+          // Additional Info Section
+          _buildInfoSection(),
+          
+          SizedBox(height: 100), // Bottom padding for navigation
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenreChip(String genre) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        genre,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.9),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Details',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        
+        SizedBox(height: 16),
+        
+        _buildInfoRow('Release Year', animeDetails?.year ?? widget.year),
+        _buildInfoRow('Rating', '${animeDetails?.rating ?? widget.rating}/10'),
+        _buildInfoRow('Genres', (animeDetails?.genres ?? widget.genres).join(', ')),
+        _buildInfoRow('Status', animeDetails?.status ?? 'Unknown'),
+        _buildInfoRow('Episodes', animeDetails?.episodes ?? 'Unknown'),
+        _buildInfoRow('Type', animeDetails?.type ?? widget.animeType),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 14,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReservationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.movie_outlined,
+                    color: Color(0xFFFF8C00),
+                    size: 48,
+                  ),
+                  
+                  SizedBox(height: 16),
+                  
+                  Text(
+                    'Coming Soon!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  
+                  SizedBox(height: 8),
+                  
+                  Text(
+                    'Reservation feature will be available soon. Stay tuned!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                  
+                  SizedBox(height: 20),
+                  
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFF8C00),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text('Got it'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

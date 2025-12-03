@@ -5,6 +5,7 @@ import 'dart:io';
 import 'handler/search_handler.dart';
 import '../../services/api_service.dart';
 import '../../models/api_models.dart';
+import '../details/details.dart';
 
 // Simple cancel token for search operations
 class CancelToken {
@@ -525,7 +526,21 @@ class _SearchPageState extends State<SearchPage> {
         child: InkWell(
           onTap: () {
             HapticFeedback.lightImpact();
-            print('Tapped trending: ${anime.title}');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AnimeDetailsPage(
+                  title: anime.title,
+                  poster: anime.poster ?? '',
+                  description: anime.description ?? 'No description available.',
+                  genres: anime.type.isNotEmpty ? [anime.type] : ['Trending'],
+                  rating: 0.0,
+                  year: 'Unknown',
+                  animeId: anime.id,
+                  animeType: anime.type,
+                ),
+              ),
+            );
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(
@@ -773,7 +788,21 @@ class _SearchPageState extends State<SearchPage> {
         child: InkWell(
           onTap: () {
             HapticFeedback.lightImpact();
-            print('Tapped: ${result.title} (${result.type})');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AnimeDetailsPage(
+                  title: result.title,
+                  poster: result.poster,
+                  description: result.description ?? 'No description available.',
+                  genres: result.type.isNotEmpty ? [result.type] : ['Unknown'],
+                  rating: 0.0,
+                  year: 'Unknown',
+                  animeId: result.id,
+                  animeType: result.type,
+                ),
+              ),
+            );
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(

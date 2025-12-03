@@ -6,6 +6,7 @@ import 'dart:async';
 import '../services/api_service.dart';
 import '../models/api_models.dart';
 import 'profile/handler/profile_handler.dart';
+import 'details/details.dart';
 import 'pages/popular.dart';
 import 'pages/upcoming.dart';
 import 'pages/anime_movies.dart';
@@ -350,10 +351,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         onTap: () {
                           HapticFeedback.lightImpact();
                           _stopAutoSlide();
-                          // TODO: Navigate to anime details
-                          Future.delayed(Duration(seconds: 2), () {
-                            _startAutoSlide();
-                      });
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AnimeDetailsPage(
+                                title: featuredAnime[index].title,
+                                poster: featuredAnime[index].poster ?? '',
+                                description: featuredAnime[index].description ?? 'No description available.',
+                                genres: featuredAnime[index].type.isNotEmpty ? [featuredAnime[index].type] : ['Unknown'],
+                                rating: 0.0,
+                                year: 'Unknown',
+                                animeId: featuredAnime[index].id,
+                                animeType: featuredAnime[index].type,
+                              ),
+                            ),
+                          ).then((_) {
+                            Future.delayed(Duration(seconds: 2), () {
+                              _startAutoSlide();
+                            });
+                          });
                     },
                     child: _buildFeaturedCard(featuredAnime[index]),
                   );
@@ -708,7 +724,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        // TODO: Navigate to anime details
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnimeDetailsPage(
+              title: anime.title,
+              poster: anime.poster ?? '',
+              description: anime.description ?? 'No description available.',
+              genres: anime.type.isNotEmpty ? [anime.type] : ['Unknown'],
+              rating: 0.0, // Will be fetched by handler
+              year: 'Unknown', // Will be fetched by handler
+              animeId: anime.id,
+              animeType: anime.type,
+            ),
+          ),
+        );
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
