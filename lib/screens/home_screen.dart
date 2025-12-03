@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'dart:async';
 import '../services/api_service.dart';
 import '../models/api_models.dart';
-import '../services/profile_handler.dart';
+import 'profile/handler/profile_handler.dart';
 import 'pages/popular.dart';
 import 'pages/upcoming.dart';
 import 'pages/anime_movies.dart';
@@ -665,6 +665,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     );
   }
+
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -698,6 +700,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
         ],
+      ),
+    );
+  }
       ),
     );
   }
