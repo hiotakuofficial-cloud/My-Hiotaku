@@ -33,4 +33,5 @@ flutter:
     - assets/profile/default/
     - assets/profile/male/
     - assets/profile/female/
+    - assets/fallback/
     - assets/manifest.json

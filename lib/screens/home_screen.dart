@@ -369,12 +369,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 );
               },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey[800],
-                  child: Icon(Icons.image, color: Colors.white54, size: 64),
-                );
-              },
             ),
             Container(
               decoration: BoxDecoration(
@@ -614,13 +608,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           ),
                         );
                       },
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[800],
-                          child: Icon(Icons.image, color: Colors.white54),
-                        );
-                      },
+                    ),
                     ),
                   ),
                 ),

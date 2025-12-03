@@ -7,6 +7,7 @@ import 'screens/auth/login.dart';
 import 'screens/auth/bord_login.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile/profile.dart';
+import 'screens/search/search.dart';
 import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -226,61 +227,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 }
 
 // Placeholder pages
-class SearchPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-      child: Scaffold(
-        backgroundColor: Color(0xFF121212),
-        extendBodyBehindAppBar: true,
-        body: Container(
-          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
-          child: Column(
-            children: [
-              Text(
-                'Search',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: TextField(
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Search anime...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                    border: InputBorder.none,
-                    prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.6)),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Search functionality coming soon!',
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class FavoritesPage extends StatelessWidget {
   @override
