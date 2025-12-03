@@ -51,7 +51,7 @@ class DetailsHandler {
           id: animeId,
           title: data['title'] ?? fallbackTitle ?? 'Unknown Title',
           poster: data['poster'] ?? fallbackPoster ?? '',
-          description: data['synopsis'] ?? data['description'] ?? 'No description available.',
+          description: data['synopsis'] ?? data['description'] ?? 'Description not available from this source.',
           genres: _parseGenres(data['genre']),
           rating: _parseRating(data['mal_score']),
           year: _parseYear(data['aired']),
@@ -168,7 +168,7 @@ class DetailsHandler {
     return 0.0;
   }
 
-  // Parse year from aired string
+  // Parse genres from various formats
   static String _parseYear(dynamic aired) {
     if (aired == null) return 'Unknown';
     
