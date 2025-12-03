@@ -703,9 +703,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     );
   }
-      ),
-    );
-  }
 
   Widget _buildAnimeCard(AnimeItem anime) {
     return GestureDetector(
