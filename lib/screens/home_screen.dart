@@ -12,6 +12,8 @@ import 'pages/hindi_dubbed.dart';
 import 'pages/recently_added.dart';
 import 'pages/continue_watching.dart';
 import 'auth/login.dart';
+import 'errors/no_internet.dart';
+import 'errors/loading_error.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -99,6 +101,42 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
     } catch (e) {
       setState(() => isLoading = false);
+      
+      // Navigate to appropriate error page
+      if (mounted) {
+        String errorType = e.toString().toLowerCase();
+        
+        if (errorType.contains('network') || 
+            errorType.contains('connection') || 
+            errorType.contains('timeout')) {
+          // Network related error
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NoInternetScreen(
+                onRetry: () {
+                  Navigator.pop(context);
+                  _loadHomeData();
+                },
+              ),
+            ),
+          );
+        } else {
+          // API or data loading error
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoadingErrorScreen(
+                errorMessage: 'Failed to load anime data.\nPlease try again.',
+                onRetry: () {
+                  Navigator.pop(context);
+                  _loadHomeData();
+                },
+              ),
+            ),
+          );
+        }
+      }
     }
   }
 
