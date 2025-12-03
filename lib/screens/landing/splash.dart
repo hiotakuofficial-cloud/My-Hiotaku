@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 import '../../services/api_service.dart';
 import '../../services/permission_service.dart';
 import '../auth/login.dart';
 import '../../main.dart';
 import 'onboarding.dart';
+import '../errors/no_internet.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -22,13 +24,32 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    // GIF duration + transition time
-    await Future.wait([
-      Future.delayed(Duration(milliseconds: 3000)), // 3 seconds
-      _preloadData(),
-    ]);
+    // Fixed 3-second splash duration
+    await Future.delayed(Duration(milliseconds: 3000));
     
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    
+    // Request permissions in background (non-blocking)
+    _requestPermissions();
+    
+    // Check network connectivity
+    bool hasInternet = await _checkInternetConnection();
+    
+    if (!hasInternet) {
+      // Redirect to no internet page
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, _) => NoInternetScreen(
+            onRetry: () => _retryConnection(),
+          ),
+          transitionDuration: Duration(milliseconds: 800),
+          transitionsBuilder: (context, animation, _, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
+      return;
+    }
     
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isFirstTime = prefs.getBool('first_time') ?? true;
@@ -56,15 +77,51 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  Future<void> _preloadData() async {
+  Future<bool> _checkInternetConnection() async {
     try {
-      await Future.wait([
-        PermissionService.requestNotificationPermission().catchError((_) => null),
-        ApiService.getHome().catchError((_) => null),
-        ApiService.getPopular().catchError((_) => null),
-      ], eagerError: false);
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (e) {
-      print('Preload error: $e');
+      return false;
+    }
+  }
+
+  void _retryConnection() async {
+    bool hasInternet = await _checkInternetConnection();
+    
+    if (hasInternet) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      bool isFirstTime = prefs.getBool('first_time') ?? true;
+      
+      if (isFirstTime) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, _) => OnboardingScreen(),
+            transitionDuration: Duration(milliseconds: 800),
+            transitionsBuilder: (context, animation, _, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+          ),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, _) => MainScreen(),
+            transitionDuration: Duration(milliseconds: 800),
+            transitionsBuilder: (context, animation, _, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+          ),
+        );
+      }
+    }
+  }
+
+  void _requestPermissions() async {
+    try {
+      await PermissionService.requestNotificationPermission();
+    } catch (e) {
+      print('Permission request error: $e');
     }
   }
 
