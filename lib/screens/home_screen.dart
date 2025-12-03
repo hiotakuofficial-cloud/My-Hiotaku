@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'dart:async';
 import '../services/api_service.dart';
 import '../models/api_models.dart';
+import '../services/profile_handler.dart';
 import 'pages/popular.dart';
 import 'pages/upcoming.dart';
 import 'pages/anime_movies.dart';
@@ -31,12 +32,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<AnimeItem> recentlyUpdated = [];
   List<AnimeItem> hindiAnime = [];
   bool isLoading = true;
+  
+  // User authentication state
+  Map<String, dynamic>? userData;
+  String avatarUrl = 'assets/profile/default/default.png';
+  bool isUserLoading = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadHomeData();
+    _loadUserData();
     _startAutoSlide();
   }
 
@@ -49,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         break;
       case AppLifecycleState.resumed:
         _startAutoSlide();
+        _loadUserData(); // Reload user data when app resumes
         break;
       default:
         break;
@@ -79,6 +87,49 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   int _retryCount = 0;
   static const int _maxRetries = 3;
+
+  Future<void> _loadUserData() async {
+    try {
+      final data = await ProfileHandler.getCurrentUserData();
+      
+      if (mounted) {
+        setState(() {
+          userData = data;
+          isUserLoading = false;
+          
+          if (data != null) {
+            String? avatarId = data['avatar_url'];
+            
+            if (avatarId != null && avatarId.isNotEmpty && !avatarId.startsWith('http')) {
+              // Construct avatar path based on filename
+              if (avatarId.startsWith('male')) {
+                avatarUrl = 'assets/profile/male/$avatarId';
+              } else if (avatarId.startsWith('female')) {
+                avatarUrl = 'assets/profile/female/$avatarId';
+              } else if (avatarId == 'default.png') {
+                avatarUrl = 'assets/profile/default/default.png';
+              } else {
+                avatarUrl = 'assets/profile/default/default.png';
+              }
+            } else {
+              // Network URL or fallback
+              avatarUrl = avatarId ?? 'assets/profile/default/default.png';
+            }
+          } else {
+            avatarUrl = 'assets/profile/default/default.png';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          userData = null;
+          isUserLoading = false;
+          avatarUrl = 'assets/profile/default/default.png';
+        });
+      }
+    }
+  }
 
   Future<void> _loadHomeData() async {
     try {
@@ -219,28 +270,55 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             Spacer(),
-            // Profile Section - slightly left from original position
+            // Profile/Login Section
             Padding(
-              padding: EdgeInsets.only(right: 8), // Move slightly left
+              padding: EdgeInsets.only(right: 8),
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  // Navigate to login screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LoginScreen(),
-                    ),
-                  );
+                  if (userData == null) {
+                    // User not logged in - navigate to login
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginScreen(),
+                      ),
+                    );
+                  } else {
+                    // User logged in - navigate to settings (will create later)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Settings page coming soon!'),
+                        backgroundColor: Color(0xFFFF8C00),
+                      ),
+                    );
+                  }
                 },
                 child: Container(
-                  width: 24,
-                  height: 24,
-                  child: Image.asset(
-                    'assets/images/login.png',
-                    color: Colors.white,
-                    fit: BoxFit.contain,
-                  ),
+                  width: 32,
+                  height: 32,
+                  child: isUserLoading
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white.withOpacity(0.6),
+                          ),
+                        )
+                      : userData == null
+                          ? Container(
+                              width: 24,
+                              height: 24,
+                              child: Image.asset(
+                                'assets/images/login.png',
+                                color: Colors.white,
+                                fit: BoxFit.contain,
+                              ),
+                            )
+                          : ClipOval(
+                              child: _buildUserAvatar(),
+                            ),
                 ),
               ),
             ),
@@ -519,7 +597,74 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildUserAvatar() {
+    // Try to load from assets first
+    if (avatarUrl.startsWith('assets/')) {
+      return Image.asset(
+        avatarUrl,
+        width: 32,
+        height: 32,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackAvatar();
+        },
+      );
+    }
+    
+    // Try to load from network (Firebase photo URL)
+    if (avatarUrl.startsWith('http')) {
+      return Image.network(
+        avatarUrl,
+        width: 32,
+        height: 32,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 32,
+            height: 32,
+            color: Colors.grey[800],
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFFFF8C00),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackAvatar();
+        },
+      );
+    }
+    
+    // Fallback to default avatar
+    return _buildFallbackAvatar();
+  }
+  
+  Widget _buildFallbackAvatar() {
+    String displayName = userData?['display_name'] ?? 'Hiotaku User';
+    String initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'H';
+    
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: Color(0xFFFF8C00),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
