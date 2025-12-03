@@ -50,18 +50,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // TODO: Handle avatar ID from Supabase
             String? avatarId = data['avatar_url'];
             
-            if (avatarId != null && !avatarId.startsWith('http')) {
-              // If avatar_url is just filename (e.g., "male1.png"), construct full path
-              if (avatarId.contains('male') || avatarId.contains('female')) {
-                String gender = avatarId.contains('male') ? 'male' : 'female';
-                avatarUrl = 'assets/profile/$gender/$avatarId';
-                _selectedGender = gender;
+            // DEBUG: Show what we got from DB
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('DB Avatar: $avatarId'),
+                duration: Duration(seconds: 2),
+                backgroundColor: Colors.purple,
+              ),
+            );
+            
+            if (avatarId != null && avatarId.isNotEmpty && !avatarId.startsWith('http')) {
+              // If avatar_url is just filename (e.g., "male1.png", "female3.png"), construct full path
+              if (avatarId.contains('male')) {
+                avatarUrl = 'assets/profile/male/$avatarId';
+                _selectedGender = 'male';
+              } else if (avatarId.contains('female')) {
+                avatarUrl = 'assets/profile/female/$avatarId';
+                _selectedGender = 'female';
               } else if (avatarId == 'default.png') {
                 avatarUrl = 'assets/profile/default/default.png';
               } else {
                 avatarUrl = 'assets/profile/default/default.png';
               }
+              
+              // DEBUG: Show constructed path
+              Future.delayed(Duration(milliseconds: 500), () {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Constructed: $avatarUrl'),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              });
             } else {
+              // Network URL or fallback
               avatarUrl = avatarId ?? 'assets/profile/default/default.png';
             }
           } else {
