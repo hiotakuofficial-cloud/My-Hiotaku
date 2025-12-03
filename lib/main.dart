@@ -165,39 +165,33 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       child: Container(
         height: 70,
         decoration: BoxDecoration(
+          color: Color(0xFF1E1E1E).withOpacity(0.95),
           borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
-              color: Color(0xFF121212).withOpacity(0.3),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 20,
-              offset: Offset(0, 8),
+              offset: Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.1),
+              blurRadius: 30,
+              offset: Offset(0, 0),
             ),
           ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(35),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(35),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildNavItem(Icons.home_rounded, 0, 'Home'),
-                  _buildNavItem(Icons.search_rounded, 1, 'Search'),
-                  _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
-                  _buildNavItem(Icons.account_circle, 3, 'Profile'),
-                ],
-              ),
-            ),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
           ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(Icons.home_rounded, 0, 'Home'),
+            _buildNavItem(Icons.search_rounded, 1, 'Search'),
+            _buildNavItem(Icons.favorite_rounded, 2, 'Favorites'),
+            _buildNavItem(Icons.account_circle_rounded, 3, 'Profile'),
+          ],
         ),
       ),
     );
@@ -210,16 +204,50 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       onTap: () => _onNavTap(index),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
+        curve: Curves.easeInOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 20 : 12,
+          vertical: 12,
         ),
-        child: Icon(
-          icon,
-          color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
-          size: 24,
+        decoration: BoxDecoration(
+          color: isSelected ? Color(0xFFFF8C00) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: Color(0xFFFF8C00).withOpacity(0.3),
+              blurRadius: 15,
+              offset: Offset(0, 5),
+            ),
+          ] : [],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic,
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                size: isSelected ? 24 : 22,
+              ),
+            ),
+            if (isSelected) ...[
+              SizedBox(width: 8),
+              AnimatedOpacity(
+                duration: Duration(milliseconds: 200),
+                opacity: isSelected ? 1.0 : 0.0,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
