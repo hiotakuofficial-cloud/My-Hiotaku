@@ -156,7 +156,7 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     // Special character validation
-    if (RegExp(r'[<>"\';\\]').hasMatch(trimmedQuery)) {
+    if (RegExp(r'[<>"\\]').hasMatch(trimmedQuery)) {
       setState(() {
         _error = 'Special characters not allowed';
         _hasSearched = true;
@@ -525,7 +525,6 @@ class _SearchPageState extends State<SearchPage> {
         child: InkWell(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to anime details
             print('Tapped trending: ${anime.title}');
           },
           borderRadius: BorderRadius.circular(12),
@@ -645,34 +644,14 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildErrorState() {
-    IconData errorIcon;
-    Color errorColor;
-    String retryText = 'Retry';
-    
-    if (_error!.contains('internet') || _error!.contains('connection') || _error!.contains('Network')) {
-      errorIcon = Icons.wifi_off_rounded;
-      errorColor = Colors.orange;
-      retryText = 'Check Connection';
-    } else if (_error!.contains('timeout')) {
-      errorIcon = Icons.access_time_rounded;
-      errorColor = Colors.blue;
-    } else if (_error!.contains('characters')) {
-      errorIcon = Icons.edit_rounded;
-      errorColor = Colors.yellow;
-      retryText = 'Clear & Retry';
-    } else {
-      errorIcon = Icons.error_outline_rounded;
-      errorColor = Colors.red;
-    }
-    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            errorIcon,
+            Icons.error_outline_rounded,
             size: 80,
-            color: errorColor.withOpacity(0.7),
+            color: Colors.red.withOpacity(0.7),
           ),
           SizedBox(height: 20),
           Text(
@@ -684,50 +663,17 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
           SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_error!.contains('characters')) ...[
-                ElevatedButton(
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _hasSearched = false;
-                      _error = null;
-                      _englishResults = [];
-                      _hindiResults = [];
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[700],
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('Clear'),
-                ),
-                SizedBox(width: 12),
-              ],
-              ElevatedButton(
-                onPressed: () {
-                  if (_error!.contains('internet') || _error!.contains('connection')) {
-                    _checkNetworkConnection().then((hasNetwork) {
-                      setState(() {
-                        _hasNetworkConnection = hasNetwork;
-                      });
-                      if (hasNetwork && _lastValidQuery.isNotEmpty) {
-                        _performSearch(_lastValidQuery);
-                      }
-                    });
-                  } else if (_lastValidQuery.isNotEmpty) {
-                    _performSearch(_lastValidQuery);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFFF8C00),
-                  foregroundColor: Colors.white,
-                ),
-                child: Text(retryText),
-              ),
-            ],
+          ElevatedButton(
+            onPressed: () {
+              if (_lastValidQuery.isNotEmpty) {
+                _performSearch(_lastValidQuery);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF8C00),
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Retry'),
           ),
         ],
       ),
@@ -827,7 +773,6 @@ class _SearchPageState extends State<SearchPage> {
         child: InkWell(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to anime details
             print('Tapped: ${result.title} (${result.type})');
           },
           borderRadius: BorderRadius.circular(12),
