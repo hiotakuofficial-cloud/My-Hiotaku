@@ -493,6 +493,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Select avatar and save to Supabase
   Future<void> _selectAvatar(String avatarId, String avatarPath) async {
     try {
+      // DEBUG: Show what we're trying to save
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saving: $avatarId'),
+          duration: Duration(seconds: 1),
+          backgroundColor: Colors.blue,
+        ),
+      );
+      
       final success = await ProfileHandler.updateAvatar(avatarId);
       
       if (success && mounted) {
@@ -510,10 +519,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        
+        // DEBUG: Show what was saved
+        Future.delayed(Duration(seconds: 1), () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Saved: $avatarId, Path: $avatarPath'),
+                duration: Duration(seconds: 2),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update avatar'),
+            content: Text('Failed to update avatar - Check connection'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -521,6 +543,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       print('Select avatar error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
