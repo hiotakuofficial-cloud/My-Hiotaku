@@ -18,8 +18,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Hide status bar completely
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // Make status bar transparent instead of hiding completely
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+    ));
     _initializeApp();
   }
 

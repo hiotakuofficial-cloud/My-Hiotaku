@@ -9,13 +9,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // TODO: User data state
   Map<String, dynamic>? userData;
   bool isLoading = true;
   String displayName = 'Hiotaku User';
   String username = '@hiotakuuser';
   String avatarUrl = 'assets/profile/default/default.png';
-  String _selectedGender = 'male'; // TODO: Gender selection state
+  String _selectedGender = 'male';
   
   @override
   void initState() {
@@ -30,7 +29,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
   
-  // TODO: Load user data from Supabase
   Future<void> _loadUserData() async {
     try {
       setState(() {
@@ -47,7 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             displayName = data['display_name'] ?? 'Hiotaku User';
             username = '@${data['username'] ?? 'hiotakuuser'}';
             
-            // TODO: Handle avatar ID from Supabase
             String? avatarId = data['avatar_url'];
             
             if (avatarId != null && avatarId.isNotEmpty && !avatarId.startsWith('http')) {
@@ -103,10 +100,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
-            padding: EdgeInsets.only(bottom: 100), // TODO: Bottom nav padding
+            padding: EdgeInsets.only(bottom: 100),
             child: Column(
               children: [
-                // TODO: Header section
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
@@ -140,7 +136,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 
                 SizedBox(height: 20),
                 
-                // TODO: Profile avatar section
                 Column(
                   children: [
                     Stack(
@@ -189,12 +184,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         splashColor: Colors.transparent,
                         highlightColor: Colors.transparent,
                         onTap: () {
-                          // TODO: Check if user is logged in
                           if (userData == null) {
                             // User not logged in, redirect to login
                             Navigator.pushReplacementNamed(context, '/login');
                           } else {
-                            // TODO: User logged in, show avatar selection
                             _showAvatarSelectionSheet();
                           }
                         },
@@ -224,7 +217,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 
                 SizedBox(height: 40),
                 
-                // TODO: Profile options list
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -266,7 +258,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _showLogoutDialog();
               }
             } else {
-              // TODO: Handle other options
               if (userData == null) {
                 // User not logged in, show login prompt
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -331,7 +322,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // TODO: Show avatar selection bottom sheet
   void _showAvatarSelectionSheet() {
     String tempSelectedGender = _selectedGender;
     bool isUpdating = false; // Loading state
@@ -350,7 +340,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: Column(
             children: [
-              // TODO: Handle bar
               Container(
                 margin: EdgeInsets.only(top: 12),
                 width: 40,
@@ -390,7 +379,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               
               SizedBox(height: 30),
               
-              // TODO: Gender toggle - disabled during loading
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
@@ -451,7 +439,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               
               SizedBox(height: 30),
               
-              // TODO: Avatar grid - disabled during loading
               Expanded(
                 child: GridView.builder(
                   physics: isUpdating ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
@@ -517,7 +504,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
   
-  // TODO: Select avatar and save to Supabase with timeout
   Future<void> _selectAvatar(String avatarId, String avatarPath, Function setModalState) async {
     try {
       // Set loading state
@@ -633,7 +619,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // TODO: Build profile image with fallback handling
   Widget _buildProfileImage() {
     if (isLoading) {
       return Container(
@@ -691,7 +676,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return _buildFallbackAvatar();
   }
   
-  // TODO: Fallback avatar with user initial
   Widget _buildFallbackAvatar() {
     String initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'H';
     
@@ -743,7 +727,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
-                // TODO: Use ProfileHandler for logout
                 final success = await ProfileHandler.logoutUser();
                 if (success && mounted) {
                   Navigator.pushReplacementNamed(context, '/login');

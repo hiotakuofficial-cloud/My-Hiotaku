@@ -77,6 +77,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _startAutoSlide();
   }
 
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+
   Future<void> _loadHomeData() async {
     try {
       setState(() => isLoading = true);
@@ -91,15 +94,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       
       setState(() {
         // Use real API data for each section - 6 featured items
-        featuredAnime = homeData.data.take(6).toList();
-        trendingAnime = popularData.data.take(10).toList();
-        popularAnime = topUpcomingData.data.take(10).toList();
-        topMovies = moviesData.data.take(10).toList();
-        recentlyUpdated = subbedData.data.take(10).toList();
-        hindiAnime = hindiData.data.take(10).toList();
+        featuredAnime = homeData.data.isNotEmpty ? homeData.data.take(6).toList() : [];
+        trendingAnime = popularData.data.isNotEmpty ? popularData.data.take(10).toList() : [];
+        popularAnime = topUpcomingData.data.isNotEmpty ? topUpcomingData.data.take(10).toList() : [];
+        topMovies = moviesData.data.isNotEmpty ? moviesData.data.take(10).toList() : [];
+        recentlyUpdated = subbedData.data.isNotEmpty ? subbedData.data.take(10).toList() : [];
+        hindiAnime = hindiData.data.isNotEmpty ? hindiData.data.take(10).toList() : [];
         isLoading = false;
+        _retryCount = 0; // Reset retry count on success
       });
     } catch (e) {
+      // Silent retry mechanism
+      if (_retryCount < _maxRetries) {
+        _retryCount++;
+        print('Retry attempt $_retryCount/$_maxRetries');
+        await Future.delayed(Duration(seconds: 2));
+        _loadHomeData();
+        return;
+      }
+      
       setState(() => isLoading = false);
       
       // Navigate to appropriate error page
@@ -241,25 +254,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return SliverToBoxAdapter(
       child: Container(
         height: 300, // Reduced from 400 to 300
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                physics: BouncingScrollPhysics(),
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                  _restartAutoSlide(); // Restart timer when user manually swipes
-                },
-                itemCount: featuredAnime.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _stopAutoSlide();
-                      // TODO: Navigate to anime details
-                      Future.delayed(Duration(seconds: 2), () {
-                        _startAutoSlide();
+        child: featuredAnime.isEmpty 
+          ? _buildFeaturedEmptyState()
+          : Column(
+              children: [
+                Expanded(
+                  child: PageView.builder(
+                    physics: BouncingScrollPhysics(),
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() => _currentPage = index);
+                      _restartAutoSlide(); // Restart timer when user manually swipes
+                    },
+                    itemCount: featuredAnime.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _stopAutoSlide();
+                          // TODO: Navigate to anime details
+                          Future.delayed(Duration(seconds: 2), () {
+                            _startAutoSlide();
                       });
                     },
                     child: _buildFeaturedCard(featuredAnime[index]),
@@ -271,6 +286,46 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _buildPageIndicators(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeaturedEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/fallback/notfound.png',
+            width: 100,
+            height: 100,
+            color: Colors.grey[600],
+          ),
+          SizedBox(height: 16),
+          Text(
+            'No featured content available',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 16,
+            ),
+          ),
+          SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: () {
+              _retryCount = 0;
+              _loadHomeData();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF8C00),
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            ),
+            child: Text(
+              'Retry',
+              style: TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -296,6 +351,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             Image.network(
               anime.poster ?? '',
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.asset(
+                  'assets/fallback/notfound.png',
+                  fit: BoxFit.cover,
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: Colors.grey[800],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF8C00),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                );
+              },
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: Colors.grey[800],
@@ -437,15 +510,55 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return SliverToBoxAdapter(
       child: Container(
         height: 200,
-        child: ListView.builder(
-          physics: BouncingScrollPhysics(),
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          itemCount: animeList.length,
-          itemBuilder: (context, index) {
-            return _buildAnimeCard(animeList[index]);
-          },
-        ),
+        child: animeList.isEmpty 
+          ? _buildEmptyState()
+          : ListView.builder(
+              physics: BouncingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              itemCount: animeList.length,
+              itemBuilder: (context, index) {
+                return _buildAnimeCard(animeList[index]);
+              },
+            ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/fallback/notfound.png',
+            width: 80,
+            height: 80,
+            color: Colors.grey[600],
+          ),
+          SizedBox(height: 12),
+          Text(
+            'No content available',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 14,
+            ),
+          ),
+          SizedBox(height: 8),
+          TextButton(
+            onPressed: () {
+              _retryCount = 0;
+              _loadHomeData();
+            },
+            child: Text(
+              'Retry',
+              style: TextStyle(
+                color: Color(0xFFFF8C00),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -483,6 +596,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: Image.network(
                       anime.poster ?? '',
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/fallback/notfound.png',
+                          fit: BoxFit.cover,
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: Colors.grey[800],
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF8C00),
+                              strokeWidth: 1.5,
+                            ),
+                          ),
+                        );
+                      },
                       width: double.infinity,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
