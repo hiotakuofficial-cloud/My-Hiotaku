@@ -100,20 +100,120 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   }
 
   Widget _buildLoadingState() {
-    return Center(
+    return Container(
+      color: Color(0xFF121212),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            color: Color(0xFFFF8C00),
-            strokeWidth: 3,
+          // Header with back button during loading
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Text(
+                    'Loading Details...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          SizedBox(height: 20),
-          Text(
-            'Loading details...',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 16,
+          
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Loading animation
+                  Container(
+                    width: 80,
+                    height: 80,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF8C00),
+                      strokeWidth: 4,
+                    ),
+                  ),
+                  
+                  SizedBox(height: 24),
+                  
+                  Text(
+                    'Fetching anime details...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  
+                  SizedBox(height: 8),
+                  
+                  Text(
+                    'Please wait while we load the information',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                  
+                  SizedBox(height: 32),
+                  
+                  // Show basic info while loading
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 40),
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          widget.title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Type: ${widget.animeType}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -122,41 +222,171 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   }
 
   Widget _buildErrorState() {
-    return Center(
+    return Container(
+      color: Color(0xFF121212),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 64,
-            color: Colors.red.withOpacity(0.7),
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Failed to load details',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          // Header with back button
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Text(
+                    'Error Loading Details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            error ?? 'Unknown error occurred',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 14,
+          
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.error_outline_rounded,
+                        size: 40,
+                        color: Colors.red[300],
+                      ),
+                    ),
+                    
+                    SizedBox(height: 24),
+                    
+                    Text(
+                      'Failed to Load Details',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    
+                    SizedBox(height: 12),
+                    
+                    Text(
+                      error ?? 'Unable to fetch anime details at the moment',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    
+                    SizedBox(height: 32),
+                    
+                    // Retry button
+                    Container(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: _loadAnimeDetails,
+                        icon: Icon(Icons.refresh_rounded, size: 20),
+                        label: Text(
+                          'Try Again',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFFF8C00),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    SizedBox(height: 16),
+                    
+                    // Show basic info as fallback
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            widget.title,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Type: ${widget.animeType}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 14,
+                            ),
+                          ),
+                          if (widget.description.isNotEmpty) ...[
+                            SizedBox(height: 12),
+                            Text(
+                              widget.description,
+                              textAlign: TextAlign.center,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 12,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _loadAnimeDetails,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF8C00),
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Retry'),
           ),
         ],
       ),

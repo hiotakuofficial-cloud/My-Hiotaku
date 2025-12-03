@@ -12,47 +12,61 @@ class DetailsHandler {
     try {
       Map<String, dynamic> rawData;
       
+      print('🔍 Getting details for: $animeId (Type: $animeType)');
+      
       // Determine API based on anime type
       if (animeType.toLowerCase().contains('hindi') || 
           animeType.toLowerCase().contains('dubbed')) {
         // Use Hindi API
+        print('📱 Using Hindi API');
         rawData = await ApiService.getHindiAnimeDetails(animeId);
         return _parseHindiDetails(rawData, animeId, title, poster);
       } else {
         // Use English API
+        print('📱 Using English API');
         rawData = await ApiService.getAnimeDetails(animeId);
         return _parseEnglishDetails(rawData, animeId, title, poster);
       }
     } catch (e) {
+      print('❌ Details Handler Error: $e');
       throw Exception('Failed to get anime details: $e');
     }
   }
 
   // Parse English API response
   static AnimeDetailsResponse _parseEnglishDetails(
-    Map<String, dynamic> data,
+    Map<String, dynamic> response,
     String animeId,
     String? fallbackTitle,
     String? fallbackPoster,
   ) {
     try {
-      // English API structure: direct object with anime details
-      return AnimeDetailsResponse(
-        id: animeId,
-        title: data['title'] ?? fallbackTitle ?? 'Unknown Title',
-        poster: data['poster'] ?? data['image'] ?? fallbackPoster ?? '',
-        description: data['description'] ?? data['synopsis'] ?? 'No description available.',
-        genres: _parseGenres(data['genres']),
-        rating: _parseRating(data['rating']),
-        year: data['year']?.toString() ?? data['release_year']?.toString() ?? 'Unknown',
-        status: data['status'] ?? 'Unknown',
-        episodes: data['episodes']?.toString() ?? 'Unknown',
-        duration: data['duration'] ?? 'Unknown',
-        studio: data['studio'] ?? 'Unknown',
-        type: 'English',
-        source: 'english_api',
-      );
+      print('🔧 Parsing English API response: $response');
+      
+      // English API structure: { "success": true, "data": {...} }
+      if (response['success'] == true && response['data'] != null) {
+        final data = response['data'] as Map<String, dynamic>;
+        
+        return AnimeDetailsResponse(
+          id: animeId,
+          title: data['title'] ?? fallbackTitle ?? 'Unknown Title',
+          poster: data['poster'] ?? fallbackPoster ?? '',
+          description: data['synopsis'] ?? data['description'] ?? 'No description available.',
+          genres: _parseGenres(data['genre']),
+          rating: _parseRating(data['mal_score']),
+          year: _parseYear(data['aired']),
+          status: data['status'] ?? 'Unknown',
+          episodes: data['episodes']?.toString() ?? 'Unknown',
+          duration: data['duration'] ?? 'Unknown',
+          studio: data['studio'] ?? 'Unknown',
+          type: 'English',
+          source: 'english_api',
+        );
+      } else {
+        throw Exception('Invalid English API response structure');
+      }
     } catch (e) {
+      print('❌ English parsing error: $e');
       // Fallback with provided data
       return AnimeDetailsResponse(
         id: animeId,
@@ -80,23 +94,26 @@ class DetailsHandler {
     String? fallbackPoster,
   ) {
     try {
-      // Hindi API structure: may have different field names
+      print('🔧 Parsing Hindi API response: $data');
+      
+      // Hindi API structure: direct object with anime details
       return AnimeDetailsResponse(
         id: animeId,
         title: data['title'] ?? data['name'] ?? fallbackTitle ?? 'Unknown Title',
-        poster: data['thumbnail'] ?? data['poster'] ?? data['image'] ?? fallbackPoster ?? '',
-        description: data['description'] ?? data['synopsis'] ?? data['plot'] ?? 'No description available.',
-        genres: _parseGenres(data['genres'] ?? data['category']),
-        rating: _parseRating(data['rating'] ?? data['imdb_rating']),
-        year: data['year']?.toString() ?? data['release_year']?.toString() ?? 'Unknown',
-        status: data['status'] ?? 'Completed',
-        episodes: data['episodes']?.toString() ?? data['total_episodes']?.toString() ?? 'Unknown',
-        duration: data['duration'] ?? 'Unknown',
-        studio: data['studio'] ?? 'Unknown',
+        poster: data['thumbnail'] ?? fallbackPoster ?? '',
+        description: data['synopsis'] ?? data['description'] ?? 'No description available.',
+        genres: _parseGenres(data['genres']),
+        rating: 0.0, // Hindi API doesn't provide rating
+        year: 'Unknown', // Hindi API doesn't provide year
+        status: 'Completed',
+        episodes: 'Unknown',
+        duration: 'Unknown',
+        studio: 'Unknown',
         type: 'Hindi Dubbed',
         source: 'hindi_api',
       );
     } catch (e) {
+      print('❌ Hindi parsing error: $e');
       // Fallback with provided data
       return AnimeDetailsResponse(
         id: animeId,
@@ -122,10 +139,13 @@ class DetailsHandler {
     
     if (genres is String) {
       // Handle comma-separated string
-      return genres.split(',').map((g) => g.trim()).where((g) => g.isNotEmpty).toList();
+      if (genres.toLowerCase().contains('hindi dubbed')) {
+        return ['Hindi Dubbed', 'Anime'];
+      }
+      return genres.split(',').map((g) => g.trim()).where((g) => g.isNotEmpty).take(5).toList();
     } else if (genres is List) {
       // Handle array of strings
-      return genres.map((g) => g.toString().trim()).where((g) => g.isNotEmpty).toList();
+      return genres.map((g) => g.toString().trim()).where((g) => g.isNotEmpty).take(5).toList();
     }
     
     return ['Unknown'];
@@ -146,6 +166,18 @@ class DetailsHandler {
     }
     
     return 0.0;
+  }
+
+  // Parse year from aired string
+  static String _parseYear(dynamic aired) {
+    if (aired == null) return 'Unknown';
+    
+    String airedStr = aired.toString();
+    // Extract year from "Oct 20, 1999 to ?" format
+    RegExp yearRegex = RegExp(r'\b(19|20)\d{2}\b');
+    Match? match = yearRegex.firstMatch(airedStr);
+    
+    return match?.group(0) ?? 'Unknown';
   }
 
   // Get episodes list based on anime type
