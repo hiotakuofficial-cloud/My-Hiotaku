@@ -356,11 +356,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Show avatar selection bottom sheet
   void _showAvatarSelectionSheet() {
     String tempSelectedGender = _selectedGender;
+    bool isUpdating = false; // Loading state
     
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: false, // Prevent dismiss during loading
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           height: MediaQuery.of(context).size.height * 0.7,
@@ -384,7 +386,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(height: 20),
               
               Text(
-                'Choose Avatar',
+                isUpdating ? 'Updating Avatar...' : 'Choose Avatar',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -392,25 +394,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               
+              if (isUpdating) ...[
+                SizedBox(height: 20),
+                CircularProgressIndicator(
+                  color: Color(0xFFFF8C00),
+                  strokeWidth: 3,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Please wait...',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+              
               SizedBox(height: 30),
               
-              // TODO: Gender toggle
+              // TODO: Gender toggle - disabled during loading
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withOpacity(isUpdating ? 0.05 : 0.1),
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setModalState(() => tempSelectedGender = 'male'),
+                        onTap: isUpdating ? null : () => setModalState(() => tempSelectedGender = 'male'),
                         child: Container(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: tempSelectedGender == 'male' 
-                                ? Color(0xFFFF8C00) 
+                                ? Color(0xFFFF8C00).withOpacity(isUpdating ? 0.5 : 1.0)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(25),
                           ),
@@ -418,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Text(
                               'Male',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Colors.white.withOpacity(isUpdating ? 0.5 : 1.0),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -428,12 +446,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setModalState(() => tempSelectedGender = 'female'),
+                        onTap: isUpdating ? null : () => setModalState(() => tempSelectedGender = 'female'),
                         child: Container(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: tempSelectedGender == 'female' 
-                                ? Color(0xFFFF8C00) 
+                                ? Color(0xFFFF8C00).withOpacity(isUpdating ? 0.5 : 1.0)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(25),
                           ),
@@ -441,7 +459,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Text(
                               'Female',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Colors.white.withOpacity(isUpdating ? 0.5 : 1.0),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -455,50 +473,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
               
               SizedBox(height: 30),
               
-              // TODO: Avatar grid
+              // TODO: Avatar grid - disabled during loading
               Expanded(
                 child: GridView.builder(
-                  physics: BouncingScrollPhysics(), // Added elastic physics
+                  physics: isUpdating ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                   ),
-                  itemCount: 12, // Updated to show 12 images
+                  itemCount: 12,
                   itemBuilder: (context, index) {
                     String avatarId = '${tempSelectedGender}${index + 1}.png';
                     String avatarPath = 'assets/profile/$tempSelectedGender/$avatarId';
                     
                     return GestureDetector(
-                      onTap: () => _selectAvatar(avatarId, avatarPath),
+                      onTap: isUpdating ? null : () => _selectAvatar(avatarId, avatarPath, setModalState),
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: avatarUrl == avatarPath 
-                                ? Color(0xFFFF8C00) 
-                                : Colors.white.withOpacity(0.2),
+                                ? Color(0xFFFF8C00).withOpacity(isUpdating ? 0.5 : 1.0)
+                                : Colors.white.withOpacity(isUpdating ? 0.1 : 0.2),
                             width: 3,
                           ),
                         ),
                         child: ClipOval(
-                          child: Image.asset(
-                            avatarPath,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey.withOpacity(0.3),
-                                ),
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white.withOpacity(0.5),
-                                  size: 40,
-                                ),
-                              );
-                            },
+                          child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(
+                              Colors.black.withOpacity(isUpdating ? 0.5 : 0.0),
+                              BlendMode.darken,
+                            ),
+                            child: Image.asset(
+                              avatarPath,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.grey.withOpacity(0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white.withOpacity(0.5),
+                                    size: 40,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -515,19 +539,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
   
-  // TODO: Select avatar and save to Supabase
-  Future<void> _selectAvatar(String avatarId, String avatarPath) async {
+  // TODO: Select avatar and save to Supabase with timeout
+  Future<void> _selectAvatar(String avatarId, String avatarPath, Function setModalState) async {
     try {
-      // DEBUG: Show what we're trying to save
+      // Set loading state
+      setModalState(() {});
+      
+      // Show loading toast
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Saving: $avatarId'),
-          duration: Duration(seconds: 1),
-          backgroundColor: Colors.blue,
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('Updating avatar...'),
+            ],
+          ),
+          duration: Duration(seconds: 10),
+          backgroundColor: Color(0xFFFF8C00),
         ),
       );
       
-      final success = await ProfileHandler.updateAvatar(avatarId);
+      // Add timeout of 10 seconds
+      final success = await Future.any([
+        ProfileHandler.updateAvatar(avatarId),
+        Future.delayed(Duration(seconds: 10), () => false), // Timeout after 10s
+      ]);
       
       if (success && mounted) {
         setState(() {
@@ -537,41 +581,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
         
         Navigator.pop(context);
         
+        // Clear loading toast
+        ScaffoldMessenger.of(context).clearSnackBars();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Avatar updated successfully!'),
-            backgroundColor: Color(0xFFFF8C00),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Avatar updated successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
           ),
         );
-        
-        // DEBUG: Show what was saved
-        Future.delayed(Duration(seconds: 1), () {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Saved: $avatarId, Path: $avatarPath'),
-                duration: Duration(seconds: 2),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        });
       } else {
+        // Clear loading toast
+        ScaffoldMessenger.of(context).clearSnackBars();
+        
+        // Reset loading state
+        setModalState(() {});
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update avatar - Check connection'),
+            content: Row(
+              children: [
+                Icon(Icons.wifi_off, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Weak network or timeout. Please try again.'),
+                ),
+              ],
+            ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _selectAvatar(avatarId, avatarPath, setModalState),
+            ),
           ),
         );
       }
     } catch (e) {
       print('Select avatar error: $e');
+      
+      // Clear loading toast
+      ScaffoldMessenger.of(context).clearSnackBars();
+      
+      // Reset loading state
+      setModalState(() {});
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text('Connection error. Check your internet.'),
+              ),
+            ],
+          ),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
         ),
       );
     }
