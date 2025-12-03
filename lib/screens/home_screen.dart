@@ -98,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         isLoading = false;
       });
     } catch (e) {
-      print('Error loading home data: $e');
       setState(() => isLoading = false);
     }
   }
