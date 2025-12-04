@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'handler/player_handler.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String episodeId;
   final String animeTitle;
   final int episodeNumber;
   final String language;
+  final String? episodeTitle;
 
   const VideoPlayerScreen({
     Key? key,
@@ -14,6 +16,7 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.animeTitle,
     required this.episodeNumber,
     this.language = 'sub',
+    this.episodeTitle,
   }) : super(key: key);
 
   @override
@@ -24,17 +27,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late WebViewController _controller;
   bool isLoading = true;
   bool hasError = false;
-  String currentServer = 's-2';
-  
-  // Server fallback list
-  final List<String> servers = ['s-2', 's-4'];
-  final List<String> domains = [
-    'https://megaplay.buzz',
-    'https://vidwish.live',
-  ];
-  
-  int currentServerIndex = 0;
   int currentDomainIndex = 0;
+  int currentServerIndex = 0;
 
   @override
   void initState() {
@@ -72,94 +66,53 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             });
           },
           onWebResourceError: (WebResourceError error) {
-            setState(() {
-              hasError = true;
-              isLoading = false;
-            });
-            _tryNextServer();
+            _handleError();
           },
         ),
       )
-      ..loadHtmlString(_buildIframeHtml());
+      ..loadHtmlString(_generatePlayerHtml());
   }
 
-  String _buildIframeHtml() {
-    final streamUrl = _buildStreamUrl();
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Video Player</title>
-        <style>
-            body { 
-                margin: 0; 
-                padding: 0; 
-                background: #000; 
-                overflow: hidden;
-            }
-            iframe { 
-                width: 100vw; 
-                height: 100vh; 
-                border: none; 
-                display: block;
-            }
-        </style>
-    </head>
-    <body>
-        <iframe src="$streamUrl" 
-                allowfullscreen 
-                webkitallowfullscreen 
-                mozallowfullscreen
-                onerror="this.src='${_buildFallbackUrl()}'">
-        </iframe>
-    </body>
-    </html>
-    ''';
+  String _generatePlayerHtml() {
+    return PlayerHandler.generateIframeHtml(
+      episodeId: widget.episodeId,
+      animeTitle: widget.animeTitle,
+      episodeNumber: widget.episodeNumber,
+      language: widget.language,
+      server: PlayerHandler.streamServers[currentServerIndex],
+      domainIndex: currentDomainIndex,
+    );
   }
 
-  String _buildFallbackUrl() {
-    final domain = domains[currentDomainIndex];
-    final fallbackServer = currentServerIndex < servers.length - 1 
-        ? servers[currentServerIndex + 1] 
-        : 's-4';
-    return '$domain/stream/$fallbackServer/${widget.episodeId}/${widget.language}';
-  }
-
-  String _buildStreamUrl() {
-    final domain = domains[currentDomainIndex];
-    final server = servers[currentServerIndex];
-    return '$domain/stream/$server/${widget.episodeId}/${widget.language}';
-  }
-
-  void _tryNextServer() {
-    if (currentServerIndex < servers.length - 1) {
+  void _handleError() {
+    if (currentServerIndex < PlayerHandler.streamServers.length - 1) {
       currentServerIndex++;
-    } else if (currentDomainIndex < domains.length - 1) {
+    } else if (currentDomainIndex < PlayerHandler.streamDomains.length - 1) {
       currentDomainIndex++;
       currentServerIndex = 0;
     } else {
-      // All servers failed
+      setState(() {
+        hasError = true;
+        isLoading = false;
+      });
       return;
     }
     
+    _retryWithNewServer();
+  }
+
+  void _retryWithNewServer() {
     setState(() {
       hasError = false;
       isLoading = true;
     });
-    
-    _controller.loadRequest(Uri.parse(_buildStreamUrl()));
+    _controller.loadHtmlString(_generatePlayerHtml());
   }
 
   void _retry() {
     currentServerIndex = 0;
     currentDomainIndex = 0;
-    setState(() {
-      hasError = false;
-      isLoading = true;
-    });
-    _controller.loadRequest(Uri.parse(_buildStreamUrl()));
+    _retryWithNewServer();
   }
 
   @override
