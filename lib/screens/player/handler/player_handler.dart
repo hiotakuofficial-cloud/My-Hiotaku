@@ -331,10 +331,9 @@ class PlayerHandler {
   
   // Get English stream URL from API
   static Future<String?> getEnglishStreamUrl(String animeId, String episodeId, String language) async {
-    final url = AppConfig.buildUrl('stream', {
+    final url = AppConfig.buildUrl('video', {
       'id': animeId,
-      'episode': episodeId,
-      'language': language,
+      'ep': episodeId,
     });
     
     try {
@@ -342,14 +341,34 @@ class PlayerHandler {
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
       
       print('📡 English Stream API Status: ${response.statusCode}');
-      print('📋 English Stream Response: ${response.body}');
+      print('📋 English Stream Response: ${response.body.substring(0, 300)}...');
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['success'] == true && data['streamUrl'] != null) {
-          final streamUrl = data['streamUrl'];
-          print('✅ English stream URL: $streamUrl');
-          return streamUrl;
+        if (data['success'] == true && data['sources'] != null) {
+          final sources = data['sources'];
+          
+          // Get sources for requested language (sub/dub)
+          if (sources[language] != null && sources[language] is List) {
+            final languageSources = sources[language] as List;
+            if (languageSources.isNotEmpty) {
+              final streamUrl = languageSources[0]['url'];
+              print('✅ English stream URL ($language): $streamUrl');
+              return streamUrl;
+            }
+          }
+          
+          // Fallback to first available language
+          for (String lang in ['sub', 'dub']) {
+            if (sources[lang] != null && sources[lang] is List) {
+              final langSources = sources[lang] as List;
+              if (langSources.isNotEmpty) {
+                final streamUrl = langSources[0]['url'];
+                print('✅ English stream URL (fallback $lang): $streamUrl');
+                return streamUrl;
+              }
+            }
+          }
         }
       }
       return null;
