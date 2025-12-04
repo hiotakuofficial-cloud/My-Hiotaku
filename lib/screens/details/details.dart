@@ -158,36 +158,79 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     }
   }
 
-  Future<void> _addToFavorites() async {
-    final result = await SupabaseHandler.addToFavorites(
-      userId: 'current_user_id', // TODO: Get real user ID
-      animeId: widget.animeId,
-      animeTitle: widget.title,
-      animeImage: _getBestPosterUrl(),
-    );
+  Future<void> _handleFavoriteToggle() async {
+    HapticFeedback.lightImpact();
     
-    if (result != null && mounted) {
-      setState(() {
-        isBookmarked = true;
-      });
-      _showSnackBar('Added to favorites! ❤️');
+    // Check if user is logged in
+    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      _showLoginRequiredDialog();
+      return;
+    }
+    
+    if (isBookmarked) {
+      // Show remove confirmation dialog
+      _showRemoveFromFavoritesDialog();
     } else {
+      // Add to favorites
+      await _addToFavorites();
+    }
+  }
+
+  Future<void> _addToFavorites() async {
+    try {
+      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) return;
+      
+      // Get Supabase user data
+      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      if (userData == null) return;
+      
+      final result = await SupabaseHandler.addToFavorites(
+        userId: userData['id'],
+        animeId: widget.animeId,
+        animeTitle: widget.title,
+        animeImage: _getBestPosterUrl(),
+      );
+      
+      if (result != null && mounted) {
+        setState(() {
+          isBookmarked = true;
+        });
+        _showSnackBar('Added to favorites! ❤️');
+      } else {
+        _showSnackBar('Failed to add to favorites');
+      }
+    } catch (e) {
+      print('❌ Error adding to favorites: $e');
       _showSnackBar('Failed to add to favorites');
     }
   }
 
   Future<void> _removeFromFavorites() async {
-    final success = await SupabaseHandler.removeFromFavorites(
-      userId: 'current_user_id', // TODO: Get real user ID
-      animeId: widget.animeId,
-    );
-    
-    if (success && mounted) {
-      setState(() {
-        isBookmarked = false;
-      });
-      _showSnackBar('Removed from favorites');
-    } else {
+    try {
+      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) return;
+      
+      // Get Supabase user data
+      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      if (userData == null) return;
+      
+      final success = await SupabaseHandler.removeFromFavorites(
+        userId: userData['id'],
+        animeId: widget.animeId,
+      );
+      
+      if (success && mounted) {
+        setState(() {
+          isBookmarked = false;
+        });
+        _showSnackBar('Removed from favorites');
+      } else {
+        _showSnackBar('Failed to remove from favorites');
+      }
+    } catch (e) {
+      print('❌ Error removing from favorites: $e');
       _showSnackBar('Failed to remove from favorites');
     }
   }
