@@ -36,3 +36,4 @@ flutter:
     - assets/fallback/
     - assets/icons/
     - assets/manifest.json
+  webview_flutter: ^4.4.2
