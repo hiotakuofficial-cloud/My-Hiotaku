@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../models/api_models.dart';
 import '../auth/handler/supabase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../player/video_player.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -1281,18 +1282,19 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                   SizedBox(height: 16),
                   
                   Text(
-                    'Coming Soon!',
+                    'Watch ${widget.title}',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   
                   SizedBox(height: 8),
                   
                   Text(
-                    'Video player feature will be available soon. Stay tuned!',
+                    'Select episode to start watching',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
@@ -1302,21 +1304,152 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                   
                   SizedBox(height: 20),
                   
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF8C00),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _playEpisode(1);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFFF8C00),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text('Episode 1'),
+                        ),
                       ),
-                    ),
-                    child: Text('Got it'),
+                      
+                      SizedBox(width: 12),
+                      
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showEpisodeList();
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Color(0xFFFF8C00)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'All Episodes',
+                            style: TextStyle(color: Color(0xFFFF8C00)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _playEpisode(int episodeNumber) {
+    // Use Death Note episode ID range (1464-1500)
+    final episodeId = (1463 + episodeNumber).toString();
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VideoPlayerScreen(
+          episodeId: episodeId,
+          animeTitle: widget.title,
+          episodeNumber: episodeNumber,
+          language: 'sub',
+        ),
+      ),
+    );
+  }
+
+  void _showEpisodeList() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Color(0xFF1E1E1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              SizedBox(height: 20),
+              
+              Text(
+                'Episodes',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              
+              SizedBox(height: 20),
+              
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 2,
+                  ),
+                  itemCount: 37, // Death Note episodes
+                  itemBuilder: (context, index) {
+                    final episodeNumber = index + 1;
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _playEpisode(episodeNumber);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$episodeNumber',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
         );
       },
     );
