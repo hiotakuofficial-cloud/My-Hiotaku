@@ -7,7 +7,7 @@ import '../../services/api_service.dart';
 import '../../models/api_models.dart';
 import '../auth/handler/supabase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../player/video_player.dart';
+import '../player/video_player_screen.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -1362,10 +1362,10 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
       context,
       MaterialPageRoute(
         builder: (context) => VideoPlayerScreen(
-          episodeId: episodeId,
+          animeId: widget.animeId ?? '1', // Use animeId from widget or default
           animeTitle: widget.title,
-          episodeNumber: episodeNumber,
-          language: 'sub',
+          isHindi: false, // Assuming English anime, adjust as needed
+          initialEpisode: episodeNumber,
         ),
       ),
     );
