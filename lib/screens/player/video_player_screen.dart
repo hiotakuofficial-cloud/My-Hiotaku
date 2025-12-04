@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'handler/player_handler.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -29,6 +30,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool isLoading = true;
   bool hasError = false;
   bool isPlayerReady = false;
+
+  void _showToast(String message, {bool isError = false}) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: isError ? Colors.red : Colors.green,
+      textColor: Colors.white,
+      fontSize: 14.0,
+    );
+    print(message); // Also log to console
+  }
 
   @override
   void initState() {
@@ -114,7 +127,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       ..addJavaScriptChannel(
         'playerReady',
         onMessageReceived: (JavaScriptMessage message) {
-          print('🎬 Player ready: ${message.message}');
+          _showToast('🎉 Player Ready!');
           setState(() {
             isPlayerReady = true;
             isLoading = false;
@@ -126,15 +139,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Future<void> _loadEpisodes() async {
     try {
+      _showToast('📺 Loading episodes for ${widget.animeTitle}...');
+      
       final episodeList = await PlayerHandler.getEpisodes(widget.animeId, widget.isHindi);
       setState(() {
         episodes = episodeList;
       });
       
+      if (episodeList.isEmpty) {
+        _showToast('❌ No episodes found', isError: true);
+        setState(() {
+          hasError = true;
+          isLoading = false;
+        });
+        return;
+      }
+      
+      _showToast('✅ Found ${episodeList.length} episodes');
+      
       // Load initial episode
       await _loadEpisode(currentEpisodeNumber);
     } catch (e) {
-      print('❌ Error loading episodes: $e');
+      _showToast('❌ Failed to load episodes: $e', isError: true);
       setState(() {
         hasError = true;
         isLoading = false;
@@ -144,10 +170,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Future<void> _loadEpisode(int episodeNumber) async {
     try {
-      print('🎬 Loading episode $episodeNumber for ${widget.animeTitle}');
-      print('   - Anime ID: ${widget.animeId}');
-      print('   - Is Hindi: ${widget.isHindi}');
-      print('   - Language: $currentLanguage');
+      _showToast('🎬 Loading Episode $episodeNumber...');
       
       setState(() {
         isLoading = true;
@@ -158,13 +181,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       final episode = PlayerHandler.getEpisodeByNumber(episodes, episodeNumber);
       if (episode == null) {
-        print('❌ Episode $episodeNumber not found in episodes list');
+        _showToast('❌ Episode $episodeNumber not found', isError: true);
         throw Exception('Episode $episodeNumber not found');
       }
 
-      print('✅ Episode found: ${episode.toString()}');
       final episodeId = episode['episode_id'].toString();
-      print('📺 Episode ID: $episodeId');
+      _showToast('📺 Episode ID: $episodeId');
+      
+      _showToast('🔄 Generating ${widget.isHindi ? 'Hindi' : 'English'} player...');
       
       final html = await PlayerHandler.generatePlayerHTML(
         animeId: widget.animeId,
@@ -175,15 +199,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         language: currentLanguage,
       );
 
-      print('📄 Generated HTML length: ${html.length} characters');
-      print('📋 HTML preview: ${html.substring(0, 200)}...');
+      if (html.contains('Error')) {
+        _showToast('❌ Player generation failed', isError: true);
+        throw Exception('Player HTML contains error');
+      }
 
+      _showToast('✅ Loading player in WebView...');
       await _controller.loadHtmlString(html);
-      print('✅ HTML loaded into WebView');
       
     } catch (e) {
-      print('❌ Error loading episode $episodeNumber: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
+      _showToast('❌ Episode loading failed: ${e.toString().substring(0, 50)}...', isError: true);
       setState(() {
         hasError = true;
         isLoading = false;
