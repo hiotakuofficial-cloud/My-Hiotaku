@@ -57,6 +57,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _initializePlayer() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0.4472.120 Mobile Safari/537.36')
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
@@ -79,7 +80,51 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(_buildStreamUrl()));
+      ..loadHtmlString(_buildIframeHtml());
+  }
+
+  String _buildIframeHtml() {
+    final streamUrl = _buildStreamUrl();
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Video Player</title>
+        <style>
+            body { 
+                margin: 0; 
+                padding: 0; 
+                background: #000; 
+                overflow: hidden;
+            }
+            iframe { 
+                width: 100vw; 
+                height: 100vh; 
+                border: none; 
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <iframe src="$streamUrl" 
+                allowfullscreen 
+                webkitallowfullscreen 
+                mozallowfullscreen
+                onerror="this.src='${_buildFallbackUrl()}'">
+        </iframe>
+    </body>
+    </html>
+    ''';
+  }
+
+  String _buildFallbackUrl() {
+    final domain = domains[currentDomainIndex];
+    final fallbackServer = currentServerIndex < servers.length - 1 
+        ? servers[currentServerIndex + 1] 
+        : 's-4';
+    return '$domain/stream/$fallbackServer/${widget.episodeId}/${widget.language}';
   }
 
   String _buildStreamUrl() {
