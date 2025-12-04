@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+    <!-- Dark background matching app theme #121212 -->
+    <item android:drawable="@color/dark_background" />
 </selector>
