@@ -601,7 +601,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           // Recommendations Section
           _buildRecommendationsSection(),
         ],
-        ],
       ),
     );
   }
