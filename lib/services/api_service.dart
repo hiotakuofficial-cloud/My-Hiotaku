@@ -351,6 +351,38 @@ class ApiService {
     }
   }
 
+  // Get recommendations based on anime ID
+  static Future<HomeResponse> getRecommendations(String animeId) async {
+    final cacheKey = 'recommendations_$animeId';
+    final cached = ApiCache.get<HomeResponse>(cacheKey);
+    if (cached != null) return cached;
+
+    // Use popular anime as recommendations for now
+    // In future, can be enhanced with ML-based recommendations
+    final url = AppConfig.buildUrl('popular', {'page': 1, 'limit': 10});
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final result = _parseHomeResponse(jsonData);
+        
+        // Cache recommendations for 6 hours (shorter than other data)
+        ApiCache.set(cacheKey, result, Duration(hours: 6));
+        return result;
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } on SocketException {
+      throw Exception('Network error: Check internet connection');
+    } on FormatException {
+      throw Exception('Invalid response format');
+    } catch (e) {
+      throw Exception('Failed to get recommendations: $e');
+    }
+  }
+
   // Get Hindi episode stream URL
   static Future<Map<String, dynamic>> getHindiStreamUrl(String animeId, String episodeId) async {
     final cacheKey = 'hindi_stream_${animeId}_$episodeId';

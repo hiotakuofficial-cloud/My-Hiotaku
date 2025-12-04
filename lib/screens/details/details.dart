@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'handler/details_handler.dart';
 import '../../services/api_service.dart';
+import '../../models/api_models.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -38,10 +39,15 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   String? error;
   String? fallbackPoster;
   
+  // Recommendations state
+  List<AnimeItem> recommendations = [];
+  bool isLoadingRecommendations = true;
+  
   @override
   void initState() {
     super.initState();
     _loadAnimeDetails();
+    _loadRecommendations();
   }
 
   Future<void> _loadAnimeDetails() async {
@@ -100,6 +106,29 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
       }
     } catch (e) {
       print('❌ Failed to fetch fallback poster: $e');
+    }
+  }
+
+  Future<void> _loadRecommendations() async {
+    try {
+      print('🔄 Loading recommendations for: ${widget.animeId}');
+      
+      final response = await ApiService.getRecommendations(widget.animeId);
+      
+      if (mounted) {
+        setState(() {
+          recommendations = response.data.take(6).toList(); // Limit to 6 items
+          isLoadingRecommendations = false;
+        });
+        print('✅ Loaded ${recommendations.length} recommendations');
+      }
+    } catch (e) {
+      print('❌ Failed to load recommendations: $e');
+      if (mounted) {
+        setState(() {
+          isLoadingRecommendations = false;
+        });
+      }
     }
   }
 
@@ -700,59 +729,113 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         
         Container(
           height: 200,
-          child: ListView.builder(
-            physics: BouncingScrollPhysics(),
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.only(right: 20),
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return _buildRecommendationCard(index);
-            },
-          ),
+          child: isLoadingRecommendations
+              ? _buildRecommendationsLoading()
+              : recommendations.isEmpty
+                  ? _buildNoRecommendations()
+                  : ListView.builder(
+                      physics: BouncingScrollPhysics(),
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.only(right: 20),
+                      itemCount: recommendations.length,
+                      itemBuilder: (context, index) {
+                        return _buildRecommendationCard(recommendations[index]);
+                      },
+                    ),
         ),
       ],
     );
   }
 
-  Widget _buildRecommendationCard(int index) {
-    // Sample recommendation data
-    List<Map<String, String>> recommendations = [
-      {
-        'title': 'Attack on Titan',
-        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/bcd84731a3eda4f4a306250769675065.jpg',
-        'rating': '9.0'
+  Widget _buildRecommendationsLoading() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return Container(
+          width: 120,
+          margin: EdgeInsets.only(right: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 140,
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF8C00),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 8),
+              Container(
+                height: 12,
+                width: 80,
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
+        );
       },
-      {
-        'title': 'Demon Slayer',
-        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/9cbcf87f54194742e7686119089478f8.jpg',
-        'rating': '8.7'
-      },
-      {
-        'title': 'Jujutsu Kaisen',
-        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/bd5ae1d387a59c5abcf5e1a6a616728c.jpg',
-        'rating': '8.9'
-      },
-      {
-        'title': 'My Hero Academia',
-        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/f58b0204c20ae3310f65ae7b8cb9987e.jpg',
-        'rating': '8.5'
-      },
-      {
-        'title': 'Tokyo Ghoul',
-        'image': 'https://cdn.noitatnemucod.net/thumbnail/300x400/100/65f92e6e315a931ef872da4b312442b8.jpg',
-        'rating': '8.3'
-      },
-    ];
+    );
+  }
 
-    final rec = recommendations[index];
-    
+  Widget _buildNoRecommendations() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.movie_outlined,
+            color: Colors.grey[600],
+            size: 48,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'No recommendations available',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecommendationCard(AnimeItem anime) {
     return Container(
       width: 120,
       margin: EdgeInsets.only(right: 12),
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
-          // TODO: Navigate to recommendation details
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AnimeDetailsPage(
+                title: anime.title,
+                poster: anime.poster ?? '',
+                description: anime.description ?? 'No description available.',
+                genres: (anime.type?.isNotEmpty ?? false) ? [anime.type!] : ['Unknown'],
+                rating: 0.0,
+                year: anime.year ?? 'Unknown',
+                animeId: anime.id,
+                animeType: anime.type ?? 'Unknown',
+              ),
+            ),
+          );
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -773,7 +856,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
-                  rec['image']!,
+                  anime.poster ?? '',
                   fit: BoxFit.cover,
                   width: double.infinity,
                   errorBuilder: (context, error, stackTrace) {
@@ -786,6 +869,22 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                       ),
                     );
                   },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: Colors.grey[800],
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFF8C00),
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -794,7 +893,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
             
             // Title
             Text(
-              rec['title']!,
+              anime.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -806,24 +905,15 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
             
             SizedBox(height: 4),
             
-            // Rating
-            Row(
-              children: [
-                Icon(
-                  Icons.star_rounded,
-                  color: Color(0xFFFF8C00),
-                  size: 14,
+            // Type/Genre
+            if (anime.type?.isNotEmpty == true)
+              Text(
+                anime.type!,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 10,
                 ),
-                SizedBox(width: 4),
-                Text(
-                  rec['rating']!,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
+              ),
           ],
         ),
       ),
