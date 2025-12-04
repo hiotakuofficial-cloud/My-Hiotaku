@@ -50,16 +50,31 @@ class PlayerHandler {
     final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=getep&id=$animeId&token=${AppConfig.apiToken}';
     
     try {
+      print('🔄 Fetching Hindi episodes from: $url');
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      
+      print('📡 Hindi API Response Status: ${response.statusCode}');
+      print('📋 Hindi API Response Body: ${response.body.substring(0, 200)}...');
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((episode) => {
-          'episode_number': int.parse(episode['episode']),
-          'episode_id': episode['episode_id'],
-          'title': episode['title'],
-          'anime_id': animeId,
+        print('✅ Hindi episodes count: ${data.length}');
+        
+        return data.map((episode) {
+          // Parse episode number - it comes as string like "01", "02"
+          final episodeStr = episode['episode'].toString();
+          final episodeNumber = int.tryParse(episodeStr) ?? 1;
+          
+          return {
+            'episode_number': episodeNumber,
+            'episode_id': episode['episode_id'].toString(),
+            'title': episode['title'] ?? 'Episode $episodeNumber',
+            'anime_id': animeId,
+          };
         }).toList();
+      } else {
+        print('❌ Hindi API failed with status: ${response.statusCode}');
+        print('❌ Response: ${response.body}');
       }
       return [];
     } catch (e) {
@@ -322,11 +337,19 @@ class PlayerHandler {
     final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=playep&id=$animeId&ep=$episodeNumber&token=${AppConfig.apiToken}';
     
     try {
+      print('🔄 Getting Hindi stream URL from: $url');
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      
+      print('📡 Hindi Stream API Status: ${response.statusCode}');
+      print('📋 Hindi Stream Response: ${response.body}');
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['streamUrl'];
+        final streamUrl = data['streamUrl'];
+        print('✅ Hindi stream URL: $streamUrl');
+        return streamUrl;
+      } else {
+        print('❌ Hindi stream API failed: ${response.statusCode}');
       }
       return null;
     } catch (e) {
