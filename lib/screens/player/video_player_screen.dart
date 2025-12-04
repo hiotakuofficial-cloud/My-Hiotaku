@@ -43,6 +43,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent('Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36')
+      ..enableZoom(false)
+      ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
@@ -56,12 +58,56 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             setState(() {
               isLoading = false;
             });
+            
+            // Inject JavaScript to handle video player issues
+            _controller.runJavaScript('''
+              // Fix video player stuck issues
+              document.addEventListener('click', function(e) {
+                console.log('Click detected:', e.target);
+              });
+              
+              // Auto-play fix
+              setTimeout(function() {
+                const videos = document.querySelectorAll('video');
+                videos.forEach(function(video) {
+                  video.setAttribute('playsinline', 'true');
+                  video.setAttribute('webkit-playsinline', 'true');
+                  video.muted = false;
+                  
+                  video.addEventListener('loadstart', function() {
+                    console.log('Video loading started');
+                  });
+                  
+                  video.addEventListener('canplay', function() {
+                    console.log('Video can play');
+                  });
+                  
+                  video.addEventListener('error', function(e) {
+                    console.log('Video error:', e);
+                  });
+                });
+              }, 2000);
+              
+              // Prevent page freeze
+              document.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+              }, true);
+              
+              document.addEventListener('touchend', function(e) {
+                e.stopPropagation();
+              }, true);
+            ''');
           },
           onWebResourceError: (WebResourceError error) {
+            print('❌ WebView error: ${error.description}');
             setState(() {
               isLoading = false;
               hasError = true;
             });
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            // Allow all navigation for video player
+            return NavigationDecision.navigate;
           },
         ),
       )

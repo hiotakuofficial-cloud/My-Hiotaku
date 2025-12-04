@@ -118,17 +118,68 @@ class PlayerHandler {
           <title>$animeTitle - Episode $episodeNumber (Hindi)</title>
           <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
-              body { background: #000; overflow: hidden; }
-              iframe { width: 100vw; height: 100vh; border: none; }
+              body { 
+                  background: #000; 
+                  overflow: hidden;
+                  -webkit-touch-callout: none;
+                  -webkit-user-select: none;
+                  -khtml-user-select: none;
+                  -moz-user-select: none;
+                  -ms-user-select: none;
+                  user-select: none;
+              }
+              iframe { 
+                  width: 100vw; 
+                  height: 100vh; 
+                  border: none;
+                  pointer-events: auto;
+              }
+              .loading {
+                  position: absolute;
+                  top: 50%;
+                  left: 50%;
+                  transform: translate(-50%, -50%);
+                  color: white;
+                  font-family: Arial, sans-serif;
+                  z-index: 10;
+              }
           </style>
       </head>
       <body>
-          <iframe src="$streamUrl" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>
+          <div class="loading" id="loading">Loading Hindi video...</div>
+          
+          <iframe id="videoFrame" 
+                  src="$streamUrl" 
+                  allowfullscreen 
+                  webkitallowfullscreen 
+                  mozallowfullscreen
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-top-navigation allow-presentation">
+          </iframe>
           
           <script>
               console.log("🇮🇳 Hindi Player Ready");
               console.log("📺 $animeTitle - Episode $episodeNumber");
+              console.log("🎬 Stream URL: $streamUrl");
               
+              // Hide loading when iframe loads
+              document.getElementById('videoFrame').onload = function() {
+                  document.getElementById('loading').style.display = 'none';
+                  console.log("✅ Hindi video iframe loaded");
+              };
+              
+              // Handle iframe errors
+              document.getElementById('videoFrame').onerror = function() {
+                  document.getElementById('loading').innerHTML = 'Failed to load video';
+                  console.log("❌ Hindi video iframe failed");
+              };
+              
+              // Prevent page freeze on touch
+              document.addEventListener('touchstart', function(e) {
+                  console.log('Touch detected on Hindi player');
+              }, { passive: true });
+              
+              // Notify Flutter
               if (window.flutter_inappwebview) {
                   window.flutter_inappwebview.callHandler('playerReady', {
                       type: 'hindi',
@@ -136,6 +187,11 @@ class PlayerHandler {
                       title: '$animeTitle'
                   });
               }
+              
+              // Auto-hide loading after 10 seconds
+              setTimeout(function() {
+                  document.getElementById('loading').style.display = 'none';
+              }, 10000);
           </script>
       </body>
       </html>
@@ -188,6 +244,12 @@ class PlayerHandler {
                 padding: 0;
                 background: #000;
                 overflow: hidden;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
             }
             
             .mg-3mb3d {
@@ -203,6 +265,15 @@ class PlayerHandler {
             .fix-area {
                 width: 100% !important;
                 height: 100% !important;
+            }
+            
+            /* Prevent stuck issues */
+            video {
+                pointer-events: auto !important;
+            }
+            
+            .jw-media {
+                pointer-events: auto !important;
             }
         </style>
         
