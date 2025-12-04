@@ -353,10 +353,6 @@ class ApiService {
 
   // Get recommendations based on anime ID
   static Future<HomeResponse> getRecommendations(String animeId) async {
-    final cacheKey = 'recommendations_$animeId';
-    final cached = ApiCache.get<HomeResponse>(cacheKey);
-    if (cached != null) return cached;
-
     // Use popular anime as recommendations for now
     // In future, can be enhanced with ML-based recommendations
     final url = AppConfig.buildUrl('popular', {'page': 1, 'limit': 10});
@@ -368,9 +364,6 @@ class ApiService {
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
         final result = _parseHomeResponse(jsonData);
-        
-        // Cache recommendations for 6 hours (shorter than other data)
-        ApiCache.set(cacheKey, result, Duration(hours: 6));
         return result;
       }
       throw Exception('HTTP ${response.statusCode}');
