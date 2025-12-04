@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../services/api_service.dart';
+import '../../../config.dart';
 
 class PlayerHandler {
   
@@ -29,6 +30,104 @@ class PlayerHandler {
       print('❌ Error fetching episodes: $e');
       return [];
     }
+  }
+  
+  // Get Hindi episodes
+  static Future<List<Map<String, dynamic>>> getHindiEpisodes(String animeId) async {
+    try {
+      final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=getep&id=$animeId&token=${AppConfig.apiToken}';
+      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((episode) => {
+          'episode_number': int.parse(episode['episode']),
+          'episode_id': episode['episode_id'],
+          'title': episode['title'],
+          'anime_id': animeId,
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      print('❌ Error fetching Hindi episodes: $e');
+      return [];
+    }
+  }
+  
+  // Get Hindi video stream URL
+  static Future<String?> getHindiStreamUrl(String animeId, int episodeNumber) async {
+    try {
+      final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=playep&id=$animeId&ep=$episodeNumber&token=${AppConfig.apiToken}';
+      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['streamUrl'];
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error getting Hindi stream URL: $e');
+      return null;
+    }
+  }
+  
+  // Generate simple Hindi video HTML
+  static String generateHindiVideoHtml({
+    required String streamUrl,
+    required String animeTitle,
+    required int episodeNumber,
+  }) {
+    return '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>$animeTitle - Episode $episodeNumber (Hindi)</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                background: #000;
+                overflow: hidden;
+            }
+            
+            iframe {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+            }
+        </style>
+    </head>
+    <body>
+        <iframe src="$streamUrl" 
+                allowfullscreen
+                webkitallowfullscreen
+                mozallowfullscreen>
+        </iframe>
+        
+        <script>
+            console.log('🇮🇳 Hindi Video Player Ready');
+            console.log('📺 Playing: $animeTitle - Episode $episodeNumber');
+            console.log('🎬 Stream URL: $streamUrl');
+            
+            // Notify Flutter that player is ready
+            if (window.flutter_inappwebview) {
+                window.flutter_inappwebview.callHandler('playerReady', {
+                    type: 'hindi',
+                    animeTitle: '$animeTitle',
+                    episodeNumber: $episodeNumber,
+                    streamUrl: '$streamUrl'
+                });
+            }
+        </script>
+    </body>
+    </html>
+    ''';
   }
   
   // Build MegaPlay stream URL
@@ -198,6 +297,7 @@ class PlayerHandler {
                 // Notify Flutter that player is ready
                 if (window.flutter_inappwebview) {
                     window.flutter_inappwebview.callHandler('playerReady', {
+                        type: 'english',
                         episodeId: '$episodeId',
                         episodeNumber: $episodeNumber,
                         language: '$language'
@@ -283,7 +383,7 @@ class PlayerHandler {
   
   // Get language options
   static List<String> getLanguageOptions() {
-    return ['sub', 'dub'];
+    return ['sub', 'dub', 'hindi'];
   }
   
   // Generate episode title
