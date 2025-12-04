@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'handler/details_handler.dart';
+import '../../services/api_service.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -35,6 +36,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   bool isLoading = true;
   AnimeDetailsResponse? animeDetails;
   String? error;
+  String? fallbackPoster;
   
   @override
   void initState() {
@@ -70,6 +72,49 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         });
       }
     }
+  }
+
+  Future<void> _fetchFallbackPoster() async {
+    if (fallbackPoster != null) return; // Already fetched
+    
+    try {
+      print('🔄 Fetching fallback poster for ID: ${widget.animeId}');
+      
+      // Search for anime by ID in home API to get thumbnail
+      final homeResponse = await ApiService.searchAnime(widget.animeId, 1);
+      
+      if (homeResponse.data.isNotEmpty) {
+        final matchedAnime = homeResponse.data.firstWhere(
+          (anime) => anime.id == widget.animeId,
+          orElse: () => homeResponse.data.first,
+        );
+        
+        if (matchedAnime.poster?.isNotEmpty == true) {
+          if (mounted) {
+            setState(() {
+              fallbackPoster = matchedAnime.poster;
+            });
+            print('✅ Fallback poster found: ${matchedAnime.poster}');
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ Failed to fetch fallback poster: $e');
+    }
+  }
+
+  String _getBestPosterUrl() {
+    // Priority: API details > fallback > widget poster > empty
+    if (animeDetails?.poster?.isNotEmpty == true) {
+      return animeDetails!.poster;
+    }
+    if (fallbackPoster?.isNotEmpty == true) {
+      return fallbackPoster!;
+    }
+    if (widget.poster.isNotEmpty) {
+      return widget.poster;
+    }
+    return '';
   }
   
   @override
@@ -297,16 +342,32 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
             width: double.infinity,
             height: double.infinity,
             child: Image.network(
-              animeDetails?.poster ?? widget.poster,
+              _getBestPosterUrl(),
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
+                // Try to fetch fallback poster when image fails
+                _fetchFallbackPoster();
+                
                 return Container(
                   color: Colors.grey[800],
                   child: Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey[600],
-                      size: 64,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey[600],
+                          size: 64,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Loading fallback image...',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
