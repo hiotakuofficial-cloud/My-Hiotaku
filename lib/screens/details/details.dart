@@ -1450,8 +1450,4 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
       },
     );
   }
-        );
-      },
-    );
-  }
 }

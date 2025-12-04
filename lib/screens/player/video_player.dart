@@ -217,7 +217,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              'Server: ${domains[currentDomainIndex].split('//')[1]}/$currentServer',
+              'Server: ${PlayerHandler.streamDomains[currentDomainIndex].split('//')[1]}/${PlayerHandler.streamServers[currentServerIndex]}',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.5),
                 fontSize: 12,
