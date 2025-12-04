@@ -1,8 +1,23 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter/material.dart';
 import '../../../config.dart';
 
 class PlayerHandler {
+  
+  // Show toast helper
+  static void _showToast(String message, {bool isError = false}) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: isError ? Colors.red : Colors.green,
+      textColor: Colors.white,
+      fontSize: 12.0,
+    );
+    print(message);
+  }
   
   // Get episodes based on anime type
   static Future<List<Map<String, dynamic>>> getEpisodes(String animeId, bool isHindi) async {
@@ -47,14 +62,16 @@ class PlayerHandler {
     final url = AppConfig.buildHindiUrl('getep', {'id': animeId});
     
     try {
+      _showToast('🔄 Fetching Hindi episodes...');
       print('🔄 Fetching Hindi episodes from: $url');
+      
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
       
       print('📡 Hindi API Response Status: ${response.statusCode}');
-      print('📋 Hindi API Response Body: ${response.body.substring(0, 200)}...');
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        _showToast('✅ Found ${data.length} Hindi episodes');
         print('✅ Hindi episodes count: ${data.length}');
         
         return data.map((episode) {
@@ -70,11 +87,13 @@ class PlayerHandler {
           };
         }).toList();
       } else {
+        _showToast('❌ Hindi API failed: ${response.statusCode}', isError: true);
         print('❌ Hindi API failed with status: ${response.statusCode}');
         print('❌ Response: ${response.body}');
       }
       return [];
     } catch (e) {
+      _showToast('❌ Hindi episodes error: $e', isError: true);
       print('❌ Error fetching Hindi episodes: $e');
       return [];
     }
@@ -316,10 +335,13 @@ class PlayerHandler {
   
   // Get Hindi stream URL
   static Future<String?> getHindiStreamUrl(String animeId, int episodeNumber) async {
+    // Use episode number directly (not episode_id)
     final url = AppConfig.buildHindiUrl('playep', {'id': animeId, 'ep': episodeNumber});
     
     try {
+      _showToast('🔄 Getting Hindi stream...');
       print('🔄 Getting Hindi stream URL from: $url');
+      
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
       
       print('📡 Hindi Stream API Status: ${response.statusCode}');
@@ -327,14 +349,32 @@ class PlayerHandler {
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final streamUrl = data['streamUrl'];
-        print('✅ Hindi stream URL: $streamUrl');
-        return streamUrl;
+        
+        // Check for streamUrl first
+        if (data['streamUrl'] != null) {
+          final streamUrl = data['streamUrl'];
+          _showToast('✅ Hindi stream ready!');
+          print('✅ Hindi stream URL: $streamUrl');
+          return streamUrl;
+        }
+        
+        // Fallback to urls array
+        if (data['urls'] != null && data['urls'] is List && data['urls'].isNotEmpty) {
+          final streamUrl = data['urls'][0];
+          _showToast('✅ Hindi stream ready!');
+          print('✅ Hindi stream URL (from urls): $streamUrl');
+          return streamUrl;
+        }
+        
+        _showToast('❌ No Hindi stream found', isError: true);
+        print('❌ No stream URL found in response');
       } else {
+        _showToast('❌ Hindi stream failed: ${response.statusCode}', isError: true);
         print('❌ Hindi stream API failed: ${response.statusCode}');
       }
       return null;
     } catch (e) {
+      _showToast('❌ Hindi stream error: $e', isError: true);
       print('❌ Error getting Hindi stream URL: $e');
       return null;
     }
