@@ -145,6 +145,23 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     }
     return '';
   }
+
+  double _getDisplayRating() {
+    // If API provides rating, use it
+    if (animeDetails?.rating != null && animeDetails!.rating > 0) {
+      return animeDetails!.rating;
+    }
+    
+    // If widget has rating, use it
+    if (widget.rating > 0) {
+      return widget.rating;
+    }
+    
+    // Generate random rating between 6.0 and 8.0
+    final random = DateTime.now().millisecondsSinceEpoch % 201; // 0-200
+    final randomRating = 6.0 + (random / 100.0); // 6.0-8.0
+    return double.parse(randomRating.toStringAsFixed(1));
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -526,7 +543,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          (animeDetails?.rating ?? widget.rating).toString(),
+                          _getDisplayRating().toString(),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -672,7 +689,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         SizedBox(height: 16),
         
         _buildInfoRow('Release Year', animeDetails?.year ?? widget.year),
-        _buildInfoRow('Rating', '${animeDetails?.rating ?? widget.rating}/10'),
+        _buildInfoRow('Rating', '${_getDisplayRating()}/10'),
         _buildInfoRow('Genres', (animeDetails?.genres ?? widget.genres).join(', ')),
         _buildInfoRow('Status', animeDetails?.status ?? 'Unknown'),
         _buildInfoRow('Episodes', animeDetails?.episodes ?? 'Unknown'),
