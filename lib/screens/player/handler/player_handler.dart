@@ -89,10 +89,26 @@ class PlayerHandler {
     required bool isHindi,
     String language = 'sub',
   }) async {
-    if (isHindi) {
-      return await generateHindiPlayerHTML(animeId, episodeNumber, animeTitle);
-    } else {
-      return await generateEnglishPlayerHTML(animeId, episodeId, episodeNumber, animeTitle, language);
+    
+    print('🎬 Generating player HTML:');
+    print('   - Anime ID: $animeId');
+    print('   - Episode ID: $episodeId');
+    print('   - Episode Number: $episodeNumber');
+    print('   - Title: $animeTitle');
+    print('   - Is Hindi: $isHindi');
+    print('   - Language: $language');
+    
+    try {
+      if (isHindi) {
+        print('🇮🇳 Loading Hindi player...');
+        return await generateHindiPlayerHTML(animeId, episodeNumber, animeTitle);
+      } else {
+        print('🌐 Loading English player...');
+        return await generateEnglishPlayerHTML(animeId, episodeId, episodeNumber, animeTitle, language);
+      }
+    } catch (e) {
+      print('❌ Error in generatePlayerHTML: $e');
+      return generateErrorHTML('Failed to generate player: $e');
     }
   }
   
@@ -183,12 +199,17 @@ class PlayerHandler {
   // Generate English player HTML (Direct API-based)
   static Future<String> generateEnglishPlayerHTML(String animeId, String episodeId, int episodeNumber, String animeTitle, String language) async {
     try {
+      print('🔄 Getting English stream for: $animeId, episode: $episodeId, language: $language');
+      
       // Get English stream URL from API
       final streamUrl = await getEnglishStreamUrl(animeId, episodeId, language);
       
       if (streamUrl == null) {
+        print('❌ No English stream URL found');
         return generateErrorHTML('English episode not available');
       }
+      
+      print('✅ English stream URL found: $streamUrl');
       
       return '''
       <!DOCTYPE html>
@@ -206,10 +227,11 @@ class PlayerHandler {
                   -webkit-user-select: none;
                   user-select: none;
               }
-              .player-container {
-                  width: 100vw;
-                  height: 100vh;
-                  position: relative;
+              iframe { 
+                  width: 100vw; 
+                  height: 100vh; 
+                  border: none;
+                  pointer-events: auto;
               }
               .loading {
                   position: absolute;
@@ -237,55 +259,38 @@ class PlayerHandler {
           </style>
       </head>
       <body>
-          <div class="player-container">
-              <div class="loading" id="loading">
-                  <div class="spinner"></div>
-                  <p>Loading ${language.toUpperCase()} Episode $episodeNumber...</p>
-              </div>
-              
-              <div id="player"></div>
+          <div class="loading" id="loading">
+              <div class="spinner"></div>
+              <p>Loading ${language.toUpperCase()} Episode $episodeNumber...</p>
           </div>
+          
+          <iframe id="videoFrame" 
+                  src="$streamUrl" 
+                  allowfullscreen 
+                  webkitallowfullscreen 
+                  mozallowfullscreen
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-top-navigation allow-presentation">
+          </iframe>
           
           <script>
               console.log("🌐 English Player Ready");
               console.log("📺 $animeTitle - Episode $episodeNumber (${language.toUpperCase()})");
               console.log("🎬 Stream URL: $streamUrl");
               
-              // Load stream via fetch and create video element
-              async function loadStream() {
-                  try {
-                      // Create video element
-                      const video = document.createElement('video');
-                      video.src = '$streamUrl';
-                      video.controls = true;
-                      video.autoplay = true;
-                      video.style.width = '100%';
-                      video.style.height = '100%';
-                      video.style.backgroundColor = '#000';
-                      
-                      // Add video to player
-                      document.getElementById('player').appendChild(video);
-                      
-                      // Hide loading when video can play
-                      video.addEventListener('canplay', function() {
-                          document.getElementById('loading').style.display = 'none';
-                          console.log("✅ English video ready to play");
-                      });
-                      
-                      video.addEventListener('error', function(e) {
-                          console.log("❌ Video error:", e);
-                          document.getElementById('loading').innerHTML = '<p>Failed to load video</p>';
-                      });
-                      
-                  } catch (error) {
-                      console.log("❌ Stream loading error:", error);
-                      document.getElementById('loading').innerHTML = '<p>Stream not available</p>';
-                  }
-              }
+              // Hide loading when iframe loads
+              document.getElementById('videoFrame').onload = function() {
+                  document.getElementById('loading').style.display = 'none';
+                  console.log("✅ English video iframe loaded");
+              };
               
-              // Load stream on page ready
-              loadStream();
+              // Handle iframe errors
+              document.getElementById('videoFrame').onerror = function() {
+                  document.getElementById('loading').innerHTML = '<p>Failed to load video</p>';
+                  console.log("❌ English video iframe failed");
+              };
               
+              // Notify Flutter
               if (window.flutter_inappwebview) {
                   window.flutter_inappwebview.callHandler('playerReady', {
                       type: 'english',
@@ -294,11 +299,17 @@ class PlayerHandler {
                       title: '$animeTitle'
                   });
               }
+              
+              // Auto-hide loading after 15 seconds
+              setTimeout(function() {
+                  document.getElementById('loading').style.display = 'none';
+              }, 15000);
           </script>
       </body>
       </html>
       ''';
     } catch (e) {
+      print('❌ Error in generateEnglishPlayerHTML: $e');
       return generateErrorHTML('Failed to load English episode: $e');
     }
   }

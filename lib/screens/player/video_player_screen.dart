@@ -144,6 +144,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Future<void> _loadEpisode(int episodeNumber) async {
     try {
+      print('🎬 Loading episode $episodeNumber for ${widget.animeTitle}');
+      print('   - Anime ID: ${widget.animeId}');
+      print('   - Is Hindi: ${widget.isHindi}');
+      print('   - Language: $currentLanguage');
+      
       setState(() {
         isLoading = true;
         hasError = false;
@@ -153,10 +158,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       final episode = PlayerHandler.getEpisodeByNumber(episodes, episodeNumber);
       if (episode == null) {
-        throw Exception('Episode not found');
+        print('❌ Episode $episodeNumber not found in episodes list');
+        throw Exception('Episode $episodeNumber not found');
       }
 
+      print('✅ Episode found: ${episode.toString()}');
       final episodeId = episode['episode_id'].toString();
+      print('📺 Episode ID: $episodeId');
       
       final html = await PlayerHandler.generatePlayerHTML(
         animeId: widget.animeId,
@@ -167,9 +175,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         language: currentLanguage,
       );
 
+      print('📄 Generated HTML length: ${html.length} characters');
+      print('📋 HTML preview: ${html.substring(0, 200)}...');
+
       await _controller.loadHtmlString(html);
+      print('✅ HTML loaded into WebView');
+      
     } catch (e) {
-      print('❌ Error loading episode: $e');
+      print('❌ Error loading episode $episodeNumber: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
       setState(() {
         hasError = true;
         isLoading = false;
