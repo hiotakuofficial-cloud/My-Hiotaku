@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'handler/details_handler.dart';
 import '../../services/api_service.dart';
 import '../../models/api_models.dart';
+import '../../services/supabase_handler.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -35,6 +36,7 @@ class AnimeDetailsPage extends StatefulWidget {
 class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   bool isBookmarked = false;
   bool isLoading = true;
+  bool isCheckingFavorite = true;
   AnimeDetailsResponse? animeDetails;
   String? error;
   String? fallbackPoster;
@@ -48,6 +50,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     super.initState();
     _loadAnimeDetails();
     _loadRecommendations();
+    _checkFavoriteStatus();
   }
 
   Future<void> _loadAnimeDetails() async {
@@ -107,6 +110,215 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     } catch (e) {
       print('❌ Failed to fetch fallback poster: $e');
     }
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    try {
+      final isFavorited = await SupabaseHandler.isAnimeFavorited(widget.animeId);
+      if (mounted) {
+        setState(() {
+          isBookmarked = isFavorited;
+          isCheckingFavorite = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error checking favorite status: $e');
+      if (mounted) {
+        setState(() {
+          isCheckingFavorite = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleFavoriteToggle() async {
+    HapticFeedback.lightImpact();
+    
+    // Check if user is logged in
+    if (!SupabaseHandler.isUserLoggedIn()) {
+      _showLoginRequiredDialog();
+      return;
+    }
+    
+    if (isBookmarked) {
+      // Show remove confirmation dialog
+      _showRemoveFromFavoritesDialog();
+    } else {
+      // Add to favorites
+      await _addToFavorites();
+    }
+  }
+
+  Future<void> _addToFavorites() async {
+    final success = await SupabaseHandler.addToFavorites(
+      animeId: widget.animeId,
+      animeTitle: widget.title,
+      animePoster: _getBestPosterUrl(),
+      animeType: widget.animeType,
+    );
+    
+    if (success && mounted) {
+      setState(() {
+        isBookmarked = true;
+      });
+      _showSnackBar('Added to favorites! ❤️');
+    } else {
+      _showSnackBar('Failed to add to favorites');
+    }
+  }
+
+  Future<void> _removeFromFavorites() async {
+    final success = await SupabaseHandler.removeFromFavorites(widget.animeId);
+    
+    if (success && mounted) {
+      setState(() {
+        isBookmarked = false;
+      });
+      _showSnackBar('Removed from favorites');
+    } else {
+      _showSnackBar('Failed to remove from favorites');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Color(0xFF1E1E1E),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _showLoginRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.login_rounded, color: Color(0xFFFF8C00), size: 48),
+                  SizedBox(height: 16),
+                  Text(
+                    'Login Required',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Please login first before saving animes to your favorites.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Cancel', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            // TODO: Navigate to login screen
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFFF8C00),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('Login', style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRemoveFromFavoritesDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.favorite_border, color: Colors.red[300], size: 48),
+                  SizedBox(height: 16),
+                  Text(
+                    'Remove from Favorites?',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Do you want to remove "${widget.title}" from your saved list?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Cancel', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _removeFromFavorites();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[600],
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('Remove', style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _loadRecommendations() async {
@@ -482,12 +694,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                   
                   // Bookmark Button
                   GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() {
-                        isBookmarked = !isBookmarked;
-                      });
-                    },
+                    onTap: _handleFavoriteToggle,
                     child: Container(
                       width: 40,
                       height: 40,
@@ -495,11 +702,23 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                         color: Colors.black.withOpacity(0.3),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                        color: isBookmarked ? Color(0xFFFF8C00) : Colors.white,
-                        size: 22,
-                      ),
+                      child: isCheckingFavorite
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFFF8C00),
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Image.asset(
+                              isBookmarked 
+                                  ? 'assets/icons/saved.png'
+                                  : 'assets/icons/unsaved.png',
+                              width: 22,
+                              height: 22,
+                              color: isBookmarked ? Color(0xFFFF8C00) : Colors.white,
+                            ),
                     ),
                   ),
                 ],
