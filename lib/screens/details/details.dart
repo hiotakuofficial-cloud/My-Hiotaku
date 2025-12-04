@@ -238,10 +238,37 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              message.contains('Added') ? Icons.favorite : 
+              message.contains('Removed') ? Icons.favorite_border :
+              Icons.error_outline,
+              color: message.contains('Added') ? Color(0xFFFF8C00) :
+                     message.contains('Removed') ? Colors.white :
+                     Colors.red[300],
+              size: 18,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
         backgroundColor: Color(0xFF1E1E1E),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: EdgeInsets.all(16),
+        duration: Duration(milliseconds: 2000),
+        elevation: 8,
       ),
     );
   }
@@ -770,8 +797,8 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                               isBookmarked 
                                   ? 'assets/icons/saved.png'
                                   : 'assets/icons/unsaved.png',
-                              width: 22,
-                              height: 22,
+                              width: 18,
+                              height: 18,
                               color: isBookmarked ? Color(0xFFFF8C00) : Colors.white,
                             ),
                     ),
