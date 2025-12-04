@@ -5,7 +5,8 @@ import 'dart:ui';
 import 'handler/details_handler.dart';
 import '../../services/api_service.dart';
 import '../../models/api_models.dart';
-import '../../services/supabase_handler.dart';
+import '../auth/handler/supabase.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -114,7 +115,33 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
 
   Future<void> _checkFavoriteStatus() async {
     try {
-      final isFavorited = await SupabaseHandler.isAnimeFavorited(widget.animeId);
+      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
+        if (mounted) {
+          setState(() {
+            isBookmarked = false;
+            isCheckingFavorite = false;
+          });
+        }
+        return;
+      }
+      
+      // Get Supabase user data
+      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      if (userData == null) {
+        if (mounted) {
+          setState(() {
+            isBookmarked = false;
+            isCheckingFavorite = false;
+          });
+        }
+        return;
+      }
+      
+      // Check if anime exists in user's favorites
+      final favorites = await SupabaseHandler.getUserFavorites(userData['id']);
+      final isFavorited = favorites?.any((fav) => fav['anime_id'] == widget.animeId) ?? false;
+      
       if (mounted) {
         setState(() {
           isBookmarked = isFavorited;
@@ -131,33 +158,15 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     }
   }
 
-  Future<void> _handleFavoriteToggle() async {
-    HapticFeedback.lightImpact();
-    
-    // Check if user is logged in
-    if (!SupabaseHandler.isUserLoggedIn()) {
-      _showLoginRequiredDialog();
-      return;
-    }
-    
-    if (isBookmarked) {
-      // Show remove confirmation dialog
-      _showRemoveFromFavoritesDialog();
-    } else {
-      // Add to favorites
-      await _addToFavorites();
-    }
-  }
-
   Future<void> _addToFavorites() async {
-    final success = await SupabaseHandler.addToFavorites(
+    final result = await SupabaseHandler.addToFavorites(
+      userId: 'current_user_id', // TODO: Get real user ID
       animeId: widget.animeId,
       animeTitle: widget.title,
-      animePoster: _getBestPosterUrl(),
-      animeType: widget.animeType,
+      animeImage: _getBestPosterUrl(),
     );
     
-    if (success && mounted) {
+    if (result != null && mounted) {
       setState(() {
         isBookmarked = true;
       });
@@ -168,7 +177,10 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   }
 
   Future<void> _removeFromFavorites() async {
-    final success = await SupabaseHandler.removeFromFavorites(widget.animeId);
+    final success = await SupabaseHandler.removeFromFavorites(
+      userId: 'current_user_id', // TODO: Get real user ID
+      animeId: widget.animeId,
+    );
     
     if (success && mounted) {
       setState(() {
