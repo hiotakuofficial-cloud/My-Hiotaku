@@ -376,6 +376,58 @@ class ApiService {
     }
   }
 
+  // Get English anime episodes
+  static Future<List<Map<String, dynamic>>> getEpisodes(String animeId) async {
+    final url = AppConfig.buildUrl('episodes', {'id': animeId});
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        
+        if (jsonData['success'] == true && jsonData['episodes'] != null) {
+          return List<Map<String, dynamic>>.from(jsonData['episodes']);
+        }
+        throw Exception('No episodes found');
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } on SocketException {
+      throw Exception('Network error: Check internet connection');
+    } on FormatException {
+      throw Exception('Invalid response format');
+    } catch (e) {
+      throw Exception('Failed to get episodes: $e');
+    }
+  }
+
+  // Get English episode stream URL
+  static Future<Map<String, dynamic>> getStreamUrl(String animeId, String episodeId) async {
+    final url = AppConfig.buildUrl('stream', {'id': animeId, 'episode': episodeId});
+    
+    try {
+      final response = await _client.get(Uri.parse(url), headers: AppConfig.defaultHeaders)
+          .timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        
+        if (jsonData['success'] == true) {
+          return jsonData;
+        }
+        throw Exception('Stream not available');
+      }
+      throw Exception('HTTP ${response.statusCode}');
+    } on SocketException {
+      throw Exception('Network error: Check internet connection');
+    } on FormatException {
+      throw Exception('Invalid response format');
+    } catch (e) {
+      throw Exception('Failed to get stream URL: $e');
+    }
+  }
+
   // Get Hindi episode stream URL
   static Future<Map<String, dynamic>> getHindiStreamUrl(String animeId, String episodeId) async {
     final cacheKey = 'hindi_stream_${animeId}_$episodeId';
