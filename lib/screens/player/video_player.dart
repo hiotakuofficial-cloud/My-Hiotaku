@@ -51,7 +51,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _initializePlayer() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setUserAgent('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0.4472.120 Mobile Safari/537.36')
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36')
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
@@ -70,11 +70,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           },
         ),
       )
+      ..addJavaScriptChannel(
+        'playerReady',
+        onMessageReceived: (JavaScriptMessage message) {
+          print('🎬 Player ready: ${message.message}');
+          setState(() {
+            isLoading = false;
+            hasError = false;
+          });
+        },
+      )
       ..loadHtmlString(_generatePlayerHtml());
   }
 
   String _generatePlayerHtml() {
-    return PlayerHandler.generateIframeHtml(
+    return PlayerHandler.generateWorkingMegaPlayHtml(
       episodeId: widget.episodeId,
       animeTitle: widget.animeTitle,
       episodeNumber: widget.episodeNumber,
