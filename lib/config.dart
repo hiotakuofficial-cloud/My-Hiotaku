@@ -2,6 +2,7 @@ class AppConfig {
   // API Configuration
   static const String animeApiBaseUrl = 'https://v1-w3sc.onrender.com';
   static const String animeApiEndpoint = '/api.php';
+  static const String hindiApiEndpoint = '/hindiv2.php';
   
   // App signature hash (base256 encoded)
   static const String app_hash_base256 = 'afaea552101228848de8f8c7f48a1b7d7a6a042a6094274eaa9d30cb64bf91a7';
@@ -40,6 +41,7 @@ class AppConfig {
   static String get homeEndpoint => '$animeApiBaseUrl$animeApiEndpoint';
   static String get searchEndpoint => '$animeApiBaseUrl$animeApiEndpoint';
   static String get detailsEndpoint => '$animeApiBaseUrl$animeApiEndpoint';
+  static String get hindiApiUrl => '$animeApiBaseUrl$hindiApiEndpoint';
   
   // Build URL with parameters and token
   static String buildUrl(String action, Map<String, dynamic> params) {
@@ -52,5 +54,18 @@ class AppConfig {
         .join('&');
     
     return '$animeApiBaseUrl$animeApiEndpoint?$queryParams';
+  }
+  
+  // Build Hindi API URL
+  static String buildHindiUrl(String action, Map<String, dynamic> params) {
+    final allParams = Map<String, dynamic>.from(params);
+    allParams['action'] = action;
+    allParams['token'] = app_hash_base256;
+    
+    final queryParams = allParams.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}')
+        .join('&');
+    
+    return '$animeApiBaseUrl$hindiApiEndpoint?$queryParams';
   }
 }

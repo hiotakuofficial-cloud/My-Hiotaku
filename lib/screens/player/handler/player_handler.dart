@@ -44,7 +44,7 @@ class PlayerHandler {
   
   // Get Hindi episodes
   static Future<List<Map<String, dynamic>>> getHindiEpisodes(String animeId) async {
-    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=getep&id=$animeId&token=${AppConfig.apiToken}';
+    final url = AppConfig.buildHindiUrl('getep', {'id': animeId});
     
     try {
       print('🔄 Fetching Hindi episodes from: $url');
@@ -316,7 +316,7 @@ class PlayerHandler {
   
   // Get Hindi stream URL
   static Future<String?> getHindiStreamUrl(String animeId, int episodeNumber) async {
-    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=playep&id=$animeId&ep=$episodeNumber&token=${AppConfig.apiToken}';
+    final url = AppConfig.buildHindiUrl('playep', {'id': animeId, 'ep': episodeNumber});
     
     try {
       print('🔄 Getting Hindi stream URL from: $url');
