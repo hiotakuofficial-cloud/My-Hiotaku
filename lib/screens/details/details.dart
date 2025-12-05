@@ -7,7 +7,7 @@ import '../../services/api_service.dart';
 import '../../models/api_models.dart';
 import '../auth/handler/supabase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../player/hindi/hindi_player.dart';
+import '../player/player/player.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -1355,16 +1355,85 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   }
 
   void _playEpisode(int episodeNumber) {
-    // Navigate to Hindi player
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HindiPlayerScreen(
-          animeId: widget.animeId ?? '26', // Default to Naruto ID
-          animeTitle: widget.title,
-          initialEpisode: episodeNumber.toString(),
-        ),
-      ),
+    // Show language selection dialog
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Language',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Hindi Option
+              ListTile(
+                leading: const Text('🇮🇳', style: TextStyle(fontSize: 28)),
+                title: const Text(
+                  'Hindi Dubbed',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                subtitle: const Text(
+                  'Watch in Hindi language',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PlayerScreen(
+                        animeId: widget.animeId ?? '26', // Default to Naruto
+                        animeTitle: widget.title,
+                        initialEpisode: episodeNumber,
+                        isHindi: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              
+              const Divider(color: Colors.grey),
+              
+              // English Option
+              ListTile(
+                leading: const Text('🌐', style: TextStyle(fontSize: 28)),
+                title: const Text(
+                  'English Subbed/Dubbed',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                subtitle: const Text(
+                  'Watch in English language',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PlayerScreen(
+                        animeId: widget.animeId ?? 'naruto-3', // Default English ID
+                        animeTitle: widget.title,
+                        initialEpisode: episodeNumber,
+                        isHindi: false,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

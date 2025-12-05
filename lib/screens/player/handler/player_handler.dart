@@ -19,71 +19,99 @@ class PlayerHandler {
     print(message);
   }
   
-  // Get Hindi anime list
-  static Future<List<Map<String, dynamic>>> getHindiAnimeList() async {
-    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=home&token=${AppConfig.apiToken}';
-    
-    try {
-      _showToast('🔄 Loading Hindi anime list...');
-      
-      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
-      
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        _showToast('✅ Found ${data.length} Hindi anime');
-        
-        return data.map((anime) => {
-          'id': anime['id'],
-          'title': anime['title'],
-          'description': anime['description'],
-          'thumbnail': anime['thumbnail'],
-          'type': anime['type'],
-        }).toList();
-      } else {
-        _showToast('❌ Failed to load Hindi anime', isError: true);
-      }
-      return [];
-    } catch (e) {
-      _showToast('❌ Error: $e', isError: true);
-      return [];
+  // Get episodes based on type (Hindi or English)
+  static Future<List<Map<String, dynamic>>> getEpisodes({
+    required String animeId,
+    required bool isHindi,
+  }) async {
+    if (isHindi) {
+      return await _getHindiEpisodes(animeId);
+    } else {
+      return await _getEnglishEpisodes(animeId);
     }
   }
   
   // Get Hindi episodes
-  static Future<List<Map<String, dynamic>>> getHindiEpisodes(String animeId) async {
+  static Future<List<Map<String, dynamic>>> _getHindiEpisodes(String animeId) async {
     final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=getep&id=$animeId&token=${AppConfig.apiToken}';
     
     try {
-      _showToast('🔄 Loading episodes...');
+      _showToast('🔄 Loading Hindi episodes...');
       
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        _showToast('✅ Found ${data.length} episodes');
+        _showToast('✅ Found ${data.length} Hindi episodes');
         
         return data.map((episode) => {
-          'episode': episode['episode'],
-          'title': episode['title'],
-          'id': episode['id'],
-          'episode_id': episode['episode_id'],
+          'episode_number': int.tryParse(episode['episode'].toString()) ?? 1,
+          'episode_id': episode['episode_id'].toString(),
+          'title': episode['title'] ?? 'Episode ${episode['episode']}',
+          'type': 'hindi',
         }).toList();
       } else {
-        _showToast('❌ Failed to load episodes', isError: true);
+        _showToast('❌ Failed to load Hindi episodes', isError: true);
       }
       return [];
     } catch (e) {
-      _showToast('❌ Error: $e', isError: true);
+      _showToast('❌ Hindi episodes error: $e', isError: true);
       return [];
     }
   }
   
-  // Get Hindi stream URL
-  static Future<String?> getHindiStreamUrl(String animeId, String episodeNumber) async {
-    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=playep&id=$animeId&ep=$episodeNumber&token=${AppConfig.apiToken}';
+  // Get English episodes
+  static Future<List<Map<String, dynamic>>> _getEnglishEpisodes(String animeId) async {
+    final url = AppConfig.buildUrl('episodes', {'id': animeId});
     
     try {
-      _showToast('🔄 Getting stream URL...');
+      _showToast('🔄 Loading English episodes...');
+      
+      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['episodes'] != null) {
+          final List<dynamic> episodes = data['episodes'];
+          _showToast('✅ Found ${episodes.length} English episodes');
+          
+          return episodes.map((episode) => {
+            'episode_number': episode['episode_number'] ?? 1,
+            'episode_id': episode['episode_id'].toString(),
+            'title': episode['title'] ?? 'Episode ${episode['episode_number']}',
+            'type': 'english',
+          }).toList();
+        }
+      } else {
+        _showToast('❌ Failed to load English episodes', isError: true);
+      }
+      return [];
+    } catch (e) {
+      _showToast('❌ English episodes error: $e', isError: true);
+      return [];
+    }
+  }
+  
+  // Get stream URL based on type
+  static Future<String?> getStreamUrl({
+    required String animeId,
+    required String episodeId,
+    required bool isHindi,
+    String language = 'sub',
+  }) async {
+    if (isHindi) {
+      return await _getHindiStreamUrl(animeId, episodeId);
+    } else {
+      return await _getEnglishStreamUrl(animeId, episodeId, language);
+    }
+  }
+  
+  // Get Hindi stream URL
+  static Future<String?> _getHindiStreamUrl(String animeId, String episodeId) async {
+    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=playep&id=$animeId&ep=$episodeId&token=${AppConfig.apiToken}';
+    
+    try {
+      _showToast('🔄 Getting Hindi stream...');
       
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
       
@@ -91,53 +119,83 @@ class PlayerHandler {
         final data = json.decode(response.body);
         
         if (data['streamUrl'] != null) {
-          _showToast('✅ Stream ready!');
+          _showToast('✅ Hindi stream ready!');
           return data['streamUrl'];
         }
         
         if (data['urls'] != null && data['urls'].isNotEmpty) {
-          _showToast('✅ Stream ready!');
+          _showToast('✅ Hindi stream ready!');
           return data['urls'][0];
         }
         
-        _showToast('❌ No stream found', isError: true);
+        _showToast('❌ No Hindi stream found', isError: true);
       } else {
-        _showToast('❌ Stream failed', isError: true);
+        _showToast('❌ Hindi stream failed', isError: true);
       }
       return null;
     } catch (e) {
-      _showToast('❌ Error: $e', isError: true);
+      _showToast('❌ Hindi stream error: $e', isError: true);
       return null;
     }
   }
   
-  // Search Hindi anime
-  static Future<List<Map<String, dynamic>>> searchHindiAnime(String query) async {
-    final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=search&q=$query&token=${AppConfig.apiToken}';
+  // Get English stream URL
+  static Future<String?> _getEnglishStreamUrl(String animeId, String episodeId, String language) async {
+    final url = AppConfig.buildUrl('video', {'id': animeId, 'ep': episodeId});
     
     try {
-      _showToast('🔍 Searching...');
+      _showToast('🔄 Getting English stream...');
       
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
       
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        _showToast('✅ Found ${data.length} results');
-        
-        return data.map((anime) => {
-          'id': anime['id'],
-          'title': anime['title'],
-          'description': anime['description'],
-          'thumbnail': anime['thumbnail'],
-          'type': anime['type'],
-        }).toList();
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['sources'] != null) {
+          final sources = data['sources'];
+          
+          // Get sources for requested language (sub/dub)
+          if (sources[language] != null && sources[language] is List) {
+            final languageSources = sources[language] as List;
+            if (languageSources.isNotEmpty) {
+              _showToast('✅ English stream ready!');
+              return languageSources[0]['url'];
+            }
+          }
+          
+          // Fallback to first available language
+          for (String lang in ['sub', 'dub']) {
+            if (sources[lang] != null && sources[lang] is List) {
+              final langSources = sources[lang] as List;
+              if (langSources.isNotEmpty) {
+                _showToast('✅ English stream ready!');
+                return langSources[0]['url'];
+              }
+            }
+          }
+        }
       } else {
-        _showToast('❌ Search failed', isError: true);
+        _showToast('❌ English stream failed', isError: true);
       }
-      return [];
+      return null;
     } catch (e) {
-      _showToast('❌ Error: $e', isError: true);
-      return [];
+      _showToast('❌ English stream error: $e', isError: true);
+      return null;
     }
+  }
+  
+  // Generate player data for HTML
+  static Map<String, dynamic> generatePlayerData({
+    required String animeTitle,
+    required int episodeNumber,
+    required String streamUrl,
+    required bool isHindi,
+  }) {
+    return {
+      'title': animeTitle,
+      'episode': episodeNumber,
+      'streamUrl': streamUrl,
+      'type': isHindi ? 'hindi' : 'english',
+      'language': isHindi ? 'Hindi' : 'English',
+    };
   }
 }
