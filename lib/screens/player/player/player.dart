@@ -160,7 +160,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   Future<void> _loadPlayerDirectly(String streamUrl, int episodeNumber) async {
     try {
-      _showToast('🎬 Loading video player...');
+      _showToast('🎬 Loading video player directly...');
       
       // Generate HTML content
       final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
@@ -168,17 +168,127 @@ class _PlayerScreenState extends State<PlayerScreen> {
       // Load HTML directly in WebView
       await _controller.loadHtmlString(htmlContent);
       
-      _showToast('✅ Player loaded successfully');
+      _showToast('✅ Player loaded (direct mode)');
       
     } catch (e) {
       _showToast('❌ Player loading failed: $e', isError: true);
     }
   }
 
+  Future<String> _generateDynamicHTML(String streamUrl, int episodeNumber) async {
+    final apiType = PlayerHandler.getDetectedApiType() ?? 'unknown';
+    
+    return '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${widget.animeTitle} - Episode $episodeNumber</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+                background: #000; 
+                overflow: hidden;
+                font-family: Arial, sans-serif;
+            }
+            iframe { 
+                width: 100vw; 
+                height: 100vh; 
+                border: none;
+                pointer-events: auto;
+            }
+            .debug {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.9);
+                color: white;
+                padding: 12px;
+                border-radius: 8px;
+                font-size: 12px;
+                z-index: 1000;
+                max-width: 320px;
+                border: 1px solid #333;
+            }
+            .loading {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+                text-align: center;
+                z-index: 999;
+            }
+            .spinner {
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                border-top: 3px solid #FF8C00;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="debug" id="debug">
+            <div>🎬 <strong>${apiType == 'hindi' ? '🇮🇳' : '🌐'} ${apiType == 'hindi' ? 'Hindi' : 'English'} Player</strong></div>
+            <div>📺 <strong>Anime:</strong> ${widget.animeTitle}</div>
+            <div>🎯 <strong>Episode:</strong> $episodeNumber</div>
+            <div>⚡ <strong>Status:</strong> <span id="playerStatus">Loading...</span></div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p><strong>Loading ${apiType == 'hindi' ? 'Hindi' : 'English'} Episode $episodeNumber...</strong></p>
+        </div>
+        
+        <iframe id="videoFrame" 
+                src="$streamUrl" 
+                allowfullscreen 
+                webkitallowfullscreen 
+                mozallowfullscreen
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-top-navigation allow-presentation allow-popups">
+        </iframe>
+        
+        <script>
+            console.log("🎬 ${apiType == 'hindi' ? 'Hindi' : 'English'} Player Starting");
+            
+            const debug = document.getElementById('debug');
+            const loading = document.getElementById('loading');
+            const iframe = document.getElementById('videoFrame');
+            const playerStatus = document.getElementById('playerStatus');
+            
+            iframe.onload = function() {
+                loading.style.display = 'none';
+                playerStatus.textContent = '✅ Ready to play';
+                playerStatus.style.color = '#44ff44';
+            };
+            
+            iframe.onerror = function() {
+                loading.innerHTML = '<p style="color: #ff4444;"><strong>❌ Failed to load video</strong></p>';
+                playerStatus.textContent = '❌ Error loading';
+                playerStatus.style.color = '#ff4444';
+            };
+            
+            setTimeout(() => debug.style.opacity = '0.3', 30000);
+            debug.addEventListener('click', () => debug.style.opacity = debug.style.opacity === '0.3' ? '1' : '0.3');
+        </script>
+    </body>
+    </html>
+    ''';
+  }
+
   Future<void> _startLocalServerAndLoadPlayer(String streamUrl, int episodeNumber) async {
     try {
       // Only try server on non-web platforms
-      if (!kIsWeb && io.Platform.isAndroid || io.Platform.isIOS) {
+      if (!kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS)) {
         await _tryLocalServer(streamUrl, episodeNumber);
       } else {
         // Fallback to direct loading
@@ -251,22 +361,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
       }
     }
   }
-
-  Future<void> _loadPlayerDirectly(String streamUrl, int episodeNumber) async {
-    try {
-      _showToast('🎬 Loading video player directly...');
-      
-      // Generate HTML content
-      final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
-      
-      // Load HTML directly in WebView
-      await _controller.loadHtmlString(htmlContent);
-      
-      _showToast('✅ Player loaded (direct mode)');
-      
-    } catch (e) {
-      _showToast('❌ Player loading failed: $e', isError: true);
-    }
   }
 
   @override
