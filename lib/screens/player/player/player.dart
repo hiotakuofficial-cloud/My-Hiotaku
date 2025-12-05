@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../handler/player_handler.dart';
 import '../../errors/loading_error.dart';
+
+// Platform-specific imports
+import 'dart:io' if (dart.library.html) 'dart:html' as io;
 
 class PlayerScreen extends StatefulWidget {
   final String animeId;
@@ -28,7 +31,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   List<Map<String, dynamic>> episodes = [];
   int currentEpisode = 1;
   String? detectedApiType;
-  Process? _serverProcess;
+  dynamic _serverProcess; // Use dynamic instead of Process
   int serverPort = 8000;
 
   @override
@@ -147,7 +150,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return;
       }
 
-      // Start local server and load player
+      // Try localhost server first, fallback to direct loading
       await _startLocalServerAndLoadPlayer(streamUrl, episodeNumber);
       
     } catch (e) {
@@ -155,7 +158,39 @@ class _PlayerScreenState extends State<PlayerScreen> {
     }
   }
 
+  Future<void> _loadPlayerDirectly(String streamUrl, int episodeNumber) async {
+    try {
+      _showToast('🎬 Loading video player...');
+      
+      // Generate HTML content
+      final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
+      
+      // Load HTML directly in WebView
+      await _controller.loadHtmlString(htmlContent);
+      
+      _showToast('✅ Player loaded successfully');
+      
+    } catch (e) {
+      _showToast('❌ Player loading failed: $e', isError: true);
+    }
+  }
+
   Future<void> _startLocalServerAndLoadPlayer(String streamUrl, int episodeNumber) async {
+    try {
+      // Only try server on non-web platforms
+      if (!kIsWeb && io.Platform.isAndroid || io.Platform.isIOS) {
+        await _tryLocalServer(streamUrl, episodeNumber);
+      } else {
+        // Fallback to direct loading
+        await _loadPlayerDirectly(streamUrl, episodeNumber);
+      }
+    } catch (e) {
+      _showToast('⚠️ Server failed, using direct mode', isError: false);
+      await _loadPlayerDirectly(streamUrl, episodeNumber);
+    }
+  }
+
+  Future<void> _tryLocalServer(String streamUrl, int episodeNumber) async {
     try {
       _showToast('🚀 Starting localhost server...');
       
@@ -170,10 +205,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
       
       // Write HTML to temp file
       final htmlPath = '/tmp/player_${DateTime.now().millisecondsSinceEpoch}.html';
-      await File(htmlPath).writeAsString(htmlContent);
+      await io.File(htmlPath).writeAsString(htmlContent);
       
       // Start HTTP server
-      _serverProcess = await Process.start(
+      _serverProcess = await io.Process.start(
         'python3', 
         ['-m', 'http.server', serverPort.toString()], 
         workingDirectory: '/tmp'
@@ -186,20 +221,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
       final playerUrl = 'http://localhost:$serverPort/player_${DateTime.now().millisecondsSinceEpoch}.html';
       await _controller.loadRequest(Uri.parse(playerUrl));
       
-      _showToast('✅ Player loaded on localhost:$serverPort');
+      _showToast('✅ Localhost server running on port $serverPort');
       
     } catch (e) {
-      _showToast('❌ Server start failed: $e', isError: true);
-      // Fallback: Load HTML directly
-      final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
-      await _controller.loadHtmlString(htmlContent);
+      throw Exception('Server start failed: $e');
     }
   }
 
   Future<int> _findAvailablePort() async {
     for (int port = 8000; port <= 8010; port++) {
       try {
-        final socket = await ServerSocket.bind('localhost', port);
+        final socket = await io.ServerSocket.bind('localhost', port);
         await socket.close();
         return port;
       } catch (e) {
@@ -209,44 +241,31 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return 8000; // Fallback
   }
 
-  Future<String> _generateDynamicHTML(String streamUrl, int episodeNumber) async {
-    // Read template HTML
-    const templatePath = 'lib/screens/player/assets/play.html';
-    String template;
-    
-    try {
-      template = await File(templatePath).readAsString();
-    } catch (e) {
-      // Fallback template
-      template = '''
-      <!DOCTYPE html>
-      <html><head><title>{{TITLE}} - Episode {{EPISODE}}</title><style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #000; overflow: hidden; }
-      iframe { width: 100vw; height: 100vh; border: none; }
-      </style></head><body>
-      <iframe src="{{STREAM_URL}}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>
-      </body></html>
-      ''';
-    }
-    
-    // Replace placeholders
-    final apiType = PlayerHandler.getDetectedApiType() ?? 'unknown';
-    
-    return template
-        .replaceAll('{{TITLE}}', widget.animeTitle)
-        .replaceAll('{{EPISODE}}', episodeNumber.toString())
-        .replaceAll('{{LANGUAGE}}', apiType == 'hindi' ? 'Hindi' : 'English')
-        .replaceAll('{{TYPE}}', apiType)
-        .replaceAll('{{TYPE_EMOJI}}', apiType == 'hindi' ? '🇮🇳' : '🌐')
-        .replaceAll('{{STREAM_URL}}', streamUrl)
-        .replaceAll('{{STREAM_URL_SHORT}}', streamUrl.length > 50 ? streamUrl.substring(0, 50) : streamUrl);
-  }
-
   Future<void> _stopLocalServer() async {
     if (_serverProcess != null) {
-      _serverProcess!.kill();
-      _serverProcess = null;
+      try {
+        _serverProcess.kill();
+        _serverProcess = null;
+      } catch (e) {
+        print('Error stopping server: $e');
+      }
+    }
+  }
+
+  Future<void> _loadPlayerDirectly(String streamUrl, int episodeNumber) async {
+    try {
+      _showToast('🎬 Loading video player directly...');
+      
+      // Generate HTML content
+      final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
+      
+      // Load HTML directly in WebView
+      await _controller.loadHtmlString(htmlContent);
+      
+      _showToast('✅ Player loaded (direct mode)');
+      
+    } catch (e) {
+      _showToast('❌ Player loading failed: $e', isError: true);
     }
   }
 
