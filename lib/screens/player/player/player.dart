@@ -3,11 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../handler/player_handler.dart';
 import '../../errors/loading_error.dart';
-
-// Platform-specific imports with proper conditional import
-import 'dart:io' if (dart.library.js) 'dart:html';
 
 class PlayerScreen extends StatefulWidget {
   final String animeId;
@@ -31,13 +29,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
   List<Map<String, dynamic>> episodes = [];
   int currentEpisode = 1;
   String? detectedApiType;
-  dynamic _serverProcess; // Use dynamic instead of Process
+  Process? _serverProcess;
   int serverPort = 8000;
 
   @override
   void initState() {
     super.initState();
-    PlayerHandler.resetDetection(); // Reset for new anime
+    PlayerHandler.resetDetection();
     _initializePlayer();
     _loadEpisodesWithDetection();
   }
@@ -62,17 +60,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
   void _initializePlayer() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36')
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36')
       ..enableZoom(false)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (String url) {
-            // Don't show loading for video player area
-          },
-          onPageFinished: (String url) {
-            // Video loaded
-          },
+          onPageStarted: (String url) {},
+          onPageFinished: (String url) {},
           onWebResourceError: (WebResourceError error) {
             _showToast('❌ Player error: ${error.description}', isError: true);
           },
@@ -102,12 +96,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
           isLoading = false;
         });
         
-        // Auto-play first episode
         if (episodes.isNotEmpty) {
           await _loadEpisode(episodes.first['episode_number']);
         }
       } else {
-        // Both APIs failed - show error
         setState(() {
           hasError = true;
           errorMessage = result['error'] ?? 'Failed to load episodes';
@@ -131,7 +123,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
         currentEpisode = episodeNumber;
       });
 
-      // Find episode in list
       final episode = episodes.firstWhere(
         (ep) => ep['episode_number'] == episodeNumber,
         orElse: () => episodes.isNotEmpty ? episodes.first : {},
@@ -142,7 +133,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return;
       }
 
-      // Get stream URL using detected API
       final streamUrl = await PlayerHandler.getStreamUrl(widget.animeId, episode['episode_id']);
 
       if (streamUrl == null) {
@@ -150,7 +140,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return;
       }
 
-      // Try localhost server first, fallback to direct loading
       await _startLocalServerAndLoadPlayer(streamUrl, episodeNumber);
       
     } catch (e) {
@@ -162,10 +151,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     try {
       _showToast('🎬 Loading video player directly...');
       
-      // Generate HTML content
       final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
-      
-      // Load HTML directly in WebView
       await _controller.loadHtmlString(htmlContent);
       
       _showToast('✅ Player loaded (direct mode)');
@@ -211,28 +197,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 max-width: 320px;
                 border: 1px solid #333;
             }
-            .loading {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                color: white;
-                text-align: center;
-                z-index: 999;
-            }
-            .spinner {
-                border: 3px solid rgba(255, 255, 255, 0.3);
-                border-top: 3px solid #FF8C00;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1s linear infinite;
-                margin: 0 auto 20px;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
         </style>
     </head>
     <body>
@@ -240,12 +204,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
             <div>🎬 <strong>${apiType == 'hindi' ? '🇮🇳' : '🌐'} ${apiType == 'hindi' ? 'Hindi' : 'English'} Player</strong></div>
             <div>📺 <strong>Anime:</strong> ${widget.animeTitle}</div>
             <div>🎯 <strong>Episode:</strong> $episodeNumber</div>
-            <div>⚡ <strong>Status:</strong> <span id="playerStatus">Loading...</span></div>
-        </div>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p><strong>Loading ${apiType == 'hindi' ? 'Hindi' : 'English'} Episode $episodeNumber...</strong></p>
         </div>
         
         <iframe id="videoFrame" 
@@ -258,27 +216,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         </iframe>
         
         <script>
-            console.log("🎬 ${apiType == 'hindi' ? 'Hindi' : 'English'} Player Starting");
-            
-            const debug = document.getElementById('debug');
-            const loading = document.getElementById('loading');
-            const iframe = document.getElementById('videoFrame');
-            const playerStatus = document.getElementById('playerStatus');
-            
-            iframe.onload = function() {
-                loading.style.display = 'none';
-                playerStatus.textContent = '✅ Ready to play';
-                playerStatus.style.color = '#44ff44';
-            };
-            
-            iframe.onerror = function() {
-                loading.innerHTML = '<p style="color: #ff4444;"><strong>❌ Failed to load video</strong></p>';
-                playerStatus.textContent = '❌ Error loading';
-                playerStatus.style.color = '#ff4444';
-            };
-            
-            setTimeout(() => debug.style.opacity = '0.3', 30000);
-            debug.addEventListener('click', () => debug.style.opacity = debug.style.opacity === '0.3' ? '1' : '0.3');
+            setTimeout(() => document.getElementById('debug').style.opacity = '0.3', 30000);
         </script>
     </body>
     </html>
@@ -287,11 +225,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   Future<void> _startLocalServerAndLoadPlayer(String streamUrl, int episodeNumber) async {
     try {
-      // Only try server on mobile platforms
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         await _tryLocalServer(streamUrl, episodeNumber);
       } else {
-        // Fallback to direct loading
         await _loadPlayerDirectly(streamUrl, episodeNumber);
       }
     } catch (e) {
@@ -304,30 +240,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
     try {
       _showToast('🚀 Starting localhost server...');
       
-      // Stop existing server
       await _stopLocalServer();
-      
-      // Find available port
       serverPort = await _findAvailablePort();
       
-      // Create dynamic HTML content
       final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
-      
-      // Write HTML to temp file
       final htmlPath = '/tmp/player_${DateTime.now().millisecondsSinceEpoch}.html';
       await File(htmlPath).writeAsString(htmlContent);
       
-      // Start HTTP server
       _serverProcess = await Process.start(
         'python3', 
         ['-m', 'http.server', serverPort.toString()], 
         workingDirectory: '/tmp'
       );
       
-      // Wait for server to start
       await Future.delayed(const Duration(milliseconds: 1500));
       
-      // Load player in WebView
       final playerUrl = 'http://localhost:$serverPort/player_${DateTime.now().millisecondsSinceEpoch}.html';
       await _controller.loadRequest(Uri.parse(playerUrl));
       
@@ -345,22 +272,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
         await socket.close();
         return port;
       } catch (e) {
-        continue; // Port is busy, try next
+        continue;
       }
     }
-    return 8000; // Fallback
+    return 8000;
   }
 
   Future<void> _stopLocalServer() async {
     if (_serverProcess != null) {
       try {
-        _serverProcess.kill();
+        _serverProcess!.kill();
         _serverProcess = null;
       } catch (e) {
         print('Error stopping server: $e');
       }
     }
-  }
   }
 
   @override
@@ -414,7 +340,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   color: Colors.grey[900],
                   child: Column(
                     children: [
-                      // Header
                       Container(
                         padding: const EdgeInsets.all(16),
                         child: Row(
@@ -444,7 +369,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         ),
                       ),
                       
-                      // Episode List
                       Expanded(
                         child: ListView.builder(
                           itemCount: episodes.length,
