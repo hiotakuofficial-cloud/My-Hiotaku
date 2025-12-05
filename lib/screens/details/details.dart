@@ -7,7 +7,7 @@ import '../../services/api_service.dart';
 import '../../models/api_models.dart';
 import '../auth/handler/supabase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../player/video_player_screen.dart';
+import '../player/hindi/hindi_player.dart';
 
 class AnimeDetailsPage extends StatefulWidget {
   final String title;
@@ -1355,17 +1355,14 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
   }
 
   void _playEpisode(int episodeNumber) {
-    // Use Death Note episode ID range (1464-1500)
-    final episodeId = (1463 + episodeNumber).toString();
-    
+    // Navigate to Hindi player
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideoPlayerScreen(
-          animeId: widget.animeId ?? '1', // Use animeId from widget or default
+        builder: (context) => HindiPlayerScreen(
+          animeId: widget.animeId ?? '26', // Default to Naruto ID
           animeTitle: widget.title,
-          isHindi: false, // Assuming English anime, adjust as needed
-          initialEpisode: episodeNumber,
+          initialEpisode: episodeNumber.toString(),
         ),
       ),
     );
