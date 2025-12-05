@@ -134,12 +134,19 @@ class PlayerHandler {
   // Generate Hindi player HTML (Direct iframe)
   static Future<String> generateHindiPlayerHTML(String animeId, int episodeNumber, String animeTitle) async {
     try {
+      _showToast('🎬 Generating Hindi player...');
+      print('🎬 Generating Hindi player for: animeId=$animeId, episode=$episodeNumber');
+      
       // Get Hindi stream URL
       final streamUrl = await getHindiStreamUrl(animeId, episodeNumber);
       
       if (streamUrl == null) {
-        return generateErrorHTML('Hindi episode not available');
+        _showToast('❌ No Hindi stream URL', isError: true);
+        return generateErrorHTML('Hindi episode not available - No stream URL found');
       }
+      
+      _showToast('✅ Creating Hindi iframe...');
+      print('✅ Creating Hindi iframe with URL: $streamUrl');
       
       return '''
       <!DOCTYPE html>
@@ -153,9 +160,7 @@ class PlayerHandler {
               body { 
                   background: #000; 
                   overflow: hidden;
-                  -webkit-touch-callout: none;
-                  -webkit-user-select: none;
-                  user-select: none;
+                  font-family: Arial, sans-serif;
               }
               iframe { 
                   width: 100vw; 
@@ -163,19 +168,56 @@ class PlayerHandler {
                   border: none;
                   pointer-events: auto;
               }
+              .debug {
+                  position: absolute;
+                  top: 10px;
+                  left: 10px;
+                  background: rgba(0,0,0,0.8);
+                  color: white;
+                  padding: 10px;
+                  border-radius: 5px;
+                  font-size: 12px;
+                  z-index: 1000;
+                  max-width: 300px;
+              }
               .loading {
                   position: absolute;
                   top: 50%;
                   left: 50%;
                   transform: translate(-50%, -50%);
                   color: white;
-                  font-family: Arial, sans-serif;
-                  z-index: 10;
+                  text-align: center;
+                  z-index: 999;
+              }
+              .spinner {
+                  border: 3px solid rgba(255, 255, 255, 0.3);
+                  border-top: 3px solid #FF8C00;
+                  border-radius: 50%;
+                  width: 40px;
+                  height: 40px;
+                  animation: spin 1s linear infinite;
+                  margin: 0 auto 16px;
+              }
+              @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
               }
           </style>
       </head>
       <body>
-          <div class="loading" id="loading">Loading Hindi video...</div>
+          <div class="debug" id="debug">
+              🇮🇳 Hindi Player Debug<br>
+              Anime: $animeTitle<br>
+              Episode: $episodeNumber<br>
+              Stream: Loading...<br>
+              Status: Initializing
+          </div>
+          
+          <div class="loading" id="loading">
+              <div class="spinner"></div>
+              <p>Loading Hindi Episode $episodeNumber...</p>
+              <p style="font-size: 10px; margin-top: 10px;">Stream URL: ${streamUrl.substring(0, 50)}...</p>
+          </div>
           
           <iframe id="videoFrame" 
                   src="$streamUrl" 
@@ -187,30 +229,85 @@ class PlayerHandler {
           </iframe>
           
           <script>
-              console.log("🇮🇳 Hindi Player Ready");
-              console.log("📺 $animeTitle - Episode $episodeNumber");
+              console.log("🇮🇳 Hindi Player Starting");
+              console.log("📺 Anime: $animeTitle");
+              console.log("🎬 Episode: $episodeNumber");
+              console.log("🌐 Stream URL: $streamUrl");
               
-              document.getElementById('videoFrame').onload = function() {
-                  document.getElementById('loading').style.display = 'none';
-                  console.log("✅ Hindi video loaded");
+              const debug = document.getElementById('debug');
+              const loading = document.getElementById('loading');
+              const iframe = document.getElementById('videoFrame');
+              
+              // Update debug info
+              debug.innerHTML = \`
+                  🇮🇳 Hindi Player Debug<br>
+                  Anime: $animeTitle<br>
+                  Episode: $episodeNumber<br>
+                  Stream: $streamUrl<br>
+                  Status: Loading iframe...
+              \`;
+              
+              // Iframe load handler
+              iframe.onload = function() {
+                  loading.style.display = 'none';
+                  debug.innerHTML = \`
+                      🇮🇳 Hindi Player Debug<br>
+                      Anime: $animeTitle<br>
+                      Episode: $episodeNumber<br>
+                      Stream: ✅ Loaded<br>
+                      Status: ✅ Ready to play
+                  \`;
+                  console.log("✅ Hindi iframe loaded successfully");
               };
               
+              // Iframe error handler
+              iframe.onerror = function(e) {
+                  loading.innerHTML = '<p style="color: red;">❌ Failed to load video</p>';
+                  debug.innerHTML = \`
+                      🇮🇳 Hindi Player Debug<br>
+                      Anime: $animeTitle<br>
+                      Episode: $episodeNumber<br>
+                      Stream: ❌ Failed<br>
+                      Status: ❌ Error loading
+                  \`;
+                  console.log("❌ Hindi iframe failed to load:", e);
+              };
+              
+              // Auto-hide loading after 15 seconds
+              setTimeout(function() {
+                  if (loading.style.display !== 'none') {
+                      loading.innerHTML = '<p style="color: orange;">⚠️ Taking longer than expected...</p>';
+                      debug.innerHTML = \`
+                          🇮🇳 Hindi Player Debug<br>
+                          Anime: $animeTitle<br>
+                          Episode: $episodeNumber<br>
+                          Stream: ⚠️ Slow loading<br>
+                          Status: ⚠️ Timeout warning
+                      \`;
+                  }
+              }, 15000);
+              
+              // Hide debug after 30 seconds
+              setTimeout(function() {
+                  debug.style.display = 'none';
+              }, 30000);
+              
+              // Notify Flutter
               if (window.flutter_inappwebview) {
                   window.flutter_inappwebview.callHandler('playerReady', {
                       type: 'hindi',
                       episode: $episodeNumber,
-                      title: '$animeTitle'
+                      title: '$animeTitle',
+                      streamUrl: '$streamUrl'
                   });
               }
-              
-              setTimeout(function() {
-                  document.getElementById('loading').style.display = 'none';
-              }, 10000);
           </script>
       </body>
       </html>
       ''';
     } catch (e) {
+      _showToast('❌ Hindi player generation failed: $e', isError: true);
+      print('❌ Error in generateHindiPlayerHTML: $e');
       return generateErrorHTML('Failed to load Hindi episode: $e');
     }
   }
