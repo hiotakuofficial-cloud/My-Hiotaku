@@ -4,19 +4,16 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:io';
 import '../handler/player_handler.dart';
+import '../../errors/loading_error.dart';
 
 class PlayerScreen extends StatefulWidget {
   final String animeId;
   final String animeTitle;
-  final int initialEpisode;
-  final bool isHindi;
 
   const PlayerScreen({
     Key? key,
     required this.animeId,
     required this.animeTitle,
-    required this.initialEpisode,
-    required this.isHindi,
   }) : super(key: key);
 
   @override
@@ -27,16 +24,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
   late WebViewController _controller;
   bool isLoading = true;
   bool hasError = false;
+  String? errorMessage;
   List<Map<String, dynamic>> episodes = [];
   int currentEpisode = 1;
+  String? detectedApiType;
   Process? _serverProcess;
+  int serverPort = 8000;
 
   @override
   void initState() {
     super.initState();
-    currentEpisode = widget.initialEpisode;
+    PlayerHandler.resetDetection(); // Reset for new anime
     _initializePlayer();
-    _loadEpisodes();
+    _loadEpisodesWithDetection();
   }
 
   @override
@@ -65,63 +65,56 @@ class _PlayerScreenState extends State<PlayerScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            setState(() {
-              isLoading = true;
-              hasError = false;
-            });
+            // Don't show loading for video player area
           },
           onPageFinished: (String url) {
-            setState(() {
-              isLoading = false;
-            });
+            // Video loaded
           },
           onWebResourceError: (WebResourceError error) {
             _showToast('❌ Player error: ${error.description}', isError: true);
-            setState(() {
-              isLoading = false;
-              hasError = true;
-            });
           },
         ),
       )
       ..addJavaScriptChannel(
         'playerReady',
         onMessageReceived: (JavaScriptMessage message) {
-          _showToast('🎉 Player Ready!');
-          setState(() {
-            isLoading = false;
-            hasError = false;
-          });
+          _showToast('🎉 Video Ready!');
         },
       );
   }
 
-  Future<void> _loadEpisodes() async {
+  Future<void> _loadEpisodesWithDetection() async {
     try {
-      _showToast('📺 Loading ${widget.isHindi ? 'Hindi' : 'English'} episodes...');
-      
-      final episodeList = await PlayerHandler.getEpisodes(
-        animeId: widget.animeId,
-        isHindi: widget.isHindi,
-      );
-      
       setState(() {
-        episodes = episodeList;
+        isLoading = true;
+        hasError = false;
       });
+
+      final result = await PlayerHandler.getEpisodesWithDetection(widget.animeId);
       
-      if (episodeList.isNotEmpty) {
-        await _loadEpisode(currentEpisode);
+      if (result['success']) {
+        setState(() {
+          episodes = List<Map<String, dynamic>>.from(result['episodes']);
+          detectedApiType = result['apiType'];
+          isLoading = false;
+        });
+        
+        // Auto-play first episode
+        if (episodes.isNotEmpty) {
+          await _loadEpisode(episodes.first['episode_number']);
+        }
       } else {
-        _showToast('❌ No episodes found', isError: true);
+        // Both APIs failed - show error
         setState(() {
           hasError = true;
+          errorMessage = result['error'] ?? 'Failed to load episodes';
           isLoading = false;
         });
       }
     } catch (e) {
-      _showToast('❌ Failed to load episodes: $e', isError: true);
       setState(() {
         hasError = true;
+        errorMessage = 'Error: $e';
         isLoading = false;
       });
     }
@@ -132,8 +125,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
       _showToast('🎬 Loading Episode $episodeNumber...');
       
       setState(() {
-        isLoading = true;
-        hasError = false;
         currentEpisode = episodeNumber;
       });
 
@@ -145,26 +136,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
       if (episode.isEmpty) {
         _showToast('❌ Episode $episodeNumber not found', isError: true);
-        setState(() {
-          hasError = true;
-          isLoading = false;
-        });
         return;
       }
 
-      // Get stream URL
-      final streamUrl = await PlayerHandler.getStreamUrl(
-        animeId: widget.animeId,
-        episodeId: episode['episode_id'],
-        isHindi: widget.isHindi,
-      );
+      // Get stream URL using detected API
+      final streamUrl = await PlayerHandler.getStreamUrl(widget.animeId, episode['episode_id']);
 
       if (streamUrl == null) {
         _showToast('❌ No stream URL found', isError: true);
-        setState(() {
-          hasError = true;
-          isLoading = false;
-        });
         return;
       }
 
@@ -173,38 +152,41 @@ class _PlayerScreenState extends State<PlayerScreen> {
       
     } catch (e) {
       _showToast('❌ Episode loading failed: $e', isError: true);
-      setState(() {
-        hasError = true;
-        isLoading = false;
-      });
     }
   }
 
   Future<void> _startLocalServerAndLoadPlayer(String streamUrl, int episodeNumber) async {
     try {
-      _showToast('🚀 Starting local server...');
+      _showToast('🚀 Starting localhost server...');
       
       // Stop existing server
       await _stopLocalServer();
       
+      // Find available port
+      serverPort = await _findAvailablePort();
+      
       // Create dynamic HTML content
       final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
       
-      // Write HTML to assets directory (in a real app, you'd use a temp directory)
+      // Write HTML to temp file
       final htmlPath = '/tmp/player_${DateTime.now().millisecondsSinceEpoch}.html';
       await File(htmlPath).writeAsString(htmlContent);
       
-      // Start simple HTTP server
-      _serverProcess = await Process.start('python3', ['-m', 'http.server', '8001'], workingDirectory: '/tmp');
+      // Start HTTP server
+      _serverProcess = await Process.start(
+        'python3', 
+        ['-m', 'http.server', serverPort.toString()], 
+        workingDirectory: '/tmp'
+      );
       
-      // Wait a moment for server to start
-      await Future.delayed(const Duration(milliseconds: 1000));
+      // Wait for server to start
+      await Future.delayed(const Duration(milliseconds: 1500));
       
       // Load player in WebView
-      final playerUrl = 'http://localhost:8001/player_${DateTime.now().millisecondsSinceEpoch}.html';
+      final playerUrl = 'http://localhost:$serverPort/player_${DateTime.now().millisecondsSinceEpoch}.html';
       await _controller.loadRequest(Uri.parse(playerUrl));
       
-      _showToast('✅ Player loaded on localhost:8001');
+      _showToast('✅ Player loaded on localhost:$serverPort');
       
     } catch (e) {
       _showToast('❌ Server start failed: $e', isError: true);
@@ -212,6 +194,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
       final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
       await _controller.loadHtmlString(htmlContent);
     }
+  }
+
+  Future<int> _findAvailablePort() async {
+    for (int port = 8000; port <= 8010; port++) {
+      try {
+        final socket = await ServerSocket.bind('localhost', port);
+        await socket.close();
+        return port;
+      } catch (e) {
+        continue; // Port is busy, try next
+      }
+    }
+    return 8000; // Fallback
   }
 
   Future<String> _generateDynamicHTML(String streamUrl, int episodeNumber) async {
@@ -222,35 +217,30 @@ class _PlayerScreenState extends State<PlayerScreen> {
     try {
       template = await File(templatePath).readAsString();
     } catch (e) {
-      // Fallback template if file not found
+      // Fallback template
       template = '''
       <!DOCTYPE html>
-      <html><head><title>Player</title><style>
+      <html><head><title>{{TITLE}} - Episode {{EPISODE}}</title><style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { background: #000; overflow: hidden; }
       iframe { width: 100vw; height: 100vh; border: none; }
       </style></head><body>
-      <iframe src="{{STREAM_URL}}" allowfullscreen></iframe>
+      <iframe src="{{STREAM_URL}}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>
       </body></html>
       ''';
     }
     
     // Replace placeholders
-    final playerData = PlayerHandler.generatePlayerData(
-      animeTitle: widget.animeTitle,
-      episodeNumber: episodeNumber,
-      streamUrl: streamUrl,
-      isHindi: widget.isHindi,
-    );
+    final apiType = PlayerHandler.getDetectedApiType() ?? 'unknown';
     
     return template
-        .replaceAll('{{TITLE}}', playerData['title'])
-        .replaceAll('{{EPISODE}}', playerData['episode'].toString())
-        .replaceAll('{{LANGUAGE}}', playerData['language'])
-        .replaceAll('{{TYPE}}', playerData['type'])
-        .replaceAll('{{TYPE_EMOJI}}', widget.isHindi ? '🇮🇳' : '🌐')
-        .replaceAll('{{STREAM_URL}}', playerData['streamUrl'])
-        .replaceAll('{{STREAM_URL_SHORT}}', playerData['streamUrl'].substring(0, 50));
+        .replaceAll('{{TITLE}}', widget.animeTitle)
+        .replaceAll('{{EPISODE}}', episodeNumber.toString())
+        .replaceAll('{{LANGUAGE}}', apiType == 'hindi' ? 'Hindi' : 'English')
+        .replaceAll('{{TYPE}}', apiType)
+        .replaceAll('{{TYPE_EMOJI}}', apiType == 'hindi' ? '🇮🇳' : '🌐')
+        .replaceAll('{{STREAM_URL}}', streamUrl)
+        .replaceAll('{{STREAM_URL_SHORT}}', streamUrl.length > 50 ? streamUrl.substring(0, 50) : streamUrl);
   }
 
   Future<void> _stopLocalServer() async {
@@ -262,186 +252,142 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (hasError) {
+      return LoadingErrorScreen(
+        errorMessage: errorMessage ?? 'We\'re having trouble loading episodes',
+        onRetry: () {
+          Navigator.pop(context);
+        },
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: Text(
-          '${widget.animeTitle} - Episode $currentEpisode (${widget.isHindi ? 'Hindi' : 'English'})',
+          '${widget.animeTitle} (${detectedApiType == 'hindi' ? '🇮🇳 Hindi' : '🌐 English'})',
           style: const TextStyle(color: Colors.white, fontSize: 14),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.list),
-            onPressed: _showEpisodeList,
-          ),
-          IconButton(
-            icon: const Icon(Icons.language),
-            onPressed: _showLanguageOptions,
-          ),
-        ],
       ),
-      body: Stack(
-        children: [
-          if (!hasError)
-            WebViewWidget(controller: _controller),
-          
-          if (hasError)
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error,
-                    color: Colors.red,
-                    size: 64,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load episode',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => _loadEpisode(currentEpisode),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+      body: isLoading 
+        ? const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Colors.orange),
+                SizedBox(height: 16),
+                Text(
+                  'Auto-detecting API and loading episodes...',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
             ),
-          
-          if (isLoading)
-            const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: Colors.orange),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading player...',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  void _showEpisodeList() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+          )
+        : Column(
             children: [
-              Text(
-                'Episodes (${widget.isHindi ? 'Hindi' : 'English'})',
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              // 30% Video Player
+              Container(
+                height: MediaQuery.of(context).size.height * 0.3,
+                width: double.infinity,
+                color: Colors.black,
+                child: WebViewWidget(controller: _controller),
               ),
-              const SizedBox(height: 16),
+              
+              // 70% Episode List
               Expanded(
-                child: ListView.builder(
-                  itemCount: episodes.length,
-                  itemBuilder: (context, index) {
-                    final episode = episodes[index];
-                    final episodeNum = episode['episode_number'];
-                    final isSelected = episodeNum == currentEpisode;
-                    
-                    return ListTile(
-                      title: Text(
-                        episode['title'],
-                        style: TextStyle(
-                          color: isSelected ? Colors.orange : Colors.white,
+                child: Container(
+                  color: Colors.grey[900],
+                  child: Column(
+                    children: [
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              detectedApiType == 'hindi' ? Icons.language : Icons.subtitles,
+                              color: Colors.orange,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Episodes (${detectedApiType == 'hindi' ? 'Hindi' : 'English'})',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${episodes.length} episodes',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      leading: CircleAvatar(
-                        backgroundColor: isSelected ? Colors.orange : Colors.grey,
-                        child: Text(
-                          episodeNum.toString(),
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                      
+                      // Episode List
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: episodes.length,
+                          itemBuilder: (context, index) {
+                            final episode = episodes[index];
+                            final episodeNum = episode['episode_number'];
+                            final isSelected = episodeNum == currentEpisode;
+                            
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.orange.withOpacity(0.2) : Colors.grey[800],
+                                borderRadius: BorderRadius.circular(8),
+                                border: isSelected ? Border.all(color: Colors.orange, width: 2) : null,
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? Colors.orange : Colors.grey[600],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      episodeNum.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  episode['title'],
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.orange : Colors.white,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                                trailing: isSelected 
+                                  ? const Icon(Icons.play_arrow, color: Colors.orange)
+                                  : null,
+                                onTap: () => _loadEpisode(episodeNum),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _loadEpisode(episodeNum);
-                      },
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showLanguageOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Select Language',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Text('🇮🇳', style: TextStyle(fontSize: 24)),
-                title: const Text('Hindi', style: TextStyle(color: Colors.white)),
-                trailing: widget.isHindi ? const Icon(Icons.check, color: Colors.orange) : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  if (!widget.isHindi) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PlayerScreen(
-                          animeId: widget.animeId,
-                          animeTitle: widget.animeTitle,
-                          initialEpisode: currentEpisode,
-                          isHindi: true,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-              ListTile(
-                leading: const Text('🌐', style: TextStyle(fontSize: 24)),
-                title: const Text('English', style: TextStyle(color: Colors.white)),
-                trailing: !widget.isHindi ? const Icon(Icons.check, color: Colors.orange) : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  if (widget.isHindi) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PlayerScreen(
-                          animeId: widget.animeId,
-                          animeTitle: widget.animeTitle,
-                          initialEpisode: currentEpisode,
-                          isHindi: false,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
