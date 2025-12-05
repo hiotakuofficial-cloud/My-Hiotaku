@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart';
 import '../handler/player_handler.dart';
 import '../../errors/loading_error.dart';
 
-// Platform-specific imports
-import 'dart:io' if (dart.library.html) 'dart:html' as io;
+// Platform-specific imports with proper conditional import
+import 'dart:io' if (dart.library.js) 'dart:html';
 
 class PlayerScreen extends StatefulWidget {
   final String animeId;
@@ -287,8 +287,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   Future<void> _startLocalServerAndLoadPlayer(String streamUrl, int episodeNumber) async {
     try {
-      // Only try server on non-web platforms
-      if (!kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS)) {
+      // Only try server on mobile platforms
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         await _tryLocalServer(streamUrl, episodeNumber);
       } else {
         // Fallback to direct loading
@@ -315,10 +315,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
       
       // Write HTML to temp file
       final htmlPath = '/tmp/player_${DateTime.now().millisecondsSinceEpoch}.html';
-      await io.File(htmlPath).writeAsString(htmlContent);
+      await File(htmlPath).writeAsString(htmlContent);
       
       // Start HTTP server
-      _serverProcess = await io.Process.start(
+      _serverProcess = await Process.start(
         'python3', 
         ['-m', 'http.server', serverPort.toString()], 
         workingDirectory: '/tmp'
@@ -341,7 +341,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Future<int> _findAvailablePort() async {
     for (int port = 8000; port <= 8010; port++) {
       try {
-        final socket = await io.ServerSocket.bind('localhost', port);
+        final socket = await ServerSocket.bind('localhost', port);
         await socket.close();
         return port;
       } catch (e) {
