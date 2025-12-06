@@ -9,6 +9,7 @@ import '../handler/player_handler.dart';
 import '../../errors/loading_error.dart';
 import '../../errors/no_internet.dart';
 import '../../../components/auto-rotation.dart';
+import '../../../cache/continue_watching_cache.dart';
 
 class PlayerScreen extends StatefulWidget {
   final String animeId;
@@ -47,6 +48,10 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   bool hasDubAvailable = false;
   DateTime lastEpisodeSwitchTime = DateTime.now().subtract(Duration(seconds: 5));
   Timer? _videoLoadingTimer;
+  Timer? _progressTimer;
+  int currentProgressSeconds = 0;
+  int totalDurationSeconds = 0;
+  String currentAnimeImage = '';
 
   @override
   void initState() {
@@ -58,6 +63,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     PlayerHandler.resetDetection();
     _initializePlayer();
     _loadEpisodesWithDetection();
+    _startProgressTimer();
   }
 
   void _setupOrientationListener() {
@@ -124,6 +130,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     _slideController.dispose();
     _searchController.dispose();
     _videoLoadingTimer?.cancel();
+    _progressTimer?.cancel();
     
     // Dispose auto-rotation reminder
     AutoRotationReminder.dispose();
@@ -1315,5 +1322,32 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         );
       },
     );
+  }
+
+  // Progress tracking methods
+  void _startProgressTimer() {
+    _progressTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+      _saveProgress();
+    });
+  }
+
+  void _saveProgress() async {
+    if (currentProgressSeconds > 0 && totalDurationSeconds > 0) {
+      await ContinueWatchingCache.saveProgress(
+        animeId: widget.animeId,
+        title: widget.animeTitle,
+        image: currentAnimeImage,
+        episode: 'Episode $currentEpisode',
+        progressSeconds: currentProgressSeconds,
+        totalSeconds: totalDurationSeconds,
+      );
+    }
+  }
+
+  void _updateProgress(int progress, int total) {
+    setState(() {
+      currentProgressSeconds = progress;
+      totalDurationSeconds = total;
+    });
   }
 }

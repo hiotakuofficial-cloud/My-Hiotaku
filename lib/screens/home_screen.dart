@@ -16,6 +16,7 @@ import 'pages/continue_watching.dart';
 import 'auth/login.dart';
 import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
+import '../cache/continue_watching_cache.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<AnimeItem> topMovies = [];
   List<AnimeItem> recentlyUpdated = [];
   List<AnimeItem> hindiAnime = [];
+  List<Map<String, dynamic>> continueWatchingList = [];
   bool isLoading = true;
   
   // User authentication state
@@ -144,6 +146,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final subbedData = await ApiService.getSubbed(1);
       final hindiData = await ApiService.getHindiAnime(1);
       
+      // Load continue watching data
+      final continueWatching = await ContinueWatchingCache.getContinueWatching();
+      
       setState(() {
         // Use real API data for each section - 6 featured items
         featuredAnime = homeData.data.isNotEmpty ? homeData.data.take(6).toList() : [];
@@ -152,6 +157,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         topMovies = moviesData.data.isNotEmpty ? moviesData.data.take(10).toList() : [];
         recentlyUpdated = subbedData.data.isNotEmpty ? subbedData.data.take(10).toList() : [];
         hindiAnime = hindiData.data.isNotEmpty ? hindiData.data.take(10).toList() : [];
+        continueWatchingList = continueWatching.take(10).toList();
         isLoading = false;
         _retryCount = 0; // Reset retry count on success
       });
@@ -240,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _buildHeader(),
         _buildFeaturedCarousel(),
         _buildSectionTitle('Continue Watching', () => _navigateToSeeAll('continue')),
-        _buildHorizontalList(featuredAnime.take(5).toList()), // Show some as continue watching
+        _buildContinueWatchingList(),
         _buildSectionTitle('Popular Now', () => _navigateToSeeAll('popular')),
         _buildHorizontalList(trendingAnime),
         _buildSectionTitle('Top Upcoming', () => _navigateToSeeAll('upcoming')),
@@ -863,6 +869,101 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           return SlideTransition(
             position: animation.drive(tween),
             child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildContinueWatchingList() {
+    if (continueWatchingList.isEmpty) {
+      return Container(
+        height: 200,
+        child: Center(
+          child: Text(
+            'No continue watching items',
+            style: TextStyle(color: Colors.grey[400]),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      height: 200,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        itemCount: continueWatchingList.length,
+        itemBuilder: (context, index) {
+          final item = continueWatchingList[index];
+          return Container(
+            width: 140,
+            margin: EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () {
+                // Navigate to player with saved progress
+                Navigator.pushNamed(
+                  context,
+                  '/player',
+                  arguments: {
+                    'animeId': item['animeId'],
+                    'animeTitle': item['title'],
+                  },
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(
+                          image: NetworkImage(item['image'] ?? ''),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Progress bar
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: 4,
+                              child: LinearProgressIndicator(
+                                value: (item['progressPercent'] ?? 0) / 100,
+                                backgroundColor: Colors.grey[800],
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    item['title'] ?? '',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    item['episode'] ?? '',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),

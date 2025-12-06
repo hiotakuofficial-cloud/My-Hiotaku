@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../services/api_service.dart';
-import '../../models/api_models.dart';
+import '../../cache/continue_watching_cache.dart';
 
 class ContinueWatchingPage extends StatefulWidget {
   @override
@@ -9,7 +8,7 @@ class ContinueWatchingPage extends StatefulWidget {
 }
 
 class _ContinueWatchingPageState extends State<ContinueWatchingPage> with TickerProviderStateMixin {
-  List<AnimeItem> animeList = [];
+  List<Map<String, dynamic>> continueWatchingList = [];
   bool isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -29,11 +28,9 @@ class _ContinueWatchingPageState extends State<ContinueWatchingPage> with Ticker
 
   Future<void> _loadData() async {
     try {
-      setState(() => isLoading = true);
-      // For now, use home data as placeholder for continue watching
-      final data = await ApiService.getHome();
+      final data = await ContinueWatchingCache.getContinueWatching();
       setState(() {
-        animeList = data.data.take(20).toList(); // Limit to 20 items
+        continueWatchingList = data;
         isLoading = false;
       });
       _animationController.forward();
@@ -44,94 +41,55 @@ class _ContinueWatchingPageState extends State<ContinueWatchingPage> with Ticker
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        extendBodyBehindAppBar: true,
-        body: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: isLoading ? _buildLoading() : _buildContent(),
-            ),
-          ],
+    return Scaffold(
+      backgroundColor: Color(0xFF0A0A0A),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Continue Watching',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 10, 20, 10),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.pop(context);
-            },
-            child: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Continue Watching',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      body: isLoading ? _buildLoading() : _buildContent(),
     );
   }
 
   Widget _buildLoading() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: Colors.purple),
-          SizedBox(height: 16),
-          Text('Loading Continue Watching...', style: TextStyle(color: Colors.white)),
-        ],
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
       ),
     );
   }
 
   Widget _buildContent() {
-    if (animeList.isEmpty) {
+    if (continueWatchingList.isEmpty) {
       return _buildEmptyState();
     }
 
     return FadeTransition(
       opacity: _fadeAnimation,
       child: GridView.builder(
-        physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(16),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.7,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
-        itemCount: animeList.length,
+        itemCount: continueWatchingList.length,
         itemBuilder: (context, index) {
-          return _buildAnimeCard(animeList[index], index);
+          final anime = continueWatchingList[index];
+          return _buildAnimeCard(anime, index);
         },
       ),
     );
@@ -142,184 +100,138 @@ class _ContinueWatchingPageState extends State<ContinueWatchingPage> with Ticker
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.play_circle_outline,
-            size: 80,
-            color: Colors.white54,
-          ),
+          Icon(Icons.play_circle_outline, size: 80, color: Colors.grey[600]),
           SizedBox(height: 16),
           Text(
-            'No anime in progress',
+            'No Continue Watching',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: 8),
           Text(
             'Start watching anime to see them here',
-            style: TextStyle(
-              color: Colors.white54,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[400], fontSize: 16),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAnimeCard(AnimeItem anime, int index) {
-    // Simulate progress percentage
-    final progress = (index * 23 + 15) % 100;
-    
+  Widget _buildAnimeCard(Map<String, dynamic> anime, int index) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        // TODO: Navigate to anime details
+        Navigator.pushNamed(
+          context,
+          '/player',
+          arguments: {
+            'animeId': anime['animeId'],
+            'animeTitle': anime['title'],
+          },
+        );
       },
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 300 + (index * 50)),
-        curve: Curves.elasticOut,
-        child: Hero(
-          tag: 'continue_${anime.id}',
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: Offset(0, 6),
-                ),
-              ],
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: Offset(0, 4),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                children: [
-                  Image.network(
-                    anime.poster ?? '',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[800],
-                        child: Icon(Icons.image, color: Colors.white54, size: 50),
-                      );
-                    },
-                  ),
-                  // Progress Badge
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.purple,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${progress}%',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Play Icon
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        shape: BoxShape.circle,
-                      ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              // Anime poster
+              Container(
+                height: double.infinity,
+                width: double.infinity,
+                child: Image.network(
+                  anime['image'] ?? '',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[800],
                       child: Icon(
-                        Icons.play_arrow,
-                        color: Colors.black,
-                        size: 16,
+                        Icons.movie,
+                        color: Colors.grey[600],
+                        size: 50,
                       ),
+                    );
+                  },
+                ),
+              ),
+              
+              // Progress bar at bottom
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 4,
+                  child: LinearProgressIndicator(
+                    value: (anime['progressPercent'] ?? 0) / 100,
+                    backgroundColor: Colors.grey[800],
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+                  ),
+                ),
+              ),
+              
+              // Gradient overlay and text
+              Positioned(
+                bottom: 4,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.8),
+                      ],
                     ),
                   ),
-                  // Progress Bar
-                  Positioned(
-                    bottom: 80,
-                    left: 12,
-                    right: 12,
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress / 100,
-                        child: Container(
-                          decoration: BoxDecoration(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          anime['title'] ?? '',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          anime['episode'] ?? '',
+                          style: TextStyle(
                             color: Colors.purple,
-                            borderRadius: BorderRadius.circular(2),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                  // Gradient Overlay
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.8),
-                          ],
-                        ),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              anime.title,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Episode ${(index % 12) + 1}',
-                              style: TextStyle(
-                                color: Colors.purple,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
