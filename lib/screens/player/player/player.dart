@@ -6,6 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'dart:io';
 import '../handler/player_handler.dart';
 import '../../errors/loading_error.dart';
+import '../../../components/auto-rotation.dart';
 
 class PlayerScreen extends StatefulWidget {
   final String animeId;
@@ -125,6 +126,9 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     _fadeController.dispose();
     _slideController.dispose();
     _searchController.dispose();
+    
+    // Dispose auto-rotation reminder
+    AutoRotationReminder.dispose();
     
     // Reset to portrait mode when leaving player
     SystemChrome.setPreferredOrientations([
@@ -303,6 +307,9 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         if (episodes.isNotEmpty) {
           await _loadEpisode(episodes.first['episode_number']);
           await _checkAvailableLanguages();
+          
+          // Show auto-rotation reminder after 5 seconds
+          AutoRotationReminder.checkAndShow(context);
         }
       } else {
         setState(() {
