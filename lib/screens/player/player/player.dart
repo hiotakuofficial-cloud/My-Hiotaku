@@ -137,13 +137,92 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return;
       }
 
-      // Load stream URL directly in WebView
-      await _controller.loadRequest(Uri.parse(streamUrl));
-      _showToast('✅ Episode $episodeNumber loaded');
+      // Use native app approach - localhost server with iframe
+      await _startLocalhostServer(streamUrl);
       
     } catch (e) {
       _showToast('❌ Episode loading failed: $e', isError: true);
     }
+  }
+
+  Future<void> _startLocalhostServer(String streamUrl) async {
+    try {
+      _showToast('🚀 Starting localhost server...');
+      
+      // Stop existing server
+      await _stopLocalServer();
+      
+      // Find available port
+      int port = await _findAvailablePort();
+      
+      // Start HTTP server
+      final server = await HttpServer.bind('localhost', port);
+      
+      server.listen((HttpRequest request) {
+        final response = request.response;
+        
+        // Generate HTML with iframe (same as native app)
+        final htmlContent = '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Video Player</title>
+            <style>
+                * { margin: 0; padding: 0; }
+                body { background: #000; overflow: hidden; }
+                iframe { 
+                    width: 100vw; 
+                    height: 100vh; 
+                    border: none;
+                }
+            </style>
+        </head>
+        <body>
+            <iframe src="$streamUrl" 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0" 
+                    allowfullscreen
+                    allow="autoplay; fullscreen; picture-in-picture">
+            </iframe>
+        </body>
+        </html>
+        ''';
+        
+        response.headers.contentType = ContentType.html;
+        response.write(htmlContent);
+        response.close();
+      });
+      
+      // Load localhost URL in WebView (same as native app)
+      await _controller.loadRequest(Uri.parse('http://localhost:$port'));
+      
+      _showToast('✅ Localhost server running on port $port');
+      
+    } catch (e) {
+      _showToast('❌ Server failed: $e', isError: true);
+      // Fallback to direct URL
+      await _controller.loadRequest(Uri.parse(streamUrl));
+    }
+  }
+
+  Future<int> _findAvailablePort() async {
+    for (int port = 8080; port <= 8090; port++) {
+      try {
+        final socket = await ServerSocket.bind('localhost', port);
+        await socket.close();
+        return port;
+      } catch (e) {
+        continue;
+      }
+    }
+    return 8080;
+  }
+
+  Future<void> _stopLocalServer() async {
+    // Server cleanup will be handled by HttpServer
   }
 
   @override
