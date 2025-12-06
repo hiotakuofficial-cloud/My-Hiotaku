@@ -470,9 +470,6 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     }
   }
 
-  bool isVideoLoading = true;
-  Timer? _videoLoadingTimer;
-
   Future<void> _startLocalhostServer(String streamUrl) async {
     try {
       // Stop existing server
