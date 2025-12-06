@@ -21,8 +21,13 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen> {
+class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMixin {
   late WebViewController _controller;
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  
   bool isLoading = true;
   bool hasError = false;
   bool isLoadingEpisode = false;
@@ -35,13 +40,63 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
+    _setupStatusBar();
     PlayerHandler.resetDetection();
     _initializePlayer();
     _loadEpisodesWithDetection();
   }
 
+  void _setupAnimations() {
+    _fadeController = AnimationController(
+      duration: Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.elasticOut,
+    ));
+    
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  void _setupStatusBar() {
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: [],
+    );
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
@@ -69,9 +124,33 @@ class _PlayerScreenState extends State<PlayerScreen> {
           },
           onPageFinished: (String url) {
             print('Page finished: $url');
-            // Auto-play video like Android
+            // Auto-play video like Android + Enable fullscreen
             Future.delayed(Duration(seconds: 2), () {
-              _controller.runJavaScript("document.querySelector('video')?.play();");
+              _controller.runJavaScript('''
+                document.querySelector('video')?.play();
+                
+                // Enable fullscreen support
+                document.addEventListener('fullscreenchange', function() {
+                  if (document.fullscreenElement) {
+                    // Hide Flutter UI when video goes fullscreen
+                    document.body.style.background = '#000';
+                    document.body.style.margin = '0';
+                    document.body.style.padding = '0';
+                  }
+                });
+                
+                // Handle fullscreen requests
+                const video = document.querySelector('video');
+                if (video) {
+                  video.addEventListener('click', function() {
+                    if (video.requestFullscreen) {
+                      video.requestFullscreen();
+                    } else if (video.webkitRequestFullscreen) {
+                      video.webkitRequestFullscreen();
+                    }
+                  });
+                }
+              ''');
             });
           },
           onNavigationRequest: (NavigationRequest request) {
@@ -247,15 +326,60 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     border: none;
                     background: #000;
                 }
+                
+                /* Fullscreen styles */
+                iframe:-webkit-full-screen {
+                    width: 100vw !important;
+                    height: 100vh !important;
+                }
+                
+                iframe:-moz-full-screen {
+                    width: 100vw !important;
+                    height: 100vh !important;
+                }
+                
+                iframe:fullscreen {
+                    width: 100vw !important;
+                    height: 100vh !important;
+                }
             </style>
         </head>
         <body>
             <div id="video-container">
-                <iframe id="video-frame" src="$streamUrl" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>
+                <iframe id="video-frame" 
+                        src="$streamUrl" 
+                        allowfullscreen 
+                        webkitallowfullscreen 
+                        mozallowfullscreen
+                        allow="autoplay; fullscreen; picture-in-picture; accelerometer; gyroscope">
+                </iframe>
             </div>
             
             <script>
-                console.log('Video player loaded with URL: $streamUrl');
+                // Enhanced fullscreen support
+                const iframe = document.getElementById('video-frame');
+                
+                // Listen for fullscreen events
+                document.addEventListener('fullscreenchange', handleFullscreen);
+                document.addEventListener('webkitfullscreenchange', handleFullscreen);
+                document.addEventListener('mozfullscreenchange', handleFullscreen);
+                
+                function handleFullscreen() {
+                    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement) {
+                        // Fullscreen mode
+                        document.body.style.background = '#000';
+                        iframe.style.position = 'fixed';
+                        iframe.style.top = '0';
+                        iframe.style.left = '0';
+                        iframe.style.zIndex = '9999';
+                    } else {
+                        // Exit fullscreen
+                        iframe.style.position = 'relative';
+                        iframe.style.zIndex = 'auto';
+                    }
+                }
+                
+                console.log('Video player loaded with fullscreen support');
             </script>
         </body>
         </html>
@@ -265,6 +389,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         response.headers.contentType = ContentType.html;
         response.headers.add('Cache-Control', 'no-cache');
         response.headers.add('Access-Control-Allow-Origin', '*');
+        response.headers.add('Feature-Policy', 'fullscreen *');
         response.write(htmlContent);
         response.close();
       });
@@ -311,129 +436,368 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text(
-          '${widget.animeTitle} (${detectedApiType == 'hindi' ? '🇮🇳 Hindi' : '🌐 English'})',
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Container(
+          margin: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: isLoading 
-        ? const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        title: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Text(
+            widget.animeTitle,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        actions: [
+          Container(
+            margin: EdgeInsets.all(8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF8C00).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: Colors.orange),
-                SizedBox(height: 16),
+                Icon(
+                  detectedApiType == 'hindi' ? Icons.language : Icons.subtitles,
+                  color: Color(0xFFFF8C00),
+                  size: 16,
+                ),
+                SizedBox(width: 4),
                 Text(
-                  'Auto-detecting API and loading episodes...',
-                  style: TextStyle(color: Colors.white),
+                  detectedApiType == 'hindi' ? 'Hindi' : 'English',
+                  style: TextStyle(
+                    color: Color(0xFFFF8C00),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
-          )
-        : Column(
-            children: [
-              // 30% Video Player
-              Container(
-                height: MediaQuery.of(context).size.height * 0.3,
-                width: double.infinity,
-                color: Colors.black,
-                child: WebViewWidget(controller: _controller),
-              ),
-              
-              // 70% Episode List
-              Expanded(
-                child: Container(
-                  color: Colors.grey[900],
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Icon(
-                              detectedApiType == 'hindi' ? Icons.language : Icons.subtitles,
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Episodes (${detectedApiType == 'hindi' ? 'Hindi' : 'English'})',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '${episodes.length} episodes',
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: episodes.length,
-                          itemBuilder: (context, index) {
-                            final episode = episodes[index];
-                            final episodeNum = episode['episode_number'];
-                            final isSelected = episodeNum == currentEpisode;
-                            
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isSelected ? Colors.orange.withOpacity(0.2) : Colors.grey[800],
-                                borderRadius: BorderRadius.circular(8),
-                                border: isSelected ? Border.all(color: Colors.orange, width: 2) : null,
-                              ),
-                              child: ListTile(
-                                leading: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? Colors.orange : Colors.grey[600],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      episodeNum.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                title: Text(
-                                  episode['title'],
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.orange : Colors.white,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                ),
-                                trailing: isSelected 
-                                  ? const Icon(Icons.play_arrow, color: Colors.orange)
-                                  : null,
-                                onTap: () => _loadEpisode(episodeNum),
-                              ),
-                            );
-                          },
-                        ),
+          ),
+        ],
+      ),
+      body: isLoading 
+        ? _buildLoadingScreen()
+        : FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              children: [
+                // Video Player Section (40%)
+                Container(
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
                       ),
                     ],
                   ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                    child: WebViewWidget(controller: _controller),
+                  ),
+                ),
+                
+                // Episodes Section (60%)
+                Expanded(
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFF0A0A0A),
+                            Color(0xFF1A1A1A),
+                          ],
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildEpisodeHeader(),
+                          Expanded(child: _buildEpisodeList()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black,
+            Color(0xFF1A1A1A),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
+              ),
+              child: CircularProgressIndicator(
+                color: Color(0xFFFF8C00),
+                strokeWidth: 3,
+              ),
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Loading Episodes...',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Auto-detecting best quality',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEpisodeHeader() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF8C00).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.2)),
+            ),
+            child: Icon(
+              Icons.playlist_play_rounded,
+              color: Color(0xFFFF8C00),
+              size: 24,
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Episodes',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${episodes.length} episodes available',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Text(
+              'EP $currentEpisode',
+              style: TextStyle(
+                color: Color(0xFFFF8C00),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEpisodeList() {
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      physics: BouncingScrollPhysics(),
+      itemCount: episodes.length,
+      itemBuilder: (context, index) {
+        final episode = episodes[index];
+        final episodeNum = episode['episode_number'];
+        final isSelected = episodeNum == currentEpisode;
+        
+        return AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            gradient: isSelected 
+              ? LinearGradient(
+                  colors: [
+                    Color(0xFFFF8C00).withOpacity(0.1),
+                    Color(0xFFFF8C00).withOpacity(0.05),
+                  ],
+                )
+              : LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.03),
+                    Colors.white.withOpacity(0.01),
+                  ],
+                ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected 
+                ? Color(0xFFFF8C00).withOpacity(0.3)
+                : Colors.white.withOpacity(0.05),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => _loadEpisode(episodeNum),
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: isSelected 
+                          ? LinearGradient(
+                              colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
+                            )
+                          : LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.1),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                            ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: isLoadingEpisode && isSelected
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              episodeNum.toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            episode['title'],
+                            style: TextStyle(
+                              color: isSelected ? Color(0xFFFF8C00) : Colors.white,
+                              fontSize: 16,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Episode $episodeNum',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSelected)
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF8C00).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: Color(0xFFFF8C00),
+                          size: 20,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
+        );
+      },
     );
   }
 }

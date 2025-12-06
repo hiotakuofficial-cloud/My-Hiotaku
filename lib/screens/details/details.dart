@@ -931,7 +931,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
             child: ElevatedButton(
               onPressed: () {
                 HapticFeedback.lightImpact();
-                _showPlayDialog();
+                _playEpisode(1); // Direct play episode 1
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFFF8C00),
@@ -1248,109 +1248,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showPlayDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.play_circle_outline_rounded,
-                    color: Color(0xFFFF8C00),
-                    size: 48,
-                  ),
-                  
-                  SizedBox(height: 16),
-                  
-                  Text(
-                    'Watch ${widget.title}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  SizedBox(height: 8),
-                  
-                  Text(
-                    'Select episode to start watching',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
-                    ),
-                  ),
-                  
-                  SizedBox(height: 20),
-                  
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _playEpisode(1);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFFF8C00),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text('Episode 1'),
-                        ),
-                      ),
-                      
-                      SizedBox(width: 12),
-                      
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _showEpisodeList();
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Color(0xFFFF8C00)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'All Episodes',
-                            style: TextStyle(color: Color(0xFFFF8C00)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
