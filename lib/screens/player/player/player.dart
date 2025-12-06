@@ -25,6 +25,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   late WebViewController _controller;
   bool isLoading = true;
   bool hasError = false;
+  bool isLoadingEpisode = false;
   String? errorMessage;
   List<Map<String, dynamic>> episodes = [];
   int currentEpisode = 1;
@@ -155,7 +156,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Future<void> _loadEpisode(int episodeNumber) async {
+    // Prevent double loading
+    if (isLoadingEpisode) {
+      print('Episode already loading, skipping...');
+      return;
+    }
+    
     try {
+      setState(() {
+        isLoadingEpisode = true;
+      });
+      
       _showToast('🎬 Loading Episode $episodeNumber...');
       
       setState(() {
@@ -184,6 +195,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
       
     } catch (e) {
       _showToast('❌ Episode loading failed: $e', isError: true);
+    } finally {
+      setState(() {
+        isLoadingEpisode = false;
+      });
     }
   }
 
@@ -242,23 +257,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             </div>
             
             <script>
-                // Prevent reload loops
-                let loaded = false;
-                
-                function loadVideo(url) {
-                    if (!loaded) {
-                        document.getElementById('video-frame').src = url;
-                        loaded = true;
-                    }
-                }
-                
-                // Auto load stream URL on page load
-                window.onload = function() {
-                    if (!loaded) {
-                        document.getElementById('video-frame').src = '$streamUrl';
-                        loaded = true;
-                    }
-                };
+                console.log('Video player loaded with URL: $streamUrl');
             </script>
         </body>
         </html>
