@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../../../config.dart';
@@ -8,36 +10,41 @@ class PlayerHandler {
   
   // Auto-detect API and get episodes
   static Future<Map<String, dynamic>> getEpisodesWithDetection(String animeId) async {
-    
-    // Try English API first
-    final englishResult = await _tryEnglishEpisodes(animeId);
-    if (englishResult['success']) {
-      _detectedApiType = 'english';
-      return {
-        'success': true,
-        'episodes': englishResult['episodes'],
-        'apiType': 'english',
-      };
+    try {
+      // Try English API first
+      final englishResult = await _tryEnglishEpisodes(animeId);
+      if (englishResult['success']) {
+        _detectedApiType = 'english';
+        return {
+          'success': true,
+          'episodes': englishResult['episodes'],
+          'apiType': 'english',
+        };
+      }
+      
+      // Try Hindi API if English failed
+      final hindiResult = await _tryHindiEpisodes(animeId);
+      if (hindiResult['success']) {
+        _detectedApiType = 'hindi';
+        return {
+          'success': true,
+          'episodes': hindiResult['episodes'],
+          'apiType': 'hindi',
+        };
+      }
+      
+      // Both failed
+      throw Exception('No episodes found in both APIs');
+      
+    } on SocketException {
+      throw SocketException('No internet connection');
+    } on TimeoutException {
+      throw TimeoutException('Request timed out', Duration(seconds: 30));
+    } on HttpException catch (e) {
+      throw HttpException('Server error: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to load episodes: $e');
     }
-    
-    // Try Hindi API if English failed
-    final hindiResult = await _tryHindiEpisodes(animeId);
-    if (hindiResult['success']) {
-      _detectedApiType = 'hindi';
-      return {
-        'success': true,
-        'episodes': hindiResult['episodes'],
-        'apiType': 'hindi',
-      };
-    }
-    
-    // Both failed
-    return {
-      'success': false,
-      'episodes': [],
-      'apiType': null,
-      'error': 'No episodes found in both APIs',
-    };
   }
   
   // Try English episodes
@@ -45,7 +52,10 @@ class PlayerHandler {
     try {
       final url = AppConfig.buildUrl('episodes', {'id': animeId});
       
-      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      final response = await http.get(
+        Uri.parse(url), 
+        headers: AppConfig.defaultHeaders
+      ).timeout(Duration(seconds: 30));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -74,9 +84,18 @@ class PlayerHandler {
             };
           }
         }
+      } else if (response.statusCode >= 500) {
+        throw HttpException('English API server error: ${response.statusCode}');
       }
+      
+    } on SocketException {
+      throw SocketException('No internet connection');
+    } on TimeoutException {
+      throw TimeoutException('English API timeout', Duration(seconds: 30));
+    } on HttpException {
+      rethrow;
     } catch (e) {
-      // Silent error handling
+      // Silent error for API detection
     }
     
     return {'success': false, 'episodes': []};
@@ -87,7 +106,10 @@ class PlayerHandler {
     try {
       final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=getep&id=$animeId&token=${AppConfig.apiToken}';
       
-      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      final response = await http.get(
+        Uri.parse(url), 
+        headers: AppConfig.defaultHeaders
+      ).timeout(Duration(seconds: 30));
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -112,14 +134,24 @@ class PlayerHandler {
   
   // Get stream URL using detected API
   static Future<String?> getStreamUrl(String animeId, String episodeId, {String preferredLanguage = 'sub'}) async {
-    if (_detectedApiType == null) {
-      return null;
-    }
-    
-    if (_detectedApiType == 'hindi') {
-      return await _getHindiStreamUrl(animeId, episodeId);
-    } else {
-      return await _getEnglishStreamUrl(animeId, episodeId, preferredLanguage);
+    try {
+      if (_detectedApiType == null) {
+        throw Exception('API type not detected');
+      }
+      
+      if (_detectedApiType == 'hindi') {
+        return await _getHindiStreamUrl(animeId, episodeId);
+      } else {
+        return await _getEnglishStreamUrl(animeId, episodeId, preferredLanguage);
+      }
+    } on SocketException {
+      throw SocketException('No internet connection');
+    } on TimeoutException {
+      throw TimeoutException('Stream URL request timed out', Duration(seconds: 30));
+    } on HttpException catch (e) {
+      throw HttpException('Server error: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to get stream URL: $e');
     }
   }
   
@@ -128,7 +160,10 @@ class PlayerHandler {
     try {
       final url = '${AppConfig.animeApiBaseUrl}/hindiv2.php?action=playep&id=$animeId&ep=$episodeId&token=${AppConfig.apiToken}';
       
-      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      final response = await http.get(
+        Uri.parse(url), 
+        headers: AppConfig.defaultHeaders
+      ).timeout(Duration(seconds: 30));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -153,7 +188,10 @@ class PlayerHandler {
     try {
       final url = AppConfig.buildUrl('video', {'id': animeId, 'ep': episodeId});
       
-      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      final response = await http.get(
+        Uri.parse(url), 
+        headers: AppConfig.defaultHeaders
+      ).timeout(Duration(seconds: 30));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -172,12 +210,21 @@ class PlayerHandler {
             }
           }
         }
+      } else if (response.statusCode >= 500) {
+        throw HttpException('English stream server error: ${response.statusCode}');
       }
+      
+      throw Exception('No stream URL found for this episode');
+      
+    } on SocketException {
+      throw SocketException('No internet connection');
+    } on TimeoutException {
+      throw TimeoutException('English stream timeout', Duration(seconds: 30));
+    } on HttpException {
+      rethrow;
     } catch (e) {
-      // Silent error handling
+      throw Exception('Failed to get English stream: $e');
     }
-    
-    return null;
   }
   
   // Check available languages for English episodes
@@ -185,7 +232,10 @@ class PlayerHandler {
     try {
       final url = AppConfig.buildUrl('video', {'id': animeId, 'ep': episodeId});
       
-      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      final response = await http.get(
+        Uri.parse(url), 
+        headers: AppConfig.defaultHeaders
+      ).timeout(Duration(seconds: 30));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

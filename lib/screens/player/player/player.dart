@@ -4,8 +4,10 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:io';
+import 'dart:async';
 import '../handler/player_handler.dart';
 import '../../errors/loading_error.dart';
+import '../../errors/no_internet.dart';
 import '../../../components/auto-rotation.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -33,6 +35,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   bool isLoading = true;
   bool hasError = false;
   bool isLoadingEpisode = false;
+  bool isVideoLoading = true;
   bool isLandscape = false;
   String? errorMessage;
   List<Map<String, dynamic>> episodes = [];
@@ -43,6 +46,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   bool hasSubAvailable = false;
   bool hasDubAvailable = false;
   DateTime lastEpisodeSwitchTime = DateTime.now().subtract(Duration(seconds: 5));
+  Timer? _videoLoadingTimer;
 
   @override
   void initState() {
@@ -126,6 +130,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     _fadeController.dispose();
     _slideController.dispose();
     _searchController.dispose();
+    _videoLoadingTimer?.cancel();
     
     // Dispose auto-rotation reminder
     AutoRotationReminder.dispose();
@@ -149,6 +154,20 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     super.dispose();
   }
 
+  void _showErrorSnackbar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.withOpacity(0.9),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   void _initializePlayer() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -159,9 +178,28 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         NavigationDelegate(
           onPageStarted: (String url) {
             print('Page started: $url');
+            setState(() {
+              isVideoLoading = true;
+            });
+            
+            // Start video loading timeout
+            _videoLoadingTimer?.cancel();
+            _videoLoadingTimer = Timer(Duration(seconds: 45), () {
+              if (isVideoLoading) {
+                _showErrorSnackbar('Video loading timed out. Please try again.');
+                setState(() {
+                  isVideoLoading = false;
+                });
+              }
+            });
           },
           onPageFinished: (String url) {
             print('Page finished: $url');
+            setState(() {
+              isVideoLoading = false;
+            });
+            _videoLoadingTimer?.cancel();
+            
             // Auto-play video like Android + Enable fullscreen
             Future.delayed(Duration(seconds: 2), () {
               _controller.runJavaScript('''
@@ -215,6 +253,19 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
           },
           onWebResourceError: (WebResourceError error) {
             print('WebView error: ${error.description}');
+            _showErrorSnackbar('Video loading failed: ${error.description}');
+            setState(() {
+              isVideoLoading = false;
+            });
+            _videoLoadingTimer?.cancel();
+          },
+          onHttpError: (HttpResponseError error) {
+            print('HTTP error: ${error.response?.statusCode}');
+            _showErrorSnackbar('Network error: ${error.response?.statusCode ?? 'Unknown'}');
+            setState(() {
+              isVideoLoading = false;
+            });
+            _videoLoadingTimer?.cancel();
           },
         ),
       )
@@ -292,9 +343,11 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       setState(() {
         isLoading = true;
         hasError = false;
+        errorMessage = null;
       });
 
-      final result = await PlayerHandler.getEpisodesWithDetection(widget.animeId);
+      final result = await PlayerHandler.getEpisodesWithDetection(widget.animeId)
+          .timeout(Duration(seconds: 30));
       
       if (result['success']) {
         setState(() {
@@ -310,18 +363,42 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
           
           // Show auto-rotation reminder after 5 seconds
           AutoRotationReminder.checkAndShow(context);
+        } else {
+          setState(() {
+            hasError = true;
+            errorMessage = 'No episodes found for this anime';
+            isLoading = false;
+          });
         }
       } else {
         setState(() {
           hasError = true;
-          errorMessage = result['error'] ?? 'Failed to load episodes';
+          errorMessage = 'Failed to load episodes. Please check your connection.';
           isLoading = false;
         });
       }
+    } on SocketException {
+      setState(() {
+        hasError = true;
+        errorMessage = 'No internet connection. Please check your network.';
+        isLoading = false;
+      });
+    } on TimeoutException {
+      setState(() {
+        hasError = true;
+        errorMessage = 'Request timed out. Server might be slow or down.';
+        isLoading = false;
+      });
+    } on HttpException {
+      setState(() {
+        hasError = true;
+        errorMessage = 'Server error. Please try again later.';
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         hasError = true;
-        errorMessage = 'Error: $e';
+        errorMessage = 'Something went wrong. Please try again.';
         isLoading = false;
       });
     }
@@ -357,17 +434,17 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       );
 
       if (episode.isEmpty) {
-        return;
+        throw Exception('Episode $episodeNumber not found');
       }
 
       final streamUrl = await PlayerHandler.getStreamUrl(
         widget.animeId, 
         episode['episode_id'],
         preferredLanguage: selectedLanguage,
-      );
+      ).timeout(Duration(seconds: 30));
 
       if (streamUrl == null) {
-        return;
+        throw Exception('No stream URL found for this episode');
       }
 
       // Use native app approach - localhost server with iframe
@@ -378,14 +455,23 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         await _checkAvailableLanguages();
       }
       
+    } on SocketException {
+      _showErrorSnackbar('No internet connection');
+    } on TimeoutException {
+      _showErrorSnackbar('Episode loading timed out');
+    } on HttpException {
+      _showErrorSnackbar('Server error while loading episode');
     } catch (e) {
-      print('Episode loading failed: $e');
+      _showErrorSnackbar('Failed to load episode: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       setState(() {
         isLoadingEpisode = false;
       });
     }
   }
+
+  bool isVideoLoading = true;
+  Timer? _videoLoadingTimer;
 
   Future<void> _startLocalhostServer(String streamUrl) async {
     try {
@@ -573,12 +659,29 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     
     if (hasError) {
-      return LoadingErrorScreen(
-        errorMessage: errorMessage ?? 'We\'re having trouble loading episodes',
-        onRetry: () {
-          Navigator.pop(context);
-        },
-      );
+      // Show specific error screen based on error type
+      if (errorMessage?.contains('internet') == true || errorMessage?.contains('network') == true) {
+        return NoInternetScreen(
+          onRetry: () {
+            setState(() {
+              hasError = false;
+              errorMessage = null;
+            });
+            _loadEpisodesWithDetection();
+          },
+        );
+      } else {
+        return LoadingErrorScreen(
+          errorMessage: errorMessage ?? 'Something went wrong',
+          onRetry: () {
+            setState(() {
+              hasError = false;
+              errorMessage = null;
+            });
+            _loadEpisodesWithDetection();
+          },
+        );
+      }
     }
 
     return Scaffold(
@@ -673,28 +776,64 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       child: Stack(
         children: [
           // Full screen video player
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.black,
-            ),
-            child: WebViewWidget(controller: _controller),
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                ),
+                child: WebViewWidget(controller: _controller),
+              ),
+              
+              // Episode loading indicator for landscape
+              if (isLoadingEpisode || isVideoLoading)
+                Container(
+                  color: Colors.black.withOpacity(0.7),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Lottie.asset(
+                          'assets/animations/loading.json',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.contain,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          isLoadingEpisode ? 'Loading Episode...' : 'Loading Video...',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
           
-          // Only back button in landscape - no other controls
+          // Exit fullscreen button - small, no background
           Positioned(
-            top: 20,
-            left: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
-              ),
-              child: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                onPressed: () => Navigator.pop(context),
+            top: 15,
+            left: 15,
+            child: GestureDetector(
+              onTap: () {
+                // Exit fullscreen - go back to portrait
+                SystemChrome.setPreferredOrientations([
+                  DeviceOrientation.portraitUp,
+                ]);
+              },
+              child: Container(
+                padding: EdgeInsets.all(6),
+                child: Icon(
+                  Icons.fullscreen_exit,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 18,
+                ),
               ),
             ),
           ),
@@ -728,12 +867,49 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             ),
             child: Stack(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-                  ),
-                  child: WebViewWidget(controller: _controller),
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                      child: WebViewWidget(controller: _controller),
+                    ),
+                    
+                    // Episode loading indicator
+                    if (isLoadingEpisode || isVideoLoading)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(24),
+                            bottomRight: Radius.circular(24),
+                          ),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Lottie.asset(
+                                'assets/animations/loading.json',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.contain,
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                isLoadingEpisode ? 'Loading Episode...' : 'Loading Video...',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 
                 // Fullscreen button
@@ -1150,4 +1326,5 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       },
     );
   }
+}
 }
