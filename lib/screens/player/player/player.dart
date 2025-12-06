@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:io';
 import '../handler/player_handler.dart';
 import '../../errors/loading_error.dart';
@@ -27,24 +27,39 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late TextEditingController _searchController;
   
   bool isLoading = true;
   bool hasError = false;
   bool isLoadingEpisode = false;
+  bool isLandscape = false;
   String? errorMessage;
   List<Map<String, dynamic>> episodes = [];
+  List<Map<String, dynamic>> filteredEpisodes = [];
   int currentEpisode = 1;
   String? detectedApiType;
+  String selectedLanguage = 'sub'; // 'sub' or 'dub'
   DateTime lastEpisodeSwitchTime = DateTime.now().subtract(Duration(seconds: 5));
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     _setupAnimations();
     _setupStatusBar();
+    _setupOrientationListener();
     PlayerHandler.resetDetection();
     _initializePlayer();
     _loadEpisodesWithDetection();
+  }
+
+  void _setupOrientationListener() {
+    // Listen for orientation changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+      });
+    });
   }
 
   void _setupAnimations() {
@@ -86,29 +101,44 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
+    
+    // Enable auto-rotation for video player
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
+    _searchController.dispose();
+    
+    // Reset to portrait mode when leaving player
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    
+    // Reset system UI
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    super.dispose();
-  }
-
-  void _showToast(String message, {bool isError = false}) {
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: isError ? Colors.red : Colors.green,
-      textColor: Colors.white,
-      fontSize: 14.0,
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
     );
+    
+    super.dispose();
   }
 
   void _initializePlayer() {
@@ -177,16 +207,38 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
           },
           onWebResourceError: (WebResourceError error) {
             print('WebView error: ${error.description}');
-            _showToast('❌ Player error: ${error.description}', isError: true);
           },
         ),
       )
       ..addJavaScriptChannel(
         'playerReady',
         onMessageReceived: (JavaScriptMessage message) {
-          _showToast('🎉 Video Ready!');
+          // Video ready - no toast needed
         },
       );
+  }
+
+  void _filterEpisodes(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredEpisodes = episodes;
+      } else {
+        filteredEpisodes = episodes.where((episode) {
+          final episodeNumber = episode['episode_number'].toString();
+          return episodeNumber.contains(query);
+        }).toList();
+      }
+    });
+  }
+
+  void _switchLanguage(String language) {
+    if (detectedApiType == 'english') {
+      setState(() {
+        selectedLanguage = language;
+      });
+      // Reload current episode with new language
+      _loadEpisode(currentEpisode);
+    }
   }
 
   Future<void> _loadEpisodesWithDetection() async {
@@ -201,6 +253,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       if (result['success']) {
         setState(() {
           episodes = List<Map<String, dynamic>>.from(result['episodes']);
+          filteredEpisodes = episodes; // Initialize filtered list
           detectedApiType = result['apiType'];
           isLoading = false;
         });
@@ -244,8 +297,6 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         lastEpisodeSwitchTime = now;
       });
       
-      _showToast('🎬 Loading Episode $episodeNumber...');
-      
       setState(() {
         currentEpisode = episodeNumber;
       });
@@ -256,14 +307,12 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       );
 
       if (episode.isEmpty) {
-        _showToast('❌ Episode $episodeNumber not found', isError: true);
         return;
       }
 
       final streamUrl = await PlayerHandler.getStreamUrl(widget.animeId, episode['episode_id']);
 
       if (streamUrl == null) {
-        _showToast('❌ No stream URL found', isError: true);
         return;
       }
 
@@ -271,7 +320,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       await _startLocalhostServer(streamUrl);
       
     } catch (e) {
-      _showToast('❌ Episode loading failed: $e', isError: true);
+      print('Episode loading failed: $e');
     } finally {
       setState(() {
         isLoadingEpisode = false;
@@ -281,8 +330,6 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
 
   Future<void> _startLocalhostServer(String streamUrl) async {
     try {
-      _showToast('🚀 Starting localhost server...');
-      
       // Stop existing server
       await _stopLocalServer();
       
@@ -307,6 +354,19 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    -ms-user-select: none;
+                    user-select: none;
+                    -webkit-touch-callout: none;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                
+                html, body {
+                    overscroll-behavior: none;
+                    -webkit-overscroll-behavior: none;
+                    overflow: hidden;
+                    background: #000;
                 }
                 
                 body {
@@ -318,6 +378,9 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                     width: 100vw;
                     height: 100vh;
                     position: relative;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    user-select: none;
                 }
                 
                 iframe {
@@ -325,6 +388,10 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                     height: 100%;
                     border: none;
                     background: #000;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    user-select: none;
+                    pointer-events: auto;
                 }
                 
                 /* Fullscreen styles */
@@ -356,6 +423,27 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             </div>
             
             <script>
+                // Disable context menu, text selection, and overscroll
+                document.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+                
+                document.addEventListener('selectstart', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+                
+                document.addEventListener('dragstart', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+                
+                // Disable overscroll bounce
+                document.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                }, { passive: false });
+                
                 // Enhanced fullscreen support
                 const iframe = document.getElementById('video-frame');
                 
@@ -397,10 +485,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       // Load localhost URL in WebView (exactly like Android)
       await _controller.loadRequest(Uri.parse('http://localhost:$port'));
       
-      _showToast('✅ Localhost server running on port $port');
-      
     } catch (e) {
-      _showToast('❌ Server failed: $e', isError: true);
       // Fallback to direct URL
       await _controller.loadRequest(Uri.parse(streamUrl));
     }
@@ -425,6 +510,9 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    // Update landscape state
+    isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    
     if (hasError) {
       return LoadingErrorScreen(
         errorMessage: errorMessage ?? 'We\'re having trouble loading episodes',
@@ -437,124 +525,259 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Container(
+      extendBody: true,
+      appBar: isLandscape ? null : _buildAppBar(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.black,
+              Color(0xFF0A0A0A),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: isLoading 
+            ? _buildLoadingScreen()
+            : isLandscape 
+              ? _buildLandscapeLayout()
+              : _buildPortraitLayout(),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: Container(
+        margin: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      title: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Text(
+          widget.animeTitle,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      actions: [
+        Container(
           margin: EdgeInsets.all(8),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            color: Color(0xFFFF8C00).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
           ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        title: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Text(
-            widget.animeTitle,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        actions: [
-          Container(
-            margin: EdgeInsets.all(8),
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Color(0xFFFF8C00).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  detectedApiType == 'hindi' ? Icons.language : Icons.subtitles,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                detectedApiType == 'hindi' ? Icons.language : Icons.subtitles,
+                color: Color(0xFFFF8C00),
+                size: 16,
+              ),
+              SizedBox(width: 4),
+              Text(
+                detectedApiType == 'hindi' ? 'Hindi' : 'English',
+                style: TextStyle(
                   color: Color(0xFFFF8C00),
-                  size: 16,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
-                SizedBox(width: 4),
-                Text(
-                  detectedApiType == 'hindi' ? 'Hindi' : 'English',
-                  style: TextStyle(
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLandscapeLayout() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Stack(
+        children: [
+          // Full screen video player
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(0),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(0),
+              child: WebViewWidget(controller: _controller),
+            ),
+          ),
+          
+          // Floating back button
+          Positioned(
+            top: 20,
+            left: 20,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+          
+          // Floating episode info
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    detectedApiType == 'hindi' ? Icons.language : Icons.subtitles,
                     color: Color(0xFFFF8C00),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    size: 16,
                   ),
-                ),
-              ],
+                  SizedBox(width: 8),
+                  Text(
+                    'EP $currentEpisode',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
-      body: isLoading 
-        ? _buildLoadingScreen()
-        : FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
+    );
+  }
+
+  Widget _buildPortraitLayout() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Column(
+        children: [
+          // Video Player Section (45%)
+          Container(
+            height: MediaQuery.of(context).size.height * 0.45,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Stack(
               children: [
-                // Video Player Section (40%)
-                Container(
-                  height: MediaQuery.of(context).size.height * 0.4,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                    child: WebViewWidget(controller: _controller),
-                  ),
+                  child: WebViewWidget(controller: _controller),
                 ),
                 
-                // Episodes Section (60%)
-                Expanded(
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0xFF0A0A0A),
-                            Color(0xFF1A1A1A),
-                          ],
+                // Rotation hint
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.screen_rotation,
+                          color: Colors.white.withOpacity(0.8),
+                          size: 16,
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildEpisodeHeader(),
-                          Expanded(child: _buildEpisodeList()),
-                        ],
-                      ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Rotate for fullscreen',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
           ),
+          
+          // Episodes Section (55%)
+          Expanded(
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF0A0A0A),
+                      Color(0xFF1A1A1A),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    _buildEpisodeHeader(),
+                    Expanded(child: _buildEpisodeList()),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -571,39 +794,11 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         ),
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: CircularProgressIndicator(
-                color: Color(0xFFFF8C00),
-                strokeWidth: 3,
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Loading Episodes...',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Auto-detecting best quality',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
-                fontSize: 14,
-              ),
-            ),
-          ],
+        child: Lottie.asset(
+          'assets/animations/loading.json',
+          width: 120,
+          height: 120,
+          fit: BoxFit.contain,
         ),
       ),
     );
@@ -612,60 +807,183 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   Widget _buildEpisodeHeader() {
     return Container(
       padding: EdgeInsets.all(20),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Color(0xFFFF8C00).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.2)),
-            ),
-            child: Icon(
-              Icons.playlist_play_rounded,
-              color: Color(0xFFFF8C00),
-              size: 24,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Episodes',
+          // Title and episode count row
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Color(0xFFFF8C00).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.2)),
+                ),
+                child: Icon(
+                  Icons.playlist_play_rounded,
+                  color: Color(0xFFFF8C00),
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Episodes',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${episodes.length} episodes available',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: Text(
+                  'EP $currentEpisode',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8C00),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  '${episodes.length} episodes available',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 14,
+              ),
+            ],
+          ),
+          
+          SizedBox(height: 16),
+          
+          // Search box
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterEpisodes,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search episode number...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.white.withOpacity(0.5),
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+          
+          // Sub/Dub buttons for English anime
+          if (detectedApiType == 'english') ...[
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _switchLanguage('sub'),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: selectedLanguage == 'sub' 
+                          ? Color(0xFFFF8C00).withOpacity(0.2)
+                          : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selectedLanguage == 'sub' 
+                            ? Color(0xFFFF8C00)
+                            : Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.subtitles,
+                            color: selectedLanguage == 'sub' 
+                              ? Color(0xFFFF8C00)
+                              : Colors.white.withOpacity(0.7),
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'SUB',
+                            style: TextStyle(
+                              color: selectedLanguage == 'sub' 
+                                ? Color(0xFFFF8C00)
+                                : Colors.white.withOpacity(0.7),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _switchLanguage('dub'),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: selectedLanguage == 'dub' 
+                          ? Color(0xFFFF8C00).withOpacity(0.2)
+                          : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selectedLanguage == 'dub' 
+                            ? Color(0xFFFF8C00)
+                            : Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.record_voice_over,
+                            color: selectedLanguage == 'dub' 
+                              ? Color(0xFFFF8C00)
+                              : Colors.white.withOpacity(0.7),
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'DUB',
+                            style: TextStyle(
+                              color: selectedLanguage == 'dub' 
+                                ? Color(0xFFFF8C00)
+                                : Colors.white.withOpacity(0.7),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
-            child: Text(
-              'EP $currentEpisode',
-              style: TextStyle(
-                color: Color(0xFFFF8C00),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          ],
         ],
       ),
     );
@@ -675,9 +993,9 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: 20),
       physics: BouncingScrollPhysics(),
-      itemCount: episodes.length,
+      itemCount: filteredEpisodes.length,
       itemBuilder: (context, index) {
-        final episode = episodes[index];
+        final episode = filteredEpisodes[index];
         final episodeNum = episode['episode_number'];
         final isSelected = episodeNum == currentEpisode;
         
@@ -768,12 +1086,34 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                             overflow: TextOverflow.ellipsis,
                           ),
                           SizedBox(height: 4),
-                          Text(
-                            'Episode $episodeNum',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 12,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                'Episode $episodeNum',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              if (detectedApiType == 'english') ...[
+                                SizedBox(width: 8),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFFF8C00).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    selectedLanguage.toUpperCase(),
+                                    style: TextStyle(
+                                      color: Color(0xFFFF8C00),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
