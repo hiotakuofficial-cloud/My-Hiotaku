@@ -63,24 +63,43 @@ class PlayerHandler {
     try {
       _showToast('🌐 Trying English API...');
       final url = AppConfig.buildUrl('episodes', {'id': animeId});
+      print('🔍 English API URL: $url');
       
       final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      print('🔍 English API Status: ${response.statusCode}');
+      print('🔍 English API Response: ${response.body}');
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print('🔍 English API Data: $data');
+        
         if (data['success'] == true && data['episodes'] != null) {
           final List<dynamic> episodes = data['episodes'];
+          print('🔍 English Episodes Count: ${episodes.length}');
+          
           if (episodes.isNotEmpty) {
+            final mappedEpisodes = episodes.map((episode) {
+              // Handle both string and int episode numbers
+              final episodeNum = episode['episode_number'] is String 
+                  ? int.tryParse(episode['episode_number']) ?? 1
+                  : episode['episode_number'] ?? 1;
+              
+              return {
+                'episode_number': episodeNum,
+                'episode_id': episode['episode_id'].toString(),
+                'title': episode['title'] ?? 'Episode $episodeNum',
+                'type': 'english',
+              };
+            }).toList();
+            
+            print('🔍 Mapped Episodes: ${mappedEpisodes.length}');
             return {
               'success': true,
-              'episodes': episodes.map((episode) => {
-                'episode_number': episode['episode_number'] ?? 1,
-                'episode_id': episode['episode_id'].toString(),
-                'title': episode['title'] ?? 'Episode ${episode['episode_number']}',
-                'type': 'english',
-              }).toList(),
+              'episodes': mappedEpisodes,
             };
           }
+        } else {
+          print('❌ English API: success=${data['success']}, episodes=${data['episodes']}');
         }
       }
     } catch (e) {
