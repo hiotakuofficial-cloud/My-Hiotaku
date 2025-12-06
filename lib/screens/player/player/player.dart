@@ -82,14 +82,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
               return NavigationDecision.navigate;
             }
             
-            // Allow ads to load (like Android WebView)
-            if (request.url.contains('googleads') || 
-                request.url.contains('doubleclick') ||
-                request.url.contains('googlesyndication') ||
-                request.url.contains('adsystem')) {
-              return NavigationDecision.navigate;
-            }
-            
             // Allow the original stream domain
             if (request.url.contains('v1-w3sc.onrender.com') || 
                 request.url.contains('streamtape.com') ||
@@ -100,15 +92,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
               return NavigationDecision.navigate;
             }
             
-            // Only block final search redirects
-            if (request.url.contains('google.com/search') ||
-                request.url.contains('bing.com/search')) {
-              print('Blocked search redirect to: ${request.url}');
-              return NavigationDecision.prevent;
-            }
-            
-            // Allow everything else (like Android)
-            return NavigationDecision.navigate;
+            // Block ALL other redirects (like Android with no shouldOverrideUrlLoading)
+            print('Blocked redirect to: ${request.url}');
+            return NavigationDecision.prevent;
           },
           onWebResourceError: (WebResourceError error) {
             print('WebView error: ${error.description}');
