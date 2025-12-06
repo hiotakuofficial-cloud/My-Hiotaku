@@ -1324,4 +1324,3 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
     );
   }
 }
-}
