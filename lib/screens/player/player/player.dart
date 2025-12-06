@@ -57,14 +57,93 @@ class _PlayerScreenState extends State<PlayerScreen> {
   void _initializePlayer() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36')
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36')
       ..enableZoom(false)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) {},
+          onPageStarted: (String url) {
+            print('Page started: $url');
+          },
+          onPageFinished: (String url) {
+            print('Page finished: $url');
+            
+            // Hide ads without blocking them (to avoid detection)
+            _controller.runJavaScript('''
+              // Hide ads but don't block requests
+              function hideAds() {
+                const adSelectors = [
+                  '[id*="ad"]', '[class*="ad"]', '[id*="banner"]', '[class*="banner"]',
+                  '[id*="popup"]', '[class*="popup"]', '.advertisement', '#advertisement',
+                  '.ads', '#ads', '.google-ads', '.adsystem', '.adsbygoogle',
+                  '[src*="ads"]', '[src*="banner"]', '[href*="ads"]'
+                ];
+                
+                adSelectors.forEach(selector => {
+                  document.querySelectorAll(selector).forEach(el => {
+                    el.style.display = 'none !important';
+                    el.style.visibility = 'hidden !important';
+                    el.style.opacity = '0 !important';
+                    el.style.height = '0px !important';
+                    el.style.width = '0px !important';
+                    el.style.position = 'absolute !important';
+                    el.style.left = '-9999px !important';
+                  });
+                });
+                
+                // Hide overlay ads
+                document.querySelectorAll('div').forEach(el => {
+                  const style = window.getComputedStyle(el);
+                  if (style.position === 'fixed' || style.position === 'absolute') {
+                    if (style.zIndex > 1000) {
+                      el.style.display = 'none !important';
+                    }
+                  }
+                });
+              }
+              
+              // Run immediately and continuously
+              hideAds();
+              setInterval(hideAds, 500);
+              
+              // Prevent popups
+              const originalOpen = window.open;
+              window.open = function() { 
+                console.log('Popup blocked');
+                return null; 
+              };
+              
+              // Block alert/confirm dialogs
+              window.alert = function() { return false; };
+              window.confirm = function() { return false; };
+              
+              console.log('Ad hiding script loaded');
+            ''');
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            print('Navigation request: ${request.url}');
+            
+            // Allow localhost URLs
+            if (request.url.startsWith('http://localhost:')) {
+              return NavigationDecision.navigate;
+            }
+            
+            // Allow the original stream domain
+            if (request.url.contains('v1-w3sc.onrender.com') || 
+                request.url.contains('streamtape.com') ||
+                request.url.contains('doodstream.com') ||
+                request.url.contains('mixdrop.co') ||
+                request.url.contains('upstream.to') ||
+                request.url.contains('mp4upload.com')) {
+              return NavigationDecision.navigate;
+            }
+            
+            // Block all other redirects (Google, ads, etc.)
+            print('Blocked redirect to: ${request.url}');
+            return NavigationDecision.prevent;
+          },
           onWebResourceError: (WebResourceError error) {
+            print('WebView error: ${error.description}');
             _showToast('❌ Player error: ${error.description}', isError: true);
           },
         ),
@@ -177,6 +256,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     height: 100vh; 
                     border: none;
                 }
+                /* Hide any ads */
+                [id*="ad"], [class*="ad"], [id*="banner"], [class*="banner"],
+                [id*="popup"], [class*="popup"], .advertisement, #advertisement,
+                .ads, #ads, .google-ads, .adsystem, .adsbygoogle {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    height: 0px !important;
+                    width: 0px !important;
+                }
             </style>
         </head>
         <body>
@@ -185,8 +274,30 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     height="100%" 
                     frameborder="0" 
                     allowfullscreen
-                    allow="autoplay; fullscreen; picture-in-picture">
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-top-navigation allow-presentation">
             </iframe>
+            
+            <script>
+                // Continuous ad hiding
+                function hideAds() {
+                    const adElements = document.querySelectorAll('[id*="ad"], [class*="ad"], [id*="banner"], [class*="banner"], [id*="popup"], [class*="popup"]');
+                    adElements.forEach(el => {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                        el.style.opacity = '0';
+                    });
+                }
+                
+                setInterval(hideAds, 100);
+                
+                // Block popups
+                window.open = function() { return null; };
+                window.alert = function() { return false; };
+                window.confirm = function() { return false; };
+                
+                console.log('Player loaded with ad blocking');
+            </script>
         </body>
         </html>
         ''';
