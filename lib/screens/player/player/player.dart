@@ -68,57 +68,53 @@ class _PlayerScreenState extends State<PlayerScreen> {
           onPageFinished: (String url) {
             print('Page finished: $url');
             
-            // Hide ads without blocking them (to avoid detection)
-            _controller.runJavaScript('''
-              // Hide ads but don't block requests
-              function hideAds() {
-                const adSelectors = [
-                  '[id*="ad"]', '[class*="ad"]', '[id*="banner"]', '[class*="banner"]',
-                  '[id*="popup"]', '[class*="popup"]', '.advertisement', '#advertisement',
-                  '.ads', '#ads', '.google-ads', '.adsystem', '.adsbygoogle',
-                  '[src*="ads"]', '[src*="banner"]', '[href*="ads"]'
-                ];
-                
-                adSelectors.forEach(selector => {
-                  document.querySelectorAll(selector).forEach(el => {
-                    el.style.display = 'none !important';
-                    el.style.visibility = 'hidden !important';
-                    el.style.opacity = '0 !important';
-                    el.style.height = '0px !important';
-                    el.style.width = '0px !important';
-                    el.style.position = 'absolute !important';
-                    el.style.left = '-9999px !important';
+            // Wait a bit for ads to load, then hide them
+            Future.delayed(Duration(milliseconds: 2000), () {
+              _controller.runJavaScript('''
+                // Let ads load first, then hide them
+                setTimeout(function() {
+                  const adSelectors = [
+                    '[id*="ad"]', '[class*="ad"]', '[id*="banner"]', '[class*="banner"]',
+                    '[id*="popup"]', '[class*="popup"]', '.advertisement', '#advertisement',
+                    '.ads', '#ads', '.google-ads', '.adsystem', '.adsbygoogle',
+                    '[src*="ads"]', '[src*="banner"]', '[href*="ads"]'
+                  ];
+                  
+                  adSelectors.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                      // Move ads off-screen instead of hiding
+                      el.style.position = 'absolute';
+                      el.style.left = '-9999px';
+                      el.style.top = '-9999px';
+                      el.style.width = '1px';
+                      el.style.height = '1px';
+                      el.style.overflow = 'hidden';
+                    });
                   });
-                });
-                
-                // Hide overlay ads
-                document.querySelectorAll('div').forEach(el => {
-                  const style = window.getComputedStyle(el);
-                  if (style.position === 'fixed' || style.position === 'absolute') {
-                    if (style.zIndex > 1000) {
-                      el.style.display = 'none !important';
+                  
+                  // Hide overlay ads
+                  document.querySelectorAll('div').forEach(el => {
+                    const style = window.getComputedStyle(el);
+                    if (style.position === 'fixed' || style.position === 'absolute') {
+                      if (style.zIndex > 1000) {
+                        el.style.left = '-9999px';
+                        el.style.top = '-9999px';
+                      }
                     }
-                  }
-                });
-              }
-              
-              // Run immediately and continuously
-              hideAds();
-              setInterval(hideAds, 500);
-              
-              // Prevent popups
-              const originalOpen = window.open;
-              window.open = function() { 
-                console.log('Popup blocked');
-                return null; 
-              };
-              
-              // Block alert/confirm dialogs
-              window.alert = function() { return false; };
-              window.confirm = function() { return false; };
-              
-              console.log('Ad hiding script loaded');
-            ''');
+                  });
+                  
+                  console.log('Ads moved off-screen');
+                }, 3000); // Wait 3 seconds for ads to load
+                
+                // Don't block popups immediately - let them load first
+                setTimeout(function() {
+                  window.open = function() { 
+                    console.log('Popup redirected');
+                    return window; // Return window object to avoid detection
+                  };
+                }, 5000);
+              ''');
+            });
           },
           onNavigationRequest: (NavigationRequest request) {
             print('Navigation request: ${request.url}');
@@ -256,15 +252,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     height: 100vh; 
                     border: none;
                 }
-                /* Hide any ads */
+                /* Move ads off-screen instead of hiding */
                 [id*="ad"], [class*="ad"], [id*="banner"], [class*="banner"],
                 [id*="popup"], [class*="popup"], .advertisement, #advertisement,
                 .ads, #ads, .google-ads, .adsystem, .adsbygoogle {
-                    display: none !important;
-                    visibility: hidden !important;
-                    opacity: 0 !important;
-                    height: 0px !important;
-                    width: 0px !important;
+                    position: absolute !important;
+                    left: -9999px !important;
+                    top: -9999px !important;
+                    width: 1px !important;
+                    height: 1px !important;
+                    overflow: hidden !important;
                 }
             </style>
         </head>
@@ -274,29 +271,35 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     height="100%" 
                     frameborder="0" 
                     allowfullscreen
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-top-navigation allow-presentation">
+                    allow="autoplay; fullscreen; picture-in-picture">
             </iframe>
             
             <script>
-                // Continuous ad hiding
-                function hideAds() {
+                // Let ads load completely first
+                setTimeout(function() {
+                    // Move ads off-screen instead of hiding
                     const adElements = document.querySelectorAll('[id*="ad"], [class*="ad"], [id*="banner"], [class*="banner"], [id*="popup"], [class*="popup"]');
                     adElements.forEach(el => {
-                        el.style.display = 'none';
-                        el.style.visibility = 'hidden';
-                        el.style.opacity = '0';
+                        el.style.position = 'absolute';
+                        el.style.left = '-9999px';
+                        el.style.top = '-9999px';
+                        el.style.width = '1px';
+                        el.style.height = '1px';
                     });
-                }
+                    
+                    console.log('Ads moved off-screen after loading');
+                }, 5000); // Wait 5 seconds for ads to fully load
                 
-                setInterval(hideAds, 100);
+                // Don't block popups immediately
+                setTimeout(function() {
+                    const originalOpen = window.open;
+                    window.open = function() { 
+                        console.log('Popup handled');
+                        return window; // Return window to avoid detection
+                    };
+                }, 8000);
                 
-                // Block popups
-                window.open = function() { return null; };
-                window.alert = function() { return false; };
-                window.confirm = function() { return false; };
-                
-                console.log('Player loaded with ad blocking');
+                console.log('Player loaded - ads will be moved after loading');
             </script>
         </body>
         </html>
