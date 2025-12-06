@@ -67,60 +67,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
           },
           onPageFinished: (String url) {
             print('Page finished: $url');
-            
-            // Wait a bit for ads to load, then hide them
-            Future.delayed(Duration(milliseconds: 2000), () {
-              _controller.runJavaScript('''
-                // Let ads load first, then hide them
-                setTimeout(function() {
-                  const adSelectors = [
-                    '[id*="ad"]', '[class*="ad"]', '[id*="banner"]', '[class*="banner"]',
-                    '[id*="popup"]', '[class*="popup"]', '.advertisement', '#advertisement',
-                    '.ads', '#ads', '.google-ads', '.adsystem', '.adsbygoogle',
-                    '[src*="ads"]', '[src*="banner"]', '[href*="ads"]'
-                  ];
-                  
-                  adSelectors.forEach(selector => {
-                    document.querySelectorAll(selector).forEach(el => {
-                      // Move ads off-screen instead of hiding
-                      el.style.position = 'absolute';
-                      el.style.left = '-9999px';
-                      el.style.top = '-9999px';
-                      el.style.width = '1px';
-                      el.style.height = '1px';
-                      el.style.overflow = 'hidden';
-                    });
-                  });
-                  
-                  // Hide overlay ads
-                  document.querySelectorAll('div').forEach(el => {
-                    const style = window.getComputedStyle(el);
-                    if (style.position === 'fixed' || style.position === 'absolute') {
-                      if (style.zIndex > 1000) {
-                        el.style.left = '-9999px';
-                        el.style.top = '-9999px';
-                      }
-                    }
-                  });
-                  
-                  console.log('Ads moved off-screen');
-                }, 3000); // Wait 3 seconds for ads to load
-                
-                // Don't block popups immediately - let them load first
-                setTimeout(function() {
-                  window.open = function() { 
-                    console.log('Popup redirected');
-                    return window; // Return window object to avoid detection
-                  };
-                }, 5000);
-              ''');
-            });
+            // No JavaScript interference - let ads load normally like Android
           },
           onNavigationRequest: (NavigationRequest request) {
             print('Navigation request: ${request.url}');
             
             // Allow localhost URLs
             if (request.url.startsWith('http://localhost:')) {
+              return NavigationDecision.navigate;
+            }
+            
+            // Allow ads to load (like Android WebView)
+            if (request.url.contains('googleads') || 
+                request.url.contains('doubleclick') ||
+                request.url.contains('googlesyndication') ||
+                request.url.contains('adsystem')) {
               return NavigationDecision.navigate;
             }
             
@@ -134,9 +95,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
               return NavigationDecision.navigate;
             }
             
-            // Block all other redirects (Google, ads, etc.)
-            print('Blocked redirect to: ${request.url}');
-            return NavigationDecision.prevent;
+            // Only block final search redirects
+            if (request.url.contains('google.com/search') ||
+                request.url.contains('bing.com/search')) {
+              print('Blocked search redirect to: ${request.url}');
+              return NavigationDecision.prevent;
+            }
+            
+            // Allow everything else (like Android)
+            return NavigationDecision.navigate;
           },
           onWebResourceError: (WebResourceError error) {
             print('WebView error: ${error.description}');
@@ -236,70 +203,62 @@ class _PlayerScreenState extends State<PlayerScreen> {
       server.listen((HttpRequest request) {
         final response = request.response;
         
-        // Generate HTML with iframe (same as native app)
+        // Generate HTML that embeds video in iframe (like Android)
         final htmlContent = '''
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Video Player</title>
             <style>
-                * { margin: 0; padding: 0; }
-                body { background: #000; overflow: hidden; }
-                iframe { 
-                    width: 100vw; 
-                    height: 100vh; 
-                    border: none;
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
                 }
-                /* Move ads off-screen instead of hiding */
-                [id*="ad"], [class*="ad"], [id*="banner"], [class*="banner"],
-                [id*="popup"], [class*="popup"], .advertisement, #advertisement,
-                .ads, #ads, .google-ads, .adsystem, .adsbygoogle {
-                    position: absolute !important;
-                    left: -9999px !important;
-                    top: -9999px !important;
-                    width: 1px !important;
-                    height: 1px !important;
-                    overflow: hidden !important;
+                
+                body {
+                    background: #000;
+                    overflow: hidden;
+                }
+                
+                #video-container {
+                    width: 100vw;
+                    height: 100vh;
+                    position: relative;
+                }
+                
+                iframe {
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                    background: #000;
                 }
             </style>
         </head>
         <body>
-            <iframe src="$streamUrl" 
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0" 
-                    allowfullscreen
-                    allow="autoplay; fullscreen; picture-in-picture">
-            </iframe>
+            <div id="video-container">
+                <iframe id="video-frame" src="$streamUrl" allowfullscreen></iframe>
+            </div>
             
             <script>
-                // Let ads load completely first
-                setTimeout(function() {
-                    // Move ads off-screen instead of hiding
-                    const adElements = document.querySelectorAll('[id*="ad"], [class*="ad"], [id*="banner"], [class*="banner"], [id*="popup"], [class*="popup"]');
-                    adElements.forEach(el => {
-                        el.style.position = 'absolute';
-                        el.style.left = '-9999px';
-                        el.style.top = '-9999px';
-                        el.style.width = '1px';
-                        el.style.height = '1px';
-                    });
-                    
-                    console.log('Ads moved off-screen after loading');
-                }, 5000); // Wait 5 seconds for ads to fully load
+                // Prevent reload loops
+                let loaded = false;
                 
-                // Don't block popups immediately
-                setTimeout(function() {
-                    const originalOpen = window.open;
-                    window.open = function() { 
-                        console.log('Popup handled');
-                        return window; // Return window to avoid detection
-                    };
-                }, 8000);
+                function loadVideo(url) {
+                    if (!loaded) {
+                        document.getElementById('video-frame').src = url;
+                        loaded = true;
+                    }
+                }
                 
-                console.log('Player loaded - ads will be moved after loading');
+                // Auto load stream URL on page load
+                window.onload = function() {
+                    if (!loaded) {
+                        document.getElementById('video-frame').src = '$streamUrl';
+                        loaded = true;
+                    }
+                };
             </script>
         </body>
         </html>
@@ -310,7 +269,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         response.close();
       });
       
-      // Load localhost URL in WebView (same as native app)
+      // Load localhost URL in WebView (exactly like Android)
       await _controller.loadRequest(Uri.parse('http://localhost:$port'));
       
       _showToast('✅ Localhost server running on port $port');
