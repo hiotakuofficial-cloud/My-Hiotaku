@@ -111,7 +111,7 @@ class PlayerHandler {
   }
   
   // Get stream URL using detected API
-  static Future<String?> getStreamUrl(String animeId, String episodeId) async {
+  static Future<String?> getStreamUrl(String animeId, String episodeId, {String preferredLanguage = 'sub'}) async {
     if (_detectedApiType == null) {
       return null;
     }
@@ -119,7 +119,7 @@ class PlayerHandler {
     if (_detectedApiType == 'hindi') {
       return await _getHindiStreamUrl(animeId, episodeId);
     } else {
-      return await _getEnglishStreamUrl(animeId, episodeId);
+      return await _getEnglishStreamUrl(animeId, episodeId, preferredLanguage);
     }
   }
   
@@ -149,7 +149,7 @@ class PlayerHandler {
   }
   
   // Get English stream URL
-  static Future<String?> _getEnglishStreamUrl(String animeId, String episodeId) async {
+  static Future<String?> _getEnglishStreamUrl(String animeId, String episodeId, String preferredLanguage) async {
     try {
       final url = AppConfig.buildUrl('video', {'id': animeId, 'ep': episodeId});
       
@@ -160,8 +160,10 @@ class PlayerHandler {
         if (data['success'] == true && data['sources'] != null) {
           final sources = data['sources'];
           
-          // Try sub first, then dub
-          for (String lang in ['sub', 'dub']) {
+          // Try preferred language first, then fallback
+          final languageOrder = preferredLanguage == 'dub' ? ['dub', 'sub'] : ['sub', 'dub'];
+          
+          for (String lang in languageOrder) {
             if (sources[lang] != null && sources[lang] is List) {
               final langSources = sources[lang] as List;
               if (langSources.isNotEmpty) {
@@ -178,6 +180,31 @@ class PlayerHandler {
     return null;
   }
   
+  // Check available languages for English episodes
+  static Future<Map<String, bool>> getAvailableLanguages(String animeId, String episodeId) async {
+    try {
+      final url = AppConfig.buildUrl('video', {'id': animeId, 'ep': episodeId});
+      
+      final response = await http.get(Uri.parse(url), headers: AppConfig.defaultHeaders);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['sources'] != null) {
+          final sources = data['sources'];
+          
+          return {
+            'hasSub': sources['sub'] != null && sources['sub'] is List && (sources['sub'] as List).isNotEmpty,
+            'hasDub': sources['dub'] != null && sources['dub'] is List && (sources['dub'] as List).isNotEmpty,
+          };
+        }
+      }
+    } catch (e) {
+      // Silent error handling
+    }
+    
+    return {'hasSub': false, 'hasDub': false};
+  }
+
   // Get detected API type
   static String? getDetectedApiType() {
     return _detectedApiType;

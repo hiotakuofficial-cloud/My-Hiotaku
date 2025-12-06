@@ -39,6 +39,8 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   int currentEpisode = 1;
   String? detectedApiType;
   String selectedLanguage = 'sub'; // 'sub' or 'dub'
+  bool hasSubAvailable = false;
+  bool hasDubAvailable = false;
   DateTime lastEpisodeSwitchTime = DateTime.now().subtract(Duration(seconds: 5));
 
   @override
@@ -93,10 +95,12 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   }
 
   void _setupStatusBar() {
+    // Complete immersive sticky mode - permanently hide status bar
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.immersiveSticky,
       overlays: [],
     );
+    
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -218,6 +222,44 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       );
   }
 
+  Future<void> _checkAvailableLanguages() async {
+    if (detectedApiType == 'english' && episodes.isNotEmpty) {
+      final episode = episodes.firstWhere(
+        (ep) => ep['episode_number'] == currentEpisode,
+        orElse: () => episodes.first,
+      );
+      
+      final result = await PlayerHandler.getAvailableLanguages(widget.animeId, episode['episode_id']);
+      
+      setState(() {
+        hasSubAvailable = result['hasSub'] ?? false;
+        hasDubAvailable = result['hasDub'] ?? false;
+        
+        // Set default language to available one
+        if (!hasSubAvailable && hasDubAvailable) {
+          selectedLanguage = 'dub';
+        } else if (hasSubAvailable && !hasDubAvailable) {
+          selectedLanguage = 'sub';
+        }
+      });
+    }
+  }
+
+  void _toggleFullscreen() {
+    if (isLandscape) {
+      // Exit fullscreen - go to portrait
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+    } else {
+      // Enter fullscreen - go to landscape
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
+  }
+
   void _filterEpisodes(String query) {
     setState(() {
       if (query.isEmpty) {
@@ -232,11 +274,11 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   }
 
   void _switchLanguage(String language) {
-    if (detectedApiType == 'english') {
+    if (detectedApiType == 'english' && selectedLanguage != language) {
       setState(() {
         selectedLanguage = language;
       });
-      // Reload current episode with new language
+      // Reload current episode with new language preference
       _loadEpisode(currentEpisode);
     }
   }
@@ -260,6 +302,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         
         if (episodes.isNotEmpty) {
           await _loadEpisode(episodes.first['episode_number']);
+          await _checkAvailableLanguages();
         }
       } else {
         setState(() {
@@ -310,7 +353,11 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         return;
       }
 
-      final streamUrl = await PlayerHandler.getStreamUrl(widget.animeId, episode['episode_id']);
+      final streamUrl = await PlayerHandler.getStreamUrl(
+        widget.animeId, 
+        episode['episode_id'],
+        preferredLanguage: selectedLanguage,
+      );
 
       if (streamUrl == null) {
         return;
@@ -318,6 +365,11 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
 
       // Use native app approach - localhost server with iframe
       await _startLocalhostServer(streamUrl);
+      
+      // Check available languages for this episode
+      if (detectedApiType == 'english') {
+        await _checkAvailableLanguages();
+      }
       
     } catch (e) {
       print('Episode loading failed: $e');
@@ -526,7 +578,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
       extendBody: true,
-      appBar: isLandscape ? null : _buildAppBar(),
+      appBar: (isLandscape || isLoading) ? null : _buildAppBar(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -538,14 +590,11 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             ],
           ),
         ),
-        child: SafeArea(
-          top: false,
-          child: isLoading 
-            ? _buildLoadingScreen()
-            : isLandscape 
-              ? _buildLandscapeLayout()
-              : _buildPortraitLayout(),
-        ),
+        child: isLoading 
+          ? _buildLoadingScreen()
+          : isLandscape 
+            ? _buildLandscapeLayout()
+            : _buildPortraitLayout(),
       ),
     );
   }
@@ -622,60 +671,23 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             height: double.infinity,
             decoration: BoxDecoration(
               color: Colors.black,
-              borderRadius: BorderRadius.circular(0),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(0),
-              child: WebViewWidget(controller: _controller),
-            ),
+            child: WebViewWidget(controller: _controller),
           ),
           
-          // Floating back button
+          // Only back button in landscape - no other controls
           Positioned(
             top: 20,
             left: 20,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(color: Colors.white.withOpacity(0.2)),
               ),
               child: IconButton(
                 icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                 onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-          
-          // Floating episode info
-          Positioned(
-            top: 20,
-            right: 20,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    detectedApiType == 'hindi' ? Icons.language : Icons.subtitles,
-                    color: Color(0xFFFF8C00),
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'EP $currentEpisode',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -717,34 +729,24 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                   child: WebViewWidget(controller: _controller),
                 ),
                 
-                // Rotation hint
+                // Fullscreen button
                 Positioned(
                   bottom: 16,
                   right: 16,
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.screen_rotation,
-                          color: Colors.white.withOpacity(0.8),
-                          size: 16,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Rotate for fullscreen',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
+                  child: GestureDetector(
+                    onTap: _toggleFullscreen,
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(color: Colors.white.withOpacity(0.2)),
+                      ),
+                      child: Icon(
+                        Icons.fullscreen,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -879,6 +881,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             child: TextField(
               controller: _searchController,
               onChanged: _filterEpisodes,
+              keyboardType: TextInputType.number,
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search episode number...',
@@ -893,8 +896,8 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             ),
           ),
           
-          // Sub/Dub buttons for English anime
-          if (detectedApiType == 'english') ...[
+          // Sub/Dub buttons for English anime - only show available languages
+          if (detectedApiType == 'english' && (hasSubAvailable || hasDubAvailable)) ...[
             SizedBox(height: 16),
             Row(
               children: [
