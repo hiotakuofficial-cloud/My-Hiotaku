@@ -29,8 +29,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   List<Map<String, dynamic>> episodes = [];
   int currentEpisode = 1;
   String? detectedApiType;
-  Process? _serverProcess;
-  int serverPort = 8000;
 
   @override
   void initState() {
@@ -42,7 +40,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
-    _stopLocalServer();
     super.dispose();
   }
 
@@ -140,152 +137,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return;
       }
 
-      await _startLocalServerAndLoadPlayer(streamUrl, episodeNumber);
+      // Load stream URL directly in WebView
+      await _controller.loadRequest(Uri.parse(streamUrl));
+      _showToast('✅ Episode $episodeNumber loaded');
       
     } catch (e) {
       _showToast('❌ Episode loading failed: $e', isError: true);
-    }
-  }
-
-  Future<void> _loadPlayerDirectly(String streamUrl, int episodeNumber) async {
-    try {
-      _showToast('🎬 Loading video player directly...');
-      
-      final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
-      await _controller.loadHtmlString(htmlContent);
-      
-      _showToast('✅ Player loaded (direct mode)');
-      
-    } catch (e) {
-      _showToast('❌ Player loading failed: $e', isError: true);
-    }
-  }
-
-  Future<String> _generateDynamicHTML(String streamUrl, int episodeNumber) async {
-    final apiType = PlayerHandler.getDetectedApiType() ?? 'unknown';
-    
-    return '''
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${widget.animeTitle} - Episode $episodeNumber</title>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-                background: #000; 
-                overflow: hidden;
-                font-family: Arial, sans-serif;
-            }
-            iframe { 
-                width: 100vw; 
-                height: 100vh; 
-                border: none;
-                pointer-events: auto;
-            }
-            .debug {
-                position: absolute;
-                top: 10px;
-                left: 10px;
-                background: rgba(0,0,0,0.9);
-                color: white;
-                padding: 12px;
-                border-radius: 8px;
-                font-size: 12px;
-                z-index: 1000;
-                max-width: 320px;
-                border: 1px solid #333;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="debug" id="debug">
-            <div>🎬 <strong>${apiType == 'hindi' ? '🇮🇳' : '🌐'} ${apiType == 'hindi' ? 'Hindi' : 'English'} Player</strong></div>
-            <div>📺 <strong>Anime:</strong> ${widget.animeTitle}</div>
-            <div>🎯 <strong>Episode:</strong> $episodeNumber</div>
-        </div>
-        
-        <iframe id="videoFrame" 
-                src="$streamUrl" 
-                allowfullscreen 
-                webkitallowfullscreen 
-                mozallowfullscreen
-                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-top-navigation allow-presentation allow-popups">
-        </iframe>
-        
-        <script>
-            setTimeout(() => document.getElementById('debug').style.opacity = '0.3', 30000);
-        </script>
-    </body>
-    </html>
-    ''';
-  }
-
-  Future<void> _startLocalServerAndLoadPlayer(String streamUrl, int episodeNumber) async {
-    try {
-      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-        await _tryLocalServer(streamUrl, episodeNumber);
-      } else {
-        await _loadPlayerDirectly(streamUrl, episodeNumber);
-      }
-    } catch (e) {
-      _showToast('⚠️ Server failed, using direct mode', isError: false);
-      await _loadPlayerDirectly(streamUrl, episodeNumber);
-    }
-  }
-
-  Future<void> _tryLocalServer(String streamUrl, int episodeNumber) async {
-    try {
-      _showToast('🚀 Starting localhost server...');
-      
-      await _stopLocalServer();
-      serverPort = await _findAvailablePort();
-      
-      final htmlContent = await _generateDynamicHTML(streamUrl, episodeNumber);
-      final htmlPath = '/tmp/player_${DateTime.now().millisecondsSinceEpoch}.html';
-      await File(htmlPath).writeAsString(htmlContent);
-      
-      _serverProcess = await Process.start(
-        'python3', 
-        ['-m', 'http.server', serverPort.toString()], 
-        workingDirectory: '/tmp'
-      );
-      
-      await Future.delayed(const Duration(milliseconds: 1500));
-      
-      final playerUrl = 'http://localhost:$serverPort/player_${DateTime.now().millisecondsSinceEpoch}.html';
-      await _controller.loadRequest(Uri.parse(playerUrl));
-      
-      _showToast('✅ Localhost server running on port $serverPort');
-      
-    } catch (e) {
-      throw Exception('Server start failed: $e');
-    }
-  }
-
-  Future<int> _findAvailablePort() async {
-    for (int port = 8000; port <= 8010; port++) {
-      try {
-        final socket = await ServerSocket.bind('localhost', port);
-        await socket.close();
-        return port;
-      } catch (e) {
-        continue;
-      }
-    }
-    return 8000;
-  }
-
-  Future<void> _stopLocalServer() async {
-    if (_serverProcess != null) {
-      try {
-        _serverProcess!.kill();
-        _serverProcess = null;
-      } catch (e) {
-        print('Error stopping server: $e');
-      }
     }
   }
 
