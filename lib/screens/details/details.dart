@@ -319,7 +319,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            // TODO: Navigate to login screen
+                            Navigator.pushNamed(context, '/login');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFFFF8C00),
