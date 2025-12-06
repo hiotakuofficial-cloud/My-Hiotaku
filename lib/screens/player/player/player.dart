@@ -100,10 +100,10 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   }
 
   void _setupStatusBar() {
-    // Complete immersive sticky mode - permanently hide status bar
+    // Show status bar with transparent background
     SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.immersiveSticky,
-      overlays: [],
+      SystemUiMode.edgeToEdge,
+      overlays: [SystemUiOverlay.top],
     );
     
     SystemChrome.setSystemUIOverlayStyle(
@@ -111,9 +111,8 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.black,
         systemNavigationBarIconBrightness: Brightness.light,
-        systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
     
