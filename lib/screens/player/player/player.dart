@@ -30,6 +30,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   List<Map<String, dynamic>> episodes = [];
   int currentEpisode = 1;
   String? detectedApiType;
+  DateTime lastEpisodeSwitchTime = DateTime.now().subtract(Duration(seconds: 5));
 
   @override
   void initState() {
@@ -68,7 +69,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
           },
           onPageFinished: (String url) {
             print('Page finished: $url');
-            // No JavaScript interference - let ads load normally like Android
+            // Auto-play video like Android
+            Future.delayed(Duration(seconds: 2), () {
+              _controller.runJavaScript("document.querySelector('video')?.play();");
+            });
           },
           onNavigationRequest: (NavigationRequest request) {
             print('Navigation request: ${request.url}');
@@ -162,9 +166,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
       return;
     }
     
+    // Check cooldown period (like Android)
+    final now = DateTime.now();
+    if (now.difference(lastEpisodeSwitchTime).inSeconds < 3) {
+      print('Episode switch cooldown active, skipping...');
+      return;
+    }
+    
     try {
       setState(() {
         isLoadingEpisode = true;
+        lastEpisodeSwitchTime = now;
       });
       
       _showToast('🎬 Loading Episode $episodeNumber...');
@@ -253,7 +265,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         </head>
         <body>
             <div id="video-container">
-                <iframe id="video-frame" src="$streamUrl" allowfullscreen></iframe>
+                <iframe id="video-frame" src="$streamUrl" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>
             </div>
             
             <script>
@@ -263,7 +275,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
         </html>
         ''';
         
+        // Add proper HTTP headers like Android
         response.headers.contentType = ContentType.html;
+        response.headers.add('Cache-Control', 'no-cache');
+        response.headers.add('Access-Control-Allow-Origin', '*');
         response.write(htmlContent);
         response.close();
       });
