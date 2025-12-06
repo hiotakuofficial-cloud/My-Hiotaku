@@ -837,9 +837,9 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       opacity: _fadeAnimation,
       child: Column(
         children: [
-          // Video Player Section (45%)
+          // Video Player Section (30%)
           Container(
-            height: MediaQuery.of(context).size.height * 0.45,
+            height: MediaQuery.of(context).size.height * 0.30,
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.black,
