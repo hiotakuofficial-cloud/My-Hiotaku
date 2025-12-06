@@ -100,19 +100,13 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   }
 
   void _setupStatusBar() {
-    // Hide status bar without black layout
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.immersive,
-      overlays: [],
-    );
+    // Proper fullscreen without black layout
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.black,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: Colors.black,
-        systemNavigationBarIconBrightness: Brightness.light,
+      SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
       ),
     );
     
