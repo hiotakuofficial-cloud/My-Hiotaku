@@ -12,7 +12,6 @@ import 'pages/upcoming.dart';
 import 'pages/anime_movies.dart';
 import 'pages/hindi_dubbed.dart';
 import 'pages/recently_added.dart';
-import 'pages/continue_watching.dart';
 import 'auth/login.dart';
 import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
@@ -239,8 +238,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       slivers: [
         _buildHeader(),
         _buildFeaturedCarousel(),
-        _buildSectionTitle('Continue Watching', () => _navigateToSeeAll('continue')),
-        _buildHorizontalList(featuredAnime.take(5).toList()), // Show some as continue watching
         _buildSectionTitle('Popular Now', () => _navigateToSeeAll('popular')),
         _buildHorizontalList(trendingAnime),
         _buildSectionTitle('Top Upcoming', () => _navigateToSeeAll('upcoming')),
@@ -826,9 +823,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         break;
       case 'recent':
         targetPage = RecentlyAddedPage();
-        break;
-      case 'continue':
-        targetPage = ContinueWatchingPage();
         break;
       default:
         // Show snackbar for unimplemented sections
