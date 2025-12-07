@@ -145,18 +145,24 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
           onRefresh: _loadFavorites,
           color: Color(0xFFFF8C00),
           backgroundColor: Color(0xFF1E1E1E),
-          child: Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
-            child: Column(
-              children: [
-                _buildHeader(),
-                SizedBox(height: 20),
-                _buildActionButtons(),
-                SizedBox(height: 20),
-                _buildSortDropdown(),
-                SizedBox(height: 20),
-                Expanded(child: _buildFavoritesList()),
-              ],
+          child: SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  SizedBox(height: 20),
+                  _buildActionButtons(),
+                  SizedBox(height: 20),
+                  _buildSortDropdown(),
+                  SizedBox(height: 20),
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: _buildFavoritesList(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

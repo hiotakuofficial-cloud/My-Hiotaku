@@ -11,7 +11,16 @@ import 'screens/search/search.dart';
 import 'screens/favourite/favourite.dart';
 import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
+import 'notifications/handler/firebase_messaging_handler.dart';
+
+// Background message handler (must be top-level function)
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print('Background message received: ${message.messageId}');
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +32,14 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     print('✅ Firebase initialized successfully');
+    
+    // Initialize Firebase Messaging background handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    // Initialize notification system
+    await FirebaseMessagingHandler.initialize();
+    print('✅ Notification system initialized');
+    
   } on FirebaseException catch (e) {
     print('❌ Firebase initialization failed: ${e.code} - ${e.message}');
     // App can still run without Firebase, but features will be limited
