@@ -810,8 +810,8 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                               isBookmarked 
                                   ? 'assets/icons/saved.png'
                                   : 'assets/icons/unsaved.png',
-                              width: 16,
-                              height: 16,
+                              width: 12,
+                              height: 12,
                               color: isBookmarked ? Color(0xFFFF8C00) : Colors.white,
                             ),
                     ),

@@ -213,7 +213,7 @@ class SupabaseHandler {
     required String animeId,
     required String animeTitle,
     String? animeImage,
-    bool isPublic = true,
+    bool isPublic = false,
   }) async {
     return await insertData(
       table: 'favorites',

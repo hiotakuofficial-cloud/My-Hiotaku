@@ -8,6 +8,7 @@ import 'screens/auth/bord_login.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile/profile.dart';
 import 'screens/search/search.dart';
+import 'screens/favourite/favourite.dart';
 import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -100,7 +101,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   final List<Widget> _screens = [
     HomeScreen(),
     SearchPage(),
-    FavoritesPage(),
+    FavouritePage(),
     ProfileScreen(),
   ];
 
@@ -266,56 +267,5 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
 // Placeholder pages
 
-class FavoritesPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-      child: Scaffold(
-        backgroundColor: Color(0xFF121212),
-        extendBodyBehindAppBar: true,
-        body: Container(
-          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
-          child: Column(
-            children: [
-              Text(
-                'Favorites',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.favorite_outline, color: Colors.white.withOpacity(0.3), size: 80),
-                      SizedBox(height: 20),
-                      Text(
-                        'No favorites yet',
-                        style: TextStyle(color: Colors.white70, fontSize: 18),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Add anime to your favorites to see them here',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 

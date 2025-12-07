@@ -306,8 +306,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         )
                       : userData == null
                           ? Container(
-                              width: 18,
-                              height: 18,
+                              width: 10,
+                              height: 10,
                               child: Image.asset(
                                 'assets/images/login.png',
                                 color: Colors.white,

@@ -1,0 +1,415 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+import 'handler/favourite_handler.dart';
+import 'widgets/not_loggedin.dart';
+import '../errors/no_internet.dart';
+
+class FavouritePage extends StatefulWidget {
+  @override
+  _FavouritePageState createState() => _FavouritePageState();
+}
+
+class _FavouritePageState extends State<FavouritePage> with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  
+  List<Map<String, dynamic>> favorites = [];
+  bool isLoading = true;
+  bool hasNetworkError = false;
+  String sortOrder = 'newest'; // 'newest' or 'oldest'
+  
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
+    
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
+    
+    _loadFavorites();
+  }
+  
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _loadFavorites() async {
+    setState(() {
+      isLoading = true;
+      hasNetworkError = false;
+    });
+    
+    try {
+      final userFavorites = await FavouriteHandler.getUserFavorites()
+          .timeout(Duration(seconds: 10));
+      setState(() {
+        favorites = userFavorites;
+        _sortFavorites();
+        isLoading = false;
+        hasNetworkError = false;
+      });
+      _animationController.forward();
+    } on TimeoutException {
+      setState(() {
+        isLoading = false;
+        hasNetworkError = true;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        hasNetworkError = true;
+      });
+      print('Load favorites error: $e');
+    }
+  }
+  
+  void _sortFavorites() {
+    favorites.sort((a, b) {
+      final aTime = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
+      final bTime = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
+      
+      return sortOrder == 'newest' 
+        ? bTime.compareTo(aTime) 
+        : aTime.compareTo(bTime);
+    });
+  }
+  
+  void _changeSortOrder(String newOrder) {
+    setState(() {
+      sortOrder = newOrder;
+      _sortFavorites();
+    });
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    // Check if user is logged in
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      return NotLoggedInWidget();
+    }
+    
+    // Check for network error
+    if (hasNetworkError) {
+      return NoInternetScreen(
+        onRetry: () {
+          _loadFavorites();
+        },
+      );
+    }
+    
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Color(0xFF121212),
+        extendBodyBehindAppBar: true,
+        body: Container(
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
+          child: Column(
+            children: [
+              _buildHeader(),
+              SizedBox(height: 20),
+              _buildActionButtons(),
+              SizedBox(height: 20),
+              _buildSortDropdown(),
+              SizedBox(height: 20),
+              Expanded(child: _buildFavoritesList()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildHeader() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'My Favorites',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Color(0xFFFF8C00).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
+              ),
+              child: Text(
+                '${favorites.length}',
+                style: TextStyle(
+                  color: Color(0xFFFF8C00),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildActionButtons() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildActionButton(
+                'Public Saved',
+                Icons.public,
+                () => _showComingSoon('Public Saved'),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildActionButton(
+                'Sync Saved',
+                Icons.sync,
+                () => _showComingSoon('Sync Saved'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildActionButton(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white70, size: 18),
+            SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildSortDropdown() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: sortOrder,
+              dropdownColor: Color(0xFF1E1E1E),
+              icon: Icon(Icons.keyboard_arrow_down, color: Colors.white70),
+              style: TextStyle(color: Colors.white, fontSize: 14),
+              onChanged: (String? newValue) {
+                if (newValue != null) _changeSortOrder(newValue);
+              },
+              items: [
+                DropdownMenuItem(value: 'newest', child: Text('Newest First')),
+                DropdownMenuItem(value: 'oldest', child: Text('Oldest First')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildFavoritesList() {
+    if (isLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFFF8C00),
+          strokeWidth: 2,
+        ),
+      );
+    }
+    
+    if (favorites.isEmpty) {
+      return FadeTransition(
+        opacity: _fadeAnimation,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.favorite_outline, color: Colors.white.withOpacity(0.3), size: 80),
+              SizedBox(height: 20),
+              Text(
+                'No favorites yet',
+                style: TextStyle(color: Colors.white70, fontSize: 18),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Add anime to your favorites to see them here',
+                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: ListView.builder(
+          physics: BouncingScrollPhysics(),
+          itemCount: favorites.length,
+          itemBuilder: (context, index) {
+            final favorite = favorites[index];
+            return _buildFavoriteItem(favorite, index);
+          },
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildFavoriteItem(Map<String, dynamic> favorite, int index) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 60,
+              height: 80,
+              color: Colors.white.withOpacity(0.1),
+              child: favorite['anime_image'] != null
+                ? Image.network(
+                    favorite['anime_image'],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.image_not_supported,
+                      color: Colors.white54,
+                    ),
+                  )
+                : Icon(Icons.movie, color: Colors.white54),
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  favorite['anime_title'] ?? 'Unknown Title',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  _formatDate(favorite['created_at']),
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _removeFavorite(favorite['anime_id'], index),
+            icon: Icon(Icons.favorite, color: Color(0xFFFF8C00), size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'Unknown date';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return 'Unknown date';
+    }
+  }
+  
+  Future<void> _removeFavorite(String animeId, int index) async {
+    final success = await FavouriteHandler.removeFromFavorites(animeId);
+    if (success) {
+      setState(() => favorites.removeAt(index));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Removed from favorites'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+  
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature - Coming Soon!'),
+        backgroundColor: Color(0xFFFF8C00),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}

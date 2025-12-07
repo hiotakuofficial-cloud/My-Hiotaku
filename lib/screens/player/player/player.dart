@@ -674,11 +674,17 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       }
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
-      extendBody: true,
-      appBar: (isLandscape || isLoading) ? null : _buildAppBar(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        extendBodyBehindAppBar: true,
+        extendBody: true,
+        appBar: (isLandscape || isLoading) ? null : _buildAppBar(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
