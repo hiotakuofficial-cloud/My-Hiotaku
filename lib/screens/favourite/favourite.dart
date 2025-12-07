@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:async';
 import 'handler/favourite_handler.dart';
 import 'widgets/not_loggedin.dart';
@@ -52,6 +53,9 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       hasNetworkError = false;
     });
     
+    // Reset animation for refresh
+    _animationController.reset();
+    
     try {
       final userFavorites = await FavouriteHandler.getUserFavorites()
           .timeout(Duration(seconds: 10));
@@ -61,6 +65,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
         isLoading = false;
         hasNetworkError = false;
       });
+      // Always trigger animation
       _animationController.forward();
     } on TimeoutException {
       setState(() {
@@ -119,18 +124,23 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
         extendBodyBehindAppBar: true,
-        body: Container(
-          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
-          child: Column(
-            children: [
-              _buildHeader(),
-              SizedBox(height: 20),
-              _buildActionButtons(),
-              SizedBox(height: 20),
-              _buildSortDropdown(),
-              SizedBox(height: 20),
-              Expanded(child: _buildFavoritesList()),
-            ],
+        body: RefreshIndicator(
+          onRefresh: _loadFavorites,
+          color: Color(0xFFFF8C00),
+          backgroundColor: Color(0xFF1E1E1E),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
+            child: Column(
+              children: [
+                _buildHeader(),
+                SizedBox(height: 20),
+                _buildActionButtons(),
+                SizedBox(height: 20),
+                _buildSortDropdown(),
+                SizedBox(height: 20),
+                Expanded(child: _buildFavoritesList()),
+              ],
+            ),
           ),
         ),
       ),
@@ -142,34 +152,15 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'My Favorites',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+        child: Center(
+          child: Text(
+            'My Favorites',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
             ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Color(0xFFFF8C00).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
-              ),
-              child: Text(
-                '${favorites.length}',
-                style: TextStyle(
-                  color: Color(0xFFFF8C00),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -238,26 +229,82 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       child: SlideTransition(
         position: _slideAnimation,
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: sortOrder,
-              dropdownColor: Color(0xFF1E1E1E),
-              icon: Icon(Icons.keyboard_arrow_down, color: Colors.white70),
-              style: TextStyle(color: Colors.white, fontSize: 14),
-              onChanged: (String? newValue) {
-                if (newValue != null) _changeSortOrder(newValue);
-              },
-              items: [
-                DropdownMenuItem(value: 'newest', child: Text('Newest First')),
-                DropdownMenuItem(value: 'oldest', child: Text('Oldest First')),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.15),
+                Colors.white.withOpacity(0.05),
               ],
             ),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: Color(0xFFFF8C00).withOpacity(0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.sort_rounded,
+                color: Color(0xFFFF8C00),
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: sortOrder,
+                  dropdownColor: Color(0xFF1A1A1A),
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFFFF8C00),
+                    size: 20,
+                  ),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      HapticFeedback.lightImpact();
+                      _changeSortOrder(newValue);
+                    }
+                  },
+                  items: [
+                    DropdownMenuItem(
+                      value: 'newest',
+                      child: Row(
+                        children: [
+                          Icon(Icons.new_releases_outlined, color: Colors.white70, size: 16),
+                          SizedBox(width: 8),
+                          Text('Newest First'),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'oldest',
+                      child: Row(
+                        children: [
+                          Icon(Icons.history_outlined, color: Colors.white70, size: 16),
+                          SizedBox(width: 8),
+                          Text('Oldest First'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -267,9 +314,24 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
   Widget _buildFavoritesList() {
     if (isLoading) {
       return Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFFFF8C00),
-          strokeWidth: 2,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/animations/loading.json',
+              width: 100,
+              height: 100,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Loading favorites...',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -304,7 +366,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       child: SlideTransition(
         position: _slideAnimation,
         child: ListView.builder(
-          physics: BouncingScrollPhysics(),
+          physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           itemCount: favorites.length,
           itemBuilder: (context, index) {
             final favorite = favorites[index];
@@ -380,12 +442,38 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
   }
   
   String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'Unknown date';
+    if (dateStr == null) {
+      return 'Just now';
+    }
+    
     try {
-      final date = DateTime.parse(dateStr);
-      return '${date.day}/${date.month}/${date.year}';
+      // Handle different date formats
+      DateTime date;
+      if (dateStr.contains('T')) {
+        // ISO format: 2023-12-07T08:20:39.620+00:00
+        date = DateTime.parse(dateStr);
+      } else if (dateStr.contains('-')) {
+        // Simple format: 2023-12-07
+        date = DateTime.parse(dateStr);
+      } else {
+        // Fallback
+        return 'Recently';
+      }
+      
+      final now = DateTime.now();
+      final difference = now.difference(date);
+      
+      if (difference.inDays == 0) {
+        return 'Today';
+      } else if (difference.inDays == 1) {
+        return 'Yesterday';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays} days ago';
+      } else {
+        return '${date.day}/${date.month}/${date.year}';
+      }
     } catch (e) {
-      return 'Unknown date';
+      return 'Recently';
     }
   }
   

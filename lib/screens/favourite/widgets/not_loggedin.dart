@@ -193,7 +193,7 @@ class _NotLoggedInWidgetState extends State<NotLoggedInWidget>
             ),
           ),
           child: Text(
-            '🔐 Secure • 🚀 Fast • 💾 Synced',
+            'Secure • Fast • Synced',
             style: TextStyle(
               color: Colors.white54,
               fontSize: 14,
