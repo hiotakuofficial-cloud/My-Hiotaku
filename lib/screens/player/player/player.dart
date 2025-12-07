@@ -685,22 +685,23 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
         extendBodyBehindAppBar: true,
         extendBody: true,
         appBar: (isLandscape || isLoading) ? null : _buildAppBar(),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black,
-              Color(0xFF0A0A0A),
-            ],
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black,
+                Color(0xFF0A0A0A),
+              ],
+            ),
           ),
+          child: isLoading 
+            ? _buildLoadingScreen()
+            : isLandscape 
+              ? _buildLandscapeLayout()
+              : _buildPortraitLayout(),
         ),
-        child: isLoading 
-          ? _buildLoadingScreen()
-          : isLandscape 
-            ? _buildLandscapeLayout()
-            : _buildPortraitLayout(),
       ),
     );
   }
