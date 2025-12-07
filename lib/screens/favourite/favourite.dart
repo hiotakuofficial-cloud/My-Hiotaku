@@ -7,6 +7,7 @@ import 'handler/favourite_handler.dart';
 import 'widgets/not_loggedin.dart';
 import '../errors/no_internet.dart';
 import '../details/details.dart';
+import 'public/public.dart';
 
 class FavouritePage extends StatefulWidget {
   @override
@@ -193,7 +194,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
               child: _buildActionButton(
                 'Public Saved',
                 Icons.public,
-                () => _showComingSoon('Public Saved'),
+                () => _navigateToPublicFavorites(),
               ),
             ),
             SizedBox(width: 12),
@@ -549,6 +550,25 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error removing favorite'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+  
+  void _navigateToPublicFavorites() {
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PublicFavoritesPage(),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening public favorites'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
