@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'handler/firebase_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../notifications/handler/firebase_messaging_handler.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -543,6 +544,14 @@ class _LoginScreenState extends State<LoginScreen>
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setBool('first_time', false);
       
+      // Initialize FCM after successful login
+      try {
+        await FirebaseMessagingHandler.initialize();
+        print('✅ FCM initialized after login');
+      } catch (e) {
+        print('❌ FCM initialization failed: $e');
+      }
+      
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/main');
       }
@@ -598,6 +607,14 @@ class _LoginScreenState extends State<LoginScreen>
       if (user != null) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('first_time', false);
+        
+        // Initialize FCM after successful Google sign in
+        try {
+          await FirebaseMessagingHandler.initialize();
+          print('✅ FCM initialized after Google sign in');
+        } catch (e) {
+          print('❌ FCM initialization failed: $e');
+        }
         
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/main');
