@@ -314,24 +314,11 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
   Widget _buildFavoritesList() {
     if (isLoading) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset(
-              'assets/animations/loading.json',
-              width: 100,
-              height: 100,
-              fit: BoxFit.contain,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Loading favorites...',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
-            ),
-          ],
+        child: Lottie.asset(
+          'assets/animations/loading.json',
+          width: 100,
+          height: 100,
+          fit: BoxFit.contain,
         ),
       );
     }
