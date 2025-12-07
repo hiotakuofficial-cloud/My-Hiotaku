@@ -14,22 +14,46 @@ class PublicHandler {
     }
   }
   
-  // Get public favorites by specific user ID
+  // Get public favorites by specific user ID (filtered from all public favorites)
   static Future<List<Map<String, dynamic>>> getPublicFavoritesByUser(String userId) async {
     try {
-      final userPublicFavorites = await SupabaseHandler.getPublicFavoritesByUser(userId);
-      return userPublicFavorites ?? [];
+      final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
+      if (allPublicFavorites == null) return [];
+      
+      return allPublicFavorites.where((fav) => fav['user_id']?.toString() == userId).toList();
     } catch (e) {
       print('Get user public favorites error: $e');
       return [];
     }
   }
   
-  // Get trending public favorites (most favorited animes)
+  // Get trending public favorites (most favorited animes) - simplified implementation
   static Future<List<Map<String, dynamic>>> getTrendingPublicFavorites({int limit = 20}) async {
     try {
-      final trendingFavorites = await SupabaseHandler.getTrendingPublicFavorites(limit: limit);
-      return trendingFavorites ?? [];
+      final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
+      if (allPublicFavorites == null) return [];
+      
+      // Group by anime_id and count occurrences
+      final Map<String, Map<String, dynamic>> animeCount = {};
+      for (var fav in allPublicFavorites) {
+        final animeId = fav['anime_id']?.toString();
+        if (animeId != null) {
+          if (animeCount.containsKey(animeId)) {
+            animeCount[animeId]!['count'] = (animeCount[animeId]!['count'] ?? 0) + 1;
+          } else {
+            animeCount[animeId] = {
+              ...fav,
+              'count': 1,
+            };
+          }
+        }
+      }
+      
+      // Sort by count and return top items
+      final sortedList = animeCount.values.toList()
+        ..sort((a, b) => (b['count'] ?? 0).compareTo(a['count'] ?? 0));
+      
+      return sortedList.take(limit).toList();
     } catch (e) {
       print('Get trending public favorites error: $e');
       return [];
@@ -41,8 +65,14 @@ class PublicHandler {
     try {
       if (query.trim().isEmpty) return [];
       
-      final searchResults = await SupabaseHandler.searchPublicFavorites(query);
-      return searchResults ?? [];
+      final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
+      if (allPublicFavorites == null) return [];
+      
+      final lowerQuery = query.toLowerCase();
+      return allPublicFavorites.where((fav) {
+        final title = fav['anime_title']?.toString().toLowerCase() ?? '';
+        return title.contains(lowerQuery);
+      }).toList();
     } catch (e) {
       print('Search public favorites error: $e');
       return [];
@@ -52,8 +82,10 @@ class PublicHandler {
   // Get public favorites count for specific anime
   static Future<int> getPublicFavoritesCount(String animeId) async {
     try {
-      final count = await SupabaseHandler.getPublicFavoritesCount(animeId);
-      return count ?? 0;
+      final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
+      if (allPublicFavorites == null) return 0;
+      
+      return allPublicFavorites.where((fav) => fav['anime_id']?.toString() == animeId).length;
     } catch (e) {
       print('Get public favorites count error: $e');
       return 0;
@@ -63,15 +95,17 @@ class PublicHandler {
   // Get users who publicly favorited specific anime
   static Future<List<Map<String, dynamic>>> getUsersWhoFavorited(String animeId) async {
     try {
-      final users = await SupabaseHandler.getUsersWhoFavorited(animeId);
-      return users ?? [];
+      final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
+      if (allPublicFavorites == null) return [];
+      
+      return allPublicFavorites.where((fav) => fav['anime_id']?.toString() == animeId).toList();
     } catch (e) {
       print('Get users who favorited error: $e');
       return [];
     }
   }
   
-  // Make current user's favorite public
+  // Make current user's favorite public (using updateData)
   static Future<bool> makePublic(String animeId) async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
@@ -80,10 +114,13 @@ class PublicHandler {
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return false;
       
-      return await SupabaseHandler.updateFavoriteVisibility(
-        userId: userData['id'].toString(),
-        animeId: animeId,
-        isPublic: true,
+      return await SupabaseHandler.updateData(
+        table: 'favorites',
+        data: {'is_public': true},
+        matchConditions: {
+          'user_id': userData['id'].toString(),
+          'anime_id': animeId,
+        },
       );
     } catch (e) {
       print('Make public error: $e');
@@ -91,7 +128,7 @@ class PublicHandler {
     }
   }
   
-  // Make current user's favorite private
+  // Make current user's favorite private (using updateData)
   static Future<bool> makePrivate(String animeId) async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
@@ -100,10 +137,13 @@ class PublicHandler {
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return false;
       
-      return await SupabaseHandler.updateFavoriteVisibility(
-        userId: userData['id'].toString(),
-        animeId: animeId,
-        isPublic: false,
+      return await SupabaseHandler.updateData(
+        table: 'favorites',
+        data: {'is_public': false},
+        matchConditions: {
+          'user_id': userData['id'].toString(),
+          'anime_id': animeId,
+        },
       );
     } catch (e) {
       print('Make private error: $e');
@@ -124,17 +164,20 @@ class PublicHandler {
       final favorites = await SupabaseHandler.getUserFavorites(userData['id'].toString());
       final currentFavorite = favorites?.firstWhere(
         (fav) => fav['anime_id'] == animeId,
-        orElse: () => null,
+        orElse: () => <String, dynamic>{},
       );
       
-      if (currentFavorite == null) return false;
+      if (currentFavorite == null || currentFavorite.isEmpty) return false;
       
       final isCurrentlyPublic = currentFavorite['is_public'] ?? false;
       
-      return await SupabaseHandler.updateFavoriteVisibility(
-        userId: userData['id'].toString(),
-        animeId: animeId,
-        isPublic: !isCurrentlyPublic,
+      return await SupabaseHandler.updateData(
+        table: 'favorites',
+        data: {'is_public': !isCurrentlyPublic},
+        matchConditions: {
+          'user_id': userData['id'].toString(),
+          'anime_id': animeId,
+        },
       );
     } catch (e) {
       print('Toggle visibility error: $e');
@@ -142,11 +185,10 @@ class PublicHandler {
     }
   }
   
-  // Get public favorites with user info (username, avatar)
+  // Get public favorites with user info (simplified - just return public favorites)
   static Future<List<Map<String, dynamic>>> getPublicFavoritesWithUserInfo() async {
     try {
-      final publicFavoritesWithUsers = await SupabaseHandler.getPublicFavoritesWithUserInfo();
-      return publicFavoritesWithUsers ?? [];
+      return await getPublicFavorites();
     } catch (e) {
       print('Get public favorites with user info error: $e');
       return [];
@@ -156,8 +198,18 @@ class PublicHandler {
   // Get recently added public favorites
   static Future<List<Map<String, dynamic>>> getRecentPublicFavorites({int limit = 10}) async {
     try {
-      final recentFavorites = await SupabaseHandler.getRecentPublicFavorites(limit: limit);
-      return recentFavorites ?? [];
+      final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
+      if (allPublicFavorites == null) return [];
+      
+      // Sort by created_at if available, otherwise return first items
+      final sortedFavorites = List<Map<String, dynamic>>.from(allPublicFavorites);
+      sortedFavorites.sort((a, b) {
+        final aTime = DateTime.tryParse(a['created_at']?.toString() ?? '') ?? DateTime.now();
+        final bTime = DateTime.tryParse(b['created_at']?.toString() ?? '') ?? DateTime.now();
+        return bTime.compareTo(aTime);
+      });
+      
+      return sortedFavorites.take(limit).toList();
     } catch (e) {
       print('Get recent public favorites error: $e');
       return [];
@@ -176,24 +228,54 @@ class PublicHandler {
       final favorites = await SupabaseHandler.getUserFavorites(userData['id'].toString());
       final favorite = favorites?.firstWhere(
         (fav) => fav['anime_id'] == animeId,
-        orElse: () => null,
+        orElse: () => <String, dynamic>{},
       );
       
-      return favorite != null && (favorite['is_public'] ?? false);
+      return favorite != null && favorite.isNotEmpty && (favorite['is_public'] ?? false);
     } catch (e) {
       print('Check public favorite error: $e');
       return false;
     }
   }
   
-  // Get public favorites statistics
+  // Get public favorites statistics (simplified)
   static Future<Map<String, dynamic>> getPublicFavoritesStats() async {
     try {
-      final stats = await SupabaseHandler.getPublicFavoritesStats();
-      return stats ?? {
-        'total_public_favorites': 0,
-        'total_users_with_public': 0,
-        'most_favorited_anime': null,
+      final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
+      if (allPublicFavorites == null) {
+        return {
+          'total_public_favorites': 0,
+          'total_users_with_public': 0,
+          'most_favorited_anime': null,
+        };
+      }
+      
+      final uniqueUsers = <String>{};
+      final animeCount = <String, int>{};
+      
+      for (var fav in allPublicFavorites) {
+        final userId = fav['user_id']?.toString();
+        final animeId = fav['anime_id']?.toString();
+        
+        if (userId != null) uniqueUsers.add(userId);
+        if (animeId != null) {
+          animeCount[animeId] = (animeCount[animeId] ?? 0) + 1;
+        }
+      }
+      
+      String? mostFavoritedAnime;
+      int maxCount = 0;
+      animeCount.forEach((animeId, count) {
+        if (count > maxCount) {
+          maxCount = count;
+          mostFavoritedAnime = animeId;
+        }
+      });
+      
+      return {
+        'total_public_favorites': allPublicFavorites.length,
+        'total_users_with_public': uniqueUsers.length,
+        'most_favorited_anime': mostFavoritedAnime,
       };
     } catch (e) {
       print('Get public favorites stats error: $e');
