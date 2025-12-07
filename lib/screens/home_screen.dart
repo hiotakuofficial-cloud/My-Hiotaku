@@ -15,6 +15,8 @@ import 'pages/recently_added.dart';
 import 'auth/login.dart';
 import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../notifications/handler/firebase_messaging_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -45,6 +47,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _loadHomeData();
     _loadUserData();
     _startAutoSlide();
+    _initializeFCMIfLoggedIn();
+  }
+
+  // Initialize FCM only if user is logged in
+  void _initializeFCMIfLoggedIn() async {
+    try {
+      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      
+      if (firebaseUser != null) {
+        print('✅ User logged in, initializing FCM...');
+        await FirebaseMessagingHandler.initialize();
+        print('✅ FCM initialized successfully on home screen');
+      } else {
+        print('❌ User not logged in, skipping FCM initialization');
+      }
+    } catch (e) {
+      print('❌ FCM initialization error on home screen: $e');
+    }
   }
 
   @override

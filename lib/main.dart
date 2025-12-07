@@ -36,9 +36,8 @@ void main() async {
     // Initialize Firebase Messaging background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     
-    // Initialize notification system
-    await FirebaseMessagingHandler.initialize();
-    print('✅ Notification system initialized');
+    // FCM will be initialized in home screen after checking login status
+    print('✅ Firebase initialized, FCM will initialize on home screen');
     
   } on FirebaseException catch (e) {
     print('❌ Firebase initialization failed: ${e.code} - ${e.message}');
