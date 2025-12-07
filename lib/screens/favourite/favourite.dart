@@ -6,6 +6,7 @@ import 'dart:async';
 import 'handler/favourite_handler.dart';
 import 'widgets/not_loggedin.dart';
 import '../errors/no_internet.dart';
+import '../details/details.dart';
 
 class FavouritePage extends StatefulWidget {
   @override
@@ -82,21 +83,36 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
   }
   
   void _sortFavorites() {
-    favorites.sort((a, b) {
-      final aTime = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
-      final bTime = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
-      
-      return sortOrder == 'newest' 
-        ? bTime.compareTo(aTime) 
-        : aTime.compareTo(bTime);
-    });
+    try {
+      favorites.sort((a, b) {
+        final aTime = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
+        final bTime = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
+        
+        return sortOrder == 'newest' 
+          ? bTime.compareTo(aTime) 
+          : aTime.compareTo(bTime);
+      });
+    } catch (e) {
+      // If sorting fails, keep original order
+      print('Sort error: $e');
+    }
   }
   
   void _changeSortOrder(String newOrder) {
-    setState(() {
-      sortOrder = newOrder;
-      _sortFavorites();
-    });
+    try {
+      setState(() {
+        sortOrder = newOrder;
+        _sortFavorites();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sorting favorites'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
   
   @override
@@ -365,65 +381,68 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
   }
   
   Widget _buildFavoriteItem(Map<String, dynamic> favorite, int index) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 60,
-              height: 80,
-              color: Colors.white.withOpacity(0.1),
-              child: favorite['anime_image'] != null
-                ? Image.network(
-                    favorite['anime_image'],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Icon(
-                      Icons.image_not_supported,
-                      color: Colors.white54,
+    return GestureDetector(
+      onTap: () => _navigateToDetails(favorite),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 60,
+                height: 80,
+                color: Colors.white.withOpacity(0.1),
+                child: favorite['anime_image'] != null
+                  ? Image.network(
+                      favorite['anime_image'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.image_not_supported,
+                        color: Colors.white54,
+                      ),
+                    )
+                  : Icon(Icons.movie, color: Colors.white54),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    favorite['anime_title'] ?? 'Unknown Title',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
-                  )
-                : Icon(Icons.movie, color: Colors.white54),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  favorite['anime_title'] ?? 'Unknown Title',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  _formatDate(favorite['created_at']),
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
+                  SizedBox(height: 4),
+                  Text(
+                    _formatDate(favorite['created_at']),
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: () => _removeFavorite(favorite['anime_id'], index),
-            icon: Icon(Icons.favorite, color: Color(0xFFFF8C00), size: 20),
-          ),
-        ],
+            IconButton(
+              onPressed: () => _removeFavorite(favorite['anime_id'], index),
+              icon: Icon(Icons.favorite, color: Color(0xFFFF8C00), size: 20),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -464,13 +483,72 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     }
   }
   
-  Future<void> _removeFavorite(String animeId, int index) async {
-    final success = await FavouriteHandler.removeFromFavorites(animeId);
-    if (success) {
-      setState(() => favorites.removeAt(index));
+  void _navigateToDetails(Map<String, dynamic> favorite) {
+    try {
+      // Validate required data
+      final animeId = favorite['anime_id'];
+      if (animeId == null || animeId.toString().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cannot open details - Invalid anime ID'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AnimeDetailsPage(
+            title: favorite['anime_title'] ?? 'Unknown Title',
+            poster: favorite['anime_image'] ?? '',
+            description: 'No description available.',
+            genres: ['Favorite'],
+            rating: 0.0,
+            year: 'Unknown',
+            animeId: animeId.toString(),
+            animeType: 'Unknown',
+          ),
+        ),
+      );
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Removed from favorites'),
+          content: Text('Error opening details page'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+  
+  Future<void> _removeFavorite(String animeId, int index) async {
+    try {
+      final success = await FavouriteHandler.removeFromFavorites(animeId);
+      if (success) {
+        setState(() => favorites.removeAt(index));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Removed from favorites'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove from favorites'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error removing favorite'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
