@@ -266,9 +266,26 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          child: isSearchMode ? _buildSearchHeader() : _buildNormalHeader(),
+        child: AnimatedSwitcher(
+          duration: Duration(milliseconds: 400),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: Offset(isSearchMode ? -1.0 : 1.0, 0.0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOut,
+              )),
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+            );
+          },
+          child: isSearchMode 
+            ? _buildSearchHeader() 
+            : _buildNormalHeader(),
         ),
       ),
     );
@@ -278,27 +295,43 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Public Favorites',
+        AnimatedDefaultTextStyle(
+          duration: Duration(milliseconds: 300),
           style: TextStyle(
             color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
+          child: Text('Public Favorites'),
         ),
-        GestureDetector(
-          onTap: _toggleSearchMode,
-          child: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-            ),
-            child: Icon(
-              Icons.search,
-              color: Color(0xFFFF8C00),
-              size: 24,
+        AnimatedScale(
+          scale: isSearchMode ? 0.8 : 1.0,
+          duration: Duration(milliseconds: 200),
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _toggleSearchMode();
+            },
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xFFFF8C00).withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.search,
+                color: Color(0xFFFF8C00),
+                size: 24,
+              ),
             ),
           ),
         ),
@@ -310,36 +343,62 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
     return Row(
       children: [
         Expanded(
-          child: Container(
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
             padding: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(25),
               border: Border.all(color: Color(0xFFFF8C00).withOpacity(0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFFFF8C00).withOpacity(0.1),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: TextField(
               controller: searchController,
               focusNode: searchFocusNode,
               style: TextStyle(color: Colors.white, fontSize: 16),
               decoration: InputDecoration(
-                hintText: 'Search public favorites...',
+                hintText: 'Search by username...',
                 hintStyle: TextStyle(color: Colors.white54),
                 border: InputBorder.none,
-                icon: Icon(Icons.search, color: Color(0xFFFF8C00), size: 20),
+                icon: AnimatedRotation(
+                  turns: isSearchMode ? 0.5 : 0.0,
+                  duration: Duration(milliseconds: 300),
+                  child: Icon(Icons.search, color: Color(0xFFFF8C00), size: 20),
+                ),
               ),
             ),
           ),
         ),
         SizedBox(width: 12),
-        GestureDetector(
-          onTap: _toggleSearchMode,
-          child: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+        AnimatedScale(
+          scale: isSearchMode ? 1.0 : 0.8,
+          duration: Duration(milliseconds: 200),
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _toggleSearchMode();
+            },
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: AnimatedRotation(
+                turns: isSearchMode ? 0.25 : 0.0,
+                duration: Duration(milliseconds: 300),
+                child: Icon(Icons.close, color: Colors.white70, size: 24),
+              ),
             ),
-            child: Icon(Icons.close, color: Colors.white70, size: 24),
           ),
         ),
       ],

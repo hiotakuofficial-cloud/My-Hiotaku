@@ -60,7 +60,7 @@ class PublicHandler {
     }
   }
   
-  // Search public favorites by anime title
+  // Search public favorites by username
   static Future<List<Map<String, dynamic>>> searchPublicFavorites(String query) async {
     try {
       if (query.trim().isEmpty) return [];
@@ -70,8 +70,8 @@ class PublicHandler {
       
       final lowerQuery = query.toLowerCase();
       return allPublicFavorites.where((fav) {
-        final title = fav['anime_title']?.toString().toLowerCase() ?? '';
-        return title.contains(lowerQuery);
+        final username = fav['username']?.toString().toLowerCase() ?? '';
+        return username.contains(lowerQuery);
       }).toList();
     } catch (e) {
       print('Search public favorites error: $e');
@@ -201,11 +201,11 @@ class PublicHandler {
       final allPublicFavorites = await SupabaseHandler.getPublicFavorites();
       if (allPublicFavorites == null) return [];
       
-      // Sort by created_at if available, otherwise return first items
+      // Sort by added_at if available, otherwise return first items
       final sortedFavorites = List<Map<String, dynamic>>.from(allPublicFavorites);
       sortedFavorites.sort((a, b) {
-        final aTime = DateTime.tryParse(a['created_at']?.toString() ?? '') ?? DateTime.now();
-        final bTime = DateTime.tryParse(b['created_at']?.toString() ?? '') ?? DateTime.now();
+        final aTime = DateTime.tryParse(a['added_at']?.toString() ?? '') ?? DateTime.now();
+        final bTime = DateTime.tryParse(b['added_at']?.toString() ?? '') ?? DateTime.now();
         return bTime.compareTo(aTime);
       });
       

@@ -240,7 +240,38 @@ class SupabaseHandler {
   
   /// Get public favorites
   static Future<List<Map<String, dynamic>>?> getPublicFavorites() async {
-    return await getData(table: 'public_favorites');
+    try {
+      // Query favorites with is_public=true and JOIN with users table to get username and avatar
+      String url = '$_supabaseUrl/rest/v1/favorites?is_public=eq.true&select=*,users(username,avatar_url)';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'apikey': _supabaseKey,
+          'Authorization': 'Bearer $_supabaseKey',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        // Flatten the user data for easier access
+        return data.map((item) {
+          final Map<String, dynamic> favorite = Map<String, dynamic>.from(item);
+          if (favorite['users'] != null && favorite['users'] is Map) {
+            final userData = favorite['users'] as Map<String, dynamic>;
+            favorite['username'] = userData['username'];
+            favorite['avatar_url'] = userData['avatar_url'];
+            favorite.remove('users'); // Remove nested object
+          }
+          return favorite;
+        }).toList();
+      }
+      return null;
+    } catch (e) {
+      print('Get public favorites error: $e');
+      return null;
+    }
   }
 
   // Merge request methods
