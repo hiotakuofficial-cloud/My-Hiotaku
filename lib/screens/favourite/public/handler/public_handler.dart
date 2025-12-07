@@ -117,7 +117,7 @@ class PublicHandler {
       return await SupabaseHandler.updateData(
         table: 'favorites',
         data: {'is_public': true},
-        matchConditions: {
+        filters: {
           'user_id': userData['id'].toString(),
           'anime_id': animeId,
         },
@@ -140,7 +140,7 @@ class PublicHandler {
       return await SupabaseHandler.updateData(
         table: 'favorites',
         data: {'is_public': false},
-        matchConditions: {
+        filters: {
           'user_id': userData['id'].toString(),
           'anime_id': animeId,
         },
@@ -174,7 +174,7 @@ class PublicHandler {
       return await SupabaseHandler.updateData(
         table: 'favorites',
         data: {'is_public': !isCurrentlyPublic},
-        matchConditions: {
+        filters: {
           'user_id': userData['id'].toString(),
           'anime_id': animeId,
         },
