@@ -247,8 +247,8 @@ class SupabaseHandler {
       final response = await http.get(
         Uri.parse(url),
         headers: {
-          'apikey': _supabaseKey,
-          'Authorization': 'Bearer $_supabaseKey',
+          'apikey': _supabaseAnonKey,
+          'Authorization': 'Bearer $_supabaseAnonKey',
           'Content-Type': 'application/json',
         },
       );
