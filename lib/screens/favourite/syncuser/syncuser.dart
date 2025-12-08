@@ -101,40 +101,30 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
 
   void _onSearchChanged(String query) {
     _searchTimer?.cancel();
-    _searchTimer = Timer(Duration(milliseconds: 300), () {
+    _searchTimer = Timer(Duration(milliseconds: 200), () {
       _performSearch(query);
     });
   }
 
-  void _performSearch(String query) async {
+  void _performSearch(String query) {
     if (query.isEmpty) {
       setState(() => filteredUsers = users);
       return;
     }
 
-    try {
-      final result = await SyncUserHandler.getAllUsers(searchQuery: query)
-          .timeout(Duration(seconds: 5));
-      
-      if (result['success']) {
-        setState(() {
-          filteredUsers = List<Map<String, dynamic>>.from(result['users']);
-        });
-      }
-    } catch (e) {
-      setState(() {
-        filteredUsers = users.where((user) {
-          final username = (user['username'] ?? '').toLowerCase();
-          final email = (user['email'] ?? '').toLowerCase();
-          final displayName = (user['display_name'] ?? '').toLowerCase();
-          final searchLower = query.toLowerCase();
-          
-          return username.contains(searchLower) || 
-                 email.contains(searchLower) ||
-                 displayName.contains(searchLower);
-        }).toList();
-      });
-    }
+    // Local search for real-time results
+    setState(() {
+      filteredUsers = users.where((user) {
+        final username = (user['username'] ?? '').toLowerCase();
+        final email = (user['email'] ?? '').toLowerCase();
+        final displayName = (user['display_name'] ?? '').toLowerCase();
+        final searchLower = query.toLowerCase();
+        
+        return username.contains(searchLower) || 
+               email.contains(searchLower) ||
+               displayName.contains(searchLower);
+      }).toList();
+    });
   }
 
   void _toggleSearch() {
@@ -211,68 +201,46 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
             Row(
               children: [
                 Expanded(
-                  child: Stack(
-                    children: [
-                      // Title
-                      Transform.translate(
-                        offset: Offset(-100 * _titleSlideAnimation.value, 0),
-                        child: Opacity(
-                          opacity: 1 - _titleSlideAnimation.value,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Sync Users',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                  child: isSearchMode 
+                    ? Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF1E1E1E),
+                          borderRadius: BorderRadius.circular(25),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
                           ),
                         ),
-                      ),
-                      // Search Box
-                      Transform.translate(
-                        offset: Offset(100 * (1 - _searchSlideAnimation.value), 0),
-                        child: Opacity(
-                          opacity: _searchSlideAnimation.value,
-                          child: Container(
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Color(0xFF1E1E1E),
-                              borderRadius: BorderRadius.circular(25),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                              ),
+                        child: TextField(
+                          controller: _searchTextController,
+                          onChanged: _onSearchChanged,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Search users...',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
                             ),
-                            child: TextField(
-                              controller: _searchTextController,
-                              onChanged: _onSearchChanged,
-                              style: TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                hintText: 'Search users...',
-                                hintStyle: TextStyle(
-                                  color: Colors.white.withOpacity(0.5),
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 15,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search,
-                                  color: Colors.white.withOpacity(0.7),
-                                ),
-                              ),
-                              autofocus: isSearchMode,
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 15,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Colors.white.withOpacity(0.7),
                             ),
                           ),
+                          autofocus: true,
+                        ),
+                      )
+                    : Text(
+                        'Sync Users',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  ),
                 ),
                 SizedBox(width: 15),
                 GestureDetector(

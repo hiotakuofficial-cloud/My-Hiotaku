@@ -281,7 +281,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             SizedBox(height: 30),
             _buildStatsRow(),
             SizedBox(height: 30),
-            if (!isCurrentUser) _buildSyncButton(),
+            if (!isCurrentUser) _buildActionButtons(),
             SizedBox(height: 20),
             _buildSyncedAccounts(),
             SizedBox(height: 30),
@@ -393,28 +393,76 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildSyncButton() {
+  Widget _buildActionButtons() {
     bool canSync = userProfile!['can_sync'] == true;
     
-    return GestureDetector(
-      onTap: canSync ? _syncWithUser : null,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 15),
-        decoration: BoxDecoration(
-          color: canSync ? Color(0xFFFF8C00) : Colors.grey,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Text(
-          canSync ? 'Sync Account' : 'Sync Limit Reached',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+    return Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Message feature coming soon!'),
+                  backgroundColor: Color(0xFFFF8C00),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                color: Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.message, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'Message',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          textAlign: TextAlign.center,
         ),
-      ),
+        SizedBox(width: 15),
+        Expanded(
+          child: GestureDetector(
+            onTap: canSync ? _syncWithUser : null,
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                color: canSync ? Color(0xFFFF8C00) : Colors.grey,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.sync, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    canSync ? 'Sync' : 'Limit Reached',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -476,7 +524,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       return Column(
         children: [
           Text(
-            'Public Favorites',
+            'Public Saved',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -484,11 +532,29 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             ),
           ),
           SizedBox(height: 20),
-          Text(
-            'No public favorites yet',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 14,
+          Container(
+            padding: EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.favorite_outline,
+                  size: 50,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                SizedBox(height: 15),
+                Text(
+                  'No public saved anime yet',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -499,7 +565,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Public Favorites (${userFavorites.length})',
+          'Public Saved (${userFavorites.length})',
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -516,7 +582,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             mainAxisSpacing: 10,
             childAspectRatio: 0.7,
           ),
-          itemCount: userFavorites.length > 6 ? 6 : userFavorites.length,
+          itemCount: userFavorites.length > 9 ? 9 : userFavorites.length,
           itemBuilder: (context, index) {
             final favorite = userFavorites[index];
             return Container(
@@ -527,28 +593,76 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: favorite['anime_poster'] != null
-                  ? Image.network(
-                      favorite['anime_poster'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.movie,
-                        color: Colors.white54,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    favorite['anime_poster'] != null && favorite['anime_poster'].isNotEmpty
+                      ? Image.network(
+                          favorite['anime_poster'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Color(0xFF2A2A2A),
+                            child: Icon(
+                              Icons.movie,
+                              color: Colors.white54,
+                              size: 30,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: Color(0xFF2A2A2A),
+                          child: Icon(
+                            Icons.movie,
+                            color: Colors.white54,
+                            size: 30,
+                          ),
+                        ),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Text(
+                          favorite['anime_title'] ?? 'Unknown',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    )
-                  : Icon(Icons.movie, color: Colors.white54),
+                    ),
+                  ],
+                ),
               ),
             );
           },
         ),
-        if (userFavorites.length > 6)
+        if (userFavorites.length > 9)
           Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: Text(
-              '+${userFavorites.length - 6} more favorites',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 12,
+            padding: EdgeInsets.only(top: 15),
+            child: Center(
+              child: Text(
+                '+${userFavorites.length - 9} more anime',
+                style: TextStyle(
+                  color: Color(0xFFFF8C00),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
