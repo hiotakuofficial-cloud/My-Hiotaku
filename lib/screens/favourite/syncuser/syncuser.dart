@@ -449,4 +449,5 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
         },
       ),
     );
+  }
 }
