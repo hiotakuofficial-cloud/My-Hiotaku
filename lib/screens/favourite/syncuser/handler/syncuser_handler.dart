@@ -174,19 +174,19 @@ class SyncUserHandler {
       
       final result = await SupabaseHandler.getData(
         table: 'users',
-        select: 'id,username,email,profile_image,created_at,updated_at,is_active,last_login',
+        select: 'id,username,email,avatar_url,created_at,updated_at,is_active,firebase_uid,display_name',
         filters: filters,
       );
       
       if (result != null) {
-        // Add online status based on last_login (mock logic)
+        // Add online status based on updated_at (mock logic)
         List<Map<String, dynamic>> users = result.map((user) {
-          // Consider user online if logged in within last 30 minutes
+          // Consider user online if updated within last 30 minutes
           bool isOnline = false;
-          if (user['last_login'] != null) {
+          if (user['updated_at'] != null) {
             try {
-              DateTime lastLogin = DateTime.parse(user['last_login']);
-              Duration difference = DateTime.now().difference(lastLogin);
+              DateTime lastUpdate = DateTime.parse(user['updated_at']);
+              Duration difference = DateTime.now().difference(lastUpdate);
               isOnline = difference.inMinutes <= 30;
             } catch (e) {
               isOnline = false;
@@ -204,7 +204,7 @@ class SyncUserHandler {
           if (a['is_online'] != b['is_online']) {
             return b['is_online'] ? 1 : -1; // Online users first
           }
-          return a['username'].compareTo(b['username']);
+          return (a['username'] ?? '').compareTo(b['username'] ?? '');
         });
         
         return {
