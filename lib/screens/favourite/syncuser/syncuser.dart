@@ -203,7 +203,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
                 Expanded(
                   child: isSearchMode 
                     ? FadeTransition(
-                        opacity: _searchAnimation,
+                        opacity: _searchSlideAnimation,
                         child: Container(
                           height: 50,
                           decoration: BoxDecoration(
@@ -238,7 +238,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
                       )
                     : FadeTransition(
                         opacity: Animation.fromValueListenable(
-                          ValueNotifier(1.0 - _searchAnimation.value),
+                          ValueNotifier(1.0 - _searchSlideAnimation.value),
                         ),
                         child: Text(
                           'Sync Users',
