@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'package:lottie/lottie.dart';
 import 'handler/syncuser_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../profile/user_profile/user_profile.dart';
@@ -290,8 +291,11 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
       return Container(
         height: MediaQuery.of(context).size.height * 0.6,
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF8C00),
+          child: Lottie.asset(
+            'assets/animations/loading.json',
+            width: 120,
+            height: 120,
+            fit: BoxFit.contain,
           ),
         ),
       );
