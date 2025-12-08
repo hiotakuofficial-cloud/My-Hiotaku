@@ -373,15 +373,9 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: GridView.builder(
+        child: ListView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.7,
-          ),
           itemCount: favorites.length,
           itemBuilder: (context, index) {
             return _buildFavoriteItem(favorites[index], index);
