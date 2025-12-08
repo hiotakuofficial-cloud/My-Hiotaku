@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lottie/lottie.dart';
 import 'handler/user_profile_handler.dart';
 import '../../errors/no_internet.dart';
 
@@ -29,21 +30,21 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: Duration(milliseconds: 1000),
+      duration: Duration(milliseconds: 600),
       vsync: this,
     );
     
     _fadeAnimation = CurvedAnimation(
       parent: _animationController, 
-      curve: Curves.elasticOut,
+      curve: Curves.easeOut,
     );
     
     _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.5), 
+      begin: Offset(0, 0.1), 
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animationController, 
-      curve: Curves.elasticOut,
+      curve: Curves.easeOut,
     ));
     
     _checkCurrentUser();
@@ -58,7 +59,9 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
 
   void _checkCurrentUser() {
     final currentUser = FirebaseAuth.instance.currentUser;
-    isCurrentUser = currentUser != null;
+    // For now, always show buttons since we don't have current user's username
+    // In future, you can compare with actual current user's username
+    isCurrentUser = false; // Always show buttons for testing
   }
 
   void _loadUserProfile() async {
@@ -215,18 +218,12 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             HapticFeedback.lightImpact();
             Navigator.pop(context);
           },
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
+          child: Padding(
+            padding: EdgeInsets.all(8),
             child: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white.withOpacity(0.8),
-              size: 18,
+              size: 24,
             ),
           ),
         ),
@@ -242,7 +239,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             ),
           ),
         ),
-        SizedBox(width: 44),
+        SizedBox(width: 40),
       ],
     );
   }
@@ -251,7 +248,12 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     return Container(
       height: MediaQuery.of(context).size.height * 0.6,
       child: Center(
-        child: CircularProgressIndicator(color: Color(0xFFFF8C00)),
+        child: Lottie.asset(
+          'assets/animations/loading.json',
+          width: 120,
+          height: 120,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
@@ -433,8 +435,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   }
 
   Widget _buildActionButtons() {
-    bool canSync = userProfile!['can_sync'] == true;
-    
     return Row(
       children: [
         Expanded(
@@ -477,14 +477,20 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         SizedBox(width: 15),
         Expanded(
           child: GestureDetector(
-            onTap: canSync ? () {
+            onTap: () {
               HapticFeedback.lightImpact();
-              _syncWithUser();
-            } : null,
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Request Sync feature coming soon!'),
+                  backgroundColor: Color(0xFFFF8C00),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: canSync ? Color(0xFFFF8C00) : Colors.grey.withOpacity(0.5),
+                color: Color(0xFFFF8C00),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Row(
@@ -493,7 +499,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                   Icon(Icons.sync_rounded, color: Colors.white, size: 20),
                   SizedBox(width: 10),
                   Text(
-                    canSync ? 'Request Sync' : 'Limit Reached',
+                    'Request Sync',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

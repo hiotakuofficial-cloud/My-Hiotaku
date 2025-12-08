@@ -46,8 +46,8 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
       CurvedAnimation(parent: _searchController, curve: Curves.easeInOut),
     );
     
-    _cardSlideAnimation = Tween<Offset>(begin: Offset(0, 0.5), end: Offset.zero).animate(
-      CurvedAnimation(parent: _listController, curve: Curves.elasticOut),
+    _cardSlideAnimation = Tween<Offset>(begin: Offset(0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _listController, curve: Curves.easeOut),
     );
     
     _loadUsers();
@@ -174,7 +174,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
           color: Color(0xFFFF8C00),
           backgroundColor: Color(0xFF1E1E1E),
           child: SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
+            physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             child: Container(
               padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
               child: Column(
@@ -202,43 +202,51 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
               children: [
                 Expanded(
                   child: isSearchMode 
-                    ? Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Color(0xFF1E1E1E),
-                          borderRadius: BorderRadius.circular(25),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _searchTextController,
-                          onChanged: _onSearchChanged,
-                          style: TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Search users...',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 15,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: Colors.white.withOpacity(0.7),
+                    ? FadeTransition(
+                        opacity: _searchAnimation,
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
                             ),
                           ),
-                          autofocus: true,
+                          child: TextField(
+                            controller: _searchTextController,
+                            onChanged: _onSearchChanged,
+                            style: TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: 'Search users...',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 15,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Colors.white.withOpacity(0.7),
+                              ),
+                            ),
+                            autofocus: true,
+                          ),
                         ),
                       )
-                    : Text(
-                        'Sync Users',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                    : FadeTransition(
+                        opacity: Animation.fromValueListenable(
+                          ValueNotifier(1.0 - _searchAnimation.value),
+                        ),
+                        child: Text(
+                          'Sync Users',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                 ),

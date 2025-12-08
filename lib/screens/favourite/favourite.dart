@@ -34,11 +34,11 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     );
     
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     
-    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     
     _loadFavorites();
@@ -147,7 +147,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
           color: Color(0xFFFF8C00),
           backgroundColor: Color(0xFF1E1E1E),
           child: SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
+            physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             child: Container(
               padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
               child: Column(
@@ -158,10 +158,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
                   SizedBox(height: 20),
                   _buildSortDropdown(),
                   SizedBox(height: 20),
-                  Container(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    child: _buildFavoritesList(),
-                  ),
+                  _buildFavoritesList(),
                 ],
               ),
             ),
