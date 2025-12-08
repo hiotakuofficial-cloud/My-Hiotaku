@@ -8,6 +8,7 @@ import 'widgets/not_loggedin.dart';
 import '../errors/no_internet.dart';
 import '../details/details.dart';
 import 'public/public.dart';
+import 'syncuser/syncuser.dart';
 
 class FavouritePage extends StatefulWidget {
   @override
@@ -206,9 +207,9 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
             SizedBox(width: 12),
             Expanded(
               child: _buildActionButton(
-                'Sync Saved',
-                Icons.sync,
-                () => _showComingSoon('Sync Saved'),
+                'Sync Users',
+                Icons.people,
+                () => _navigateToSyncUsers(),
               ),
             ),
           ],
@@ -588,6 +589,16 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
         content: Text('$feature - Coming Soon!'),
         backgroundColor: Color(0xFFFF8C00),
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+  
+  void _navigateToSyncUsers() {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SyncUserPage(),
       ),
     );
   }

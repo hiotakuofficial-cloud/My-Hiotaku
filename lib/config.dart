@@ -42,6 +42,7 @@ class AppConfig {
   static String get searchEndpoint => '$animeApiBaseUrl$animeApiEndpoint';
   static String get detailsEndpoint => '$animeApiBaseUrl$animeApiEndpoint';
   static String get hindiApiUrl => '$animeApiBaseUrl$hindiApiEndpoint';
+  static String get notificationEndpoint => '$animeApiBaseUrl/notification/api/send.php';
   
   // Build URL with parameters and token
   static String buildUrl(String action, Map<String, dynamic> params) {
@@ -68,4 +69,10 @@ class AppConfig {
     
     return '$animeApiBaseUrl$hindiApiEndpoint?$queryParams';
   }
+  
+  // Notification API Headers
+  static Map<String, String> get notificationHeaders => {
+    'Content-Type': 'application/json',
+    'Authorization': app_hash_base256,
+  };
 }
