@@ -28,7 +28,6 @@ class _SyncUserPageState extends State<SyncUserPage>
   void initState() {
     super.initState();
     
-    // Search animation controller
     _searchController = AnimationController(
       duration: Duration(milliseconds: 400),
       vsync: this,
@@ -38,7 +37,6 @@ class _SyncUserPageState extends State<SyncUserPage>
       curve: Curves.easeInOutCubic,
     );
     
-    // Elastic animation controller
     _elasticController = AnimationController(
       duration: Duration(milliseconds: 600),
       vsync: this,
@@ -48,6 +46,8 @@ class _SyncUserPageState extends State<SyncUserPage>
       curve: Curves.elasticOut,
     );
     
+    // Always start elastic animation
+    _elasticController.forward();
     _loadUsers();
   }
   
@@ -64,16 +64,12 @@ class _SyncUserPageState extends State<SyncUserPage>
     setState(() => _isLoading = true);
     
     try {
-      // Get all users from Supabase using handler
       final result = await SyncUserHandler.getAllUsers();
       
       if (result['success']) {
         _allUsers = List<Map<String, dynamic>>.from(result['users'] ?? []);
         _filteredUsers = List.from(_allUsers);
-        _elasticController.forward();
       } else {
-        print('Error loading users: ${result['message']}');
-        // Show error or keep empty list
         _allUsers = [];
         _filteredUsers = [];
       }
@@ -120,13 +116,13 @@ class _SyncUserPageState extends State<SyncUserPage>
   void _onUserTap(Map<String, dynamic> user) {
     HapticFeedback.lightImpact();
     
-    // Show coming soon dialog with elastic animation
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) => ScaleTransition(
         scale: _elasticAnimation,
         child: AlertDialog(
+          backgroundColor: Color(0xFF1A1F3A),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -135,15 +131,16 @@ class _SyncUserPageState extends State<SyncUserPage>
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 20,
+              color: Colors.white,
             ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.account_circle,
-                size: 60,
-                color: Colors.grey[400],
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: AssetImage(_getProfileImagePath(user['profile_image'])),
+                backgroundColor: Colors.grey[700],
               ),
               SizedBox(height: 16),
               Text(
@@ -151,7 +148,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
+                  color: Colors.white70,
                 ),
               ),
               SizedBox(height: 8),
@@ -160,7 +157,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[500],
+                  color: Colors.white60,
                 ),
               ),
             ],
@@ -173,6 +170,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
+                  color: Color(0xFFFF8C00),
                 ),
               ),
             ),
@@ -196,10 +194,30 @@ class _SyncUserPageState extends State<SyncUserPage>
     }
   }
   
+  String _getProfileImagePath(String? profileImage) {
+    if (profileImage == null || profileImage.isEmpty) {
+      return 'assets/profile/default/default.png';
+    }
+    
+    if (profileImage.startsWith('http')) {
+      return profileImage;
+    }
+    
+    if (profileImage.startsWith('male')) {
+      return 'assets/profile/male/$profileImage';
+    } else if (profileImage.startsWith('female')) {
+      return 'assets/profile/female/$profileImage';
+    } else if (profileImage == 'default.png') {
+      return 'assets/profile/default/default.png';
+    } else {
+      return 'assets/profile/default/default.png';
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFF0A0E27),
       extendBodyBehindAppBar: true,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
@@ -207,11 +225,11 @@ class _SyncUserPageState extends State<SyncUserPage>
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AppBar(
-              backgroundColor: Colors.white.withOpacity(0.8),
+              backgroundColor: Color(0xFF0A0E27).withOpacity(0.8),
               elevation: 0,
-              systemOverlayStyle: SystemUiOverlayStyle.dark,
+              systemOverlayStyle: SystemUiOverlayStyle.light,
               leading: IconButton(
-                icon: Icon(Icons.arrow_back_ios, color: Colors.black87),
+                icon: Icon(Icons.arrow_back_ios, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
               title: AnimatedBuilder(
@@ -223,8 +241,9 @@ class _SyncUserPageState extends State<SyncUserPage>
                           child: Container(
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Colors.grey[100],
+                              color: Colors.white.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white.withOpacity(0.2)),
                             ),
                             child: TextField(
                               controller: _searchTextController,
@@ -232,7 +251,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                               onChanged: _onSearchChanged,
                               decoration: InputDecoration(
                                 hintText: 'Search users...',
-                                hintStyle: TextStyle(color: Colors.grey[500]),
+                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -240,11 +259,11 @@ class _SyncUserPageState extends State<SyncUserPage>
                                 ),
                                 prefixIcon: Icon(
                                   Icons.search,
-                                  color: Colors.grey[500],
+                                  color: Colors.white.withOpacity(0.6),
                                   size: 20,
                                 ),
                               ),
-                              style: TextStyle(fontSize: 16),
+                              style: TextStyle(fontSize: 16, color: Colors.white),
                             ),
                           ),
                         )
@@ -258,7 +277,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                             child: Text(
                               'Sync Users',
                               style: TextStyle(
-                                color: Colors.black87,
+                                color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -276,7 +295,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                       child: IconButton(
                         icon: Icon(
                           _isSearchMode ? Icons.close : Icons.search,
-                          color: Colors.black87,
+                          color: Colors.white,
                         ),
                         onPressed: _toggleSearch,
                       ),
@@ -288,20 +307,20 @@ class _SyncUserPageState extends State<SyncUserPage>
           ),
         ),
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-              ),
-            )
-          : AnimatedBuilder(
-              animation: _elasticAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: 0.8 + (_elasticAnimation.value * 0.2),
-                  child: Opacity(
-                    opacity: _elasticAnimation.value,
-                    child: CustomScrollView(
+      body: AnimatedBuilder(
+        animation: _elasticAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: 0.8 + (_elasticAnimation.value * 0.2),
+            child: Opacity(
+              opacity: _elasticAnimation.value,
+              child: _isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8C00)),
+                      ),
+                    )
+                  : CustomScrollView(
                       physics: BouncingScrollPhysics(),
                       slivers: [
                         SliverToBoxAdapter(
@@ -318,7 +337,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: Colors.white,
                                   ),
                                 ),
                                 SizedBox(height: 8),
@@ -326,7 +345,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                                   'Connect with other anime enthusiasts',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: Colors.grey[600],
+                                    color: Colors.white70,
                                   ),
                                 ),
                                 SizedBox(height: 24),
@@ -334,121 +353,154 @@ class _SyncUserPageState extends State<SyncUserPage>
                             ),
                           ),
                         ),
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final user = _filteredUsers[index];
-                              return Container(
-                                margin: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () => _onUserTap(user),
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Padding(
-                                      padding: EdgeInsets.all(16),
-                                      child: Row(
-                                        children: [
-                                          Stack(
-                                            children: [
-                                              CircleAvatar(
-                                                radius: 28,
-                                                backgroundColor: Colors.grey[200],
-                                                child: Icon(
-                                                  Icons.person,
-                                                  color: Colors.grey[500],
-                                                  size: 28,
-                                                ),
-                                              ),
-                                              if (user['is_online'])
-                                                Positioned(
-                                                  bottom: 2,
-                                                  right: 2,
-                                                  child: Container(
-                                                    width: 14,
-                                                    height: 14,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.green,
-                                                      shape: BoxShape.circle,
-                                                      border: Border.all(
-                                                        color: Colors.white,
-                                                        width: 2,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
+                        _filteredUsers.isEmpty
+                            ? SliverToBoxAdapter(
+                                child: Container(
+                                  height: 300,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.people_outline,
+                                          size: 80,
+                                          color: Colors.white30,
+                                        ),
+                                        SizedBox(height: 16),
+                                        Text(
+                                          'No users found',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.white60,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                          SizedBox(width: 16),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          'Try adjusting your search or check back later',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white40,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final user = _filteredUsers[index];
+                                    return Container(
+                                      margin: EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFF1A1F3A),
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.3),
+                                            blurRadius: 10,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () => _onUserTap(user),
+                                          borderRadius: BorderRadius.circular(16),
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                            child: Row(
                                               children: [
-                                                Text(
-                                                  user['username'] ?? 'Unknown User',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.black87,
+                                                Stack(
+                                                  children: [
+                                                    CircleAvatar(
+                                                      radius: 28,
+                                                      backgroundImage: AssetImage(
+                                                        _getProfileImagePath(user['profile_image']),
+                                                      ),
+                                                      backgroundColor: Colors.grey[700],
+                                                    ),
+                                                    if (user['is_online'] == true)
+                                                      Positioned(
+                                                        bottom: 2,
+                                                        right: 2,
+                                                        child: Container(
+                                                          width: 14,
+                                                          height: 14,
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.green,
+                                                            shape: BoxShape.circle,
+                                                            border: Border.all(
+                                                              color: Color(0xFF1A1F3A),
+                                                              width: 2,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                                SizedBox(width: 16),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        user['username'] ?? 'Unknown User',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      Text(
+                                                        user['email'] ?? 'No email',
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: Colors.white70,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      Text(
+                                                        'Joined ${_formatDate(user['created_at'])}',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white60,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
-                                                SizedBox(height: 4),
-                                                Text(
-                                                  user['email'] ?? 'No email',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                ),
-                                                SizedBox(height: 4),
-                                                Text(
-                                                  'Joined ${_formatDate(user['created_at'])}',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey[500],
-                                                  ),
+                                                Icon(
+                                                  Icons.arrow_forward_ios,
+                                                  color: Colors.white40,
+                                                  size: 16,
                                                 ),
                                               ],
                                             ),
                                           ),
-                                          Icon(
-                                            Icons.arrow_forward_ios,
-                                            color: Colors.grey[400],
-                                            size: 16,
-                                          ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-                                  ),
+                                    );
+                                  },
+                                  childCount: _filteredUsers.length,
                                 ),
-                              );
-                            },
-                            childCount: _filteredUsers.length,
-                          ),
-                        ),
+                              ),
                         SliverToBoxAdapter(
                           child: SizedBox(height: 40),
                         ),
                       ],
                     ),
-                  ),
-                );
-              },
             ),
+          );
+        },
+      ),
     );
   }
 }
