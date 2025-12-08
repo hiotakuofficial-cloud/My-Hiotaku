@@ -93,17 +93,17 @@ class UserProfileHandler {
       
       final userId = userData.first['id'];
       
-      // Get user's favorites
-      final favoritesData = await SupabaseHandler.getData(
-        table: 'user_favorites',
-        select: 'anime_id,anime_title,anime_poster,added_at',
-        filters: {'user_id': userId, 'is_active': true},
+      // Get user's public favorites from public_favorites table
+      final publicFavoritesData = await SupabaseHandler.getData(
+        table: 'public_favorites',
+        select: 'anime_id,anime_title,anime_image,created_at',
+        filters: {'user_id': userId},
       );
       
       return {
         'success': true,
-        'favorites': favoritesData ?? [],
-        'count': favoritesData?.length ?? 0,
+        'favorites': publicFavoritesData ?? [],
+        'count': publicFavoritesData?.length ?? 0,
       };
     } catch (e) {
       return {
