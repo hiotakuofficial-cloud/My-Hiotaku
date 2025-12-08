@@ -48,7 +48,7 @@ class SyncUserHandler {
           return {
             'success': true,
             'message': 'User created successfully',
-            'user': result.first,
+            'user': result[0],
             'isNewUser': true,
           };
         } else {
