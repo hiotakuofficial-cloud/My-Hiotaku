@@ -385,20 +385,6 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     );
   }
 
-  String _getProfileImagePath(Map<String, dynamic> user) {
-    String? profileImage = user['profile_image'];
-    if (profileImage == null || profileImage.isEmpty) {
-      return 'assets/profile/default/default.png';
-    }
-    
-    if (profileImage.startsWith('male') || profileImage.startsWith('female')) {
-      String gender = profileImage.startsWith('male') ? 'male' : 'female';
-      return 'assets/profile/$gender/$profileImage';
-    }
-    
-    return 'assets/profile/default/default.png';
-  }
-
   void _showComingSoon() {
     showDialog(
       context: context,
