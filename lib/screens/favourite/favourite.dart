@@ -384,7 +384,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
           ),
           itemCount: favorites.length,
           itemBuilder: (context, index) {
-            return _buildFavoriteCard(favorites[index]);
+            return _buildFavoriteItem(favorites[index], index);
           },
         ),
       ),
