@@ -324,12 +324,15 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     }
 
     return Column(
-      children: List.generate(filteredUsers.length, (index) {
-        return SlideTransition(
-          position: _cardSlideAnimation,
-          child: _buildUserCard(filteredUsers[index], index),
-        );
-      }),
+      children: [
+        ...List.generate(filteredUsers.length, (index) {
+          return SlideTransition(
+            position: _cardSlideAnimation,
+            child: _buildUserCard(filteredUsers[index], index),
+          );
+        }),
+        SizedBox(height: 100), // Add bottom padding for proper scroll
+      ],
     );
   }
 
