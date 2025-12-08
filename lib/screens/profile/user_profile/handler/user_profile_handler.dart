@@ -93,11 +93,11 @@ class UserProfileHandler {
       
       final userId = userData.first['id'];
       
-      // Get user's public favorites from public_favorites table
+      // Get user's public favorites from favorites table where is_public=true
       final publicFavoritesData = await SupabaseHandler.getData(
-        table: 'public_favorites',
+        table: 'favorites',
         select: 'anime_id,anime_title,anime_image,created_at',
-        filters: {'user_id': userId},
+        filters: {'user_id': userId, 'is_public': true},
       );
       
       return {
