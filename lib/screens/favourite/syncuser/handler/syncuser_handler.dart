@@ -1,6 +1,6 @@
 import 'dart:convert';
-import '../../auth/handler/supabase.dart';
-import '../../../services/notification_service.dart';
+import '../../../auth/handler/supabase.dart';
+import '../../../../services/notification_service.dart';
 
 class SyncUserHandler {
   
