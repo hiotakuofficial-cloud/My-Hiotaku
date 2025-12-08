@@ -167,10 +167,8 @@ class SyncUserHandler {
       
       // Add search filter if query provided
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        // Note: This is a simple implementation
-        // For better search, use Supabase full-text search
         filters = {
-          'username': 'ilike.%$searchQuery%',
+          'or': '(username.ilike.%$searchQuery%,email.ilike.%$searchQuery%)',
         };
       }
       

@@ -8,6 +8,7 @@ import 'widgets/not_loggedin.dart';
 import '../errors/no_internet.dart';
 import '../details/details.dart';
 import 'public/public.dart';
+import 'syncuser/syncuser.dart';
 
 class FavouritePage extends StatefulWidget {
   @override
@@ -206,9 +207,9 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
             SizedBox(width: 12),
             Expanded(
               child: _buildActionButton(
-                'Sync Saved',
-                Icons.sync,
-                () => _showComingSoon('Sync Saved'),
+                'Sync Users',
+                Icons.people,
+                () => _navigateToSyncUsers(),
               ),
             ),
           ],
@@ -575,6 +576,25 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error opening public favorites'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+  
+  void _navigateToSyncUsers() {
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SyncUserPage(),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening sync users'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
