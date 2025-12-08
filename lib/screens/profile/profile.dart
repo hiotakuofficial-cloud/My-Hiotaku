@@ -123,7 +123,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(20),
                           splashColor: Colors.transparent,
                           highlightColor: Colors.transparent,
-                          onTap: () {},
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Coming Soon!'),
+                                backgroundColor: Color(0xFFFF8C00),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
                           child: Padding(
                             padding: EdgeInsets.all(8),
                             child: Icon(Icons.settings_outlined, color: Colors.white, size: 22),

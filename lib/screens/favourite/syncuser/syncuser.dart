@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'handler/syncuser_handler.dart';
 import '../../errors/no_internet.dart';
+import '../../profile/user_profile/user_profile.dart';
 
 class SyncUserPage extends StatefulWidget {
   @override
@@ -437,38 +438,15 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
         ),
         onTap: () {
           HapticFeedback.lightImpact();
-          _showComingSoon();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserProfilePage(
+                username: user['username'] ?? 'unknown',
+              ),
+            ),
+          );
         },
       ),
     );
-  }
-
-  void _showComingSoon() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Color(0xFF1E1E1E),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        title: Text(
-          'Coming Soon',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          'User profile feature will be available in the next update.',
-          style: TextStyle(color: Colors.white.withOpacity(0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'OK',
-              style: TextStyle(color: Color(0xFFFF8C00)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
