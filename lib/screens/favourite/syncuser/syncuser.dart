@@ -12,7 +12,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
   late AnimationController _searchController;
   late AnimationController _listController;
   late Animation<double> _searchAnimation;
-  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
   
   TextEditingController _searchTextController = TextEditingController();
   Timer? _searchTimer;
@@ -26,20 +26,22 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
   void initState() {
     super.initState();
     _searchController = AnimationController(
-      duration: Duration(milliseconds: 600),
+      duration: Duration(milliseconds: 400),
       vsync: this,
     );
     _listController = AnimationController(
-      duration: Duration(milliseconds: 800),
+      duration: Duration(milliseconds: 600),
       vsync: this,
     );
     
-    _searchAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _searchController, curve: Curves.elasticOut),
+    _searchAnimation = CurvedAnimation(
+      parent: _searchController, 
+      curve: Curves.easeInOutCubic,
     );
     
-    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _listController, curve: Curves.elasticOut),
+    _fadeAnimation = CurvedAnimation(
+      parent: _listController, 
+      curve: Curves.easeOut,
     );
     
     _loadUsers();
@@ -106,7 +108,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
   }
 
   String _getProfileImagePath(Map<String, dynamic> user) {
-    String? profileImage = user['profile_image'];
+    String? profileImage = user['avatar_url'];
     if (profileImage == null || profileImage.isEmpty) {
       return 'assets/profile/default/default.png';
     }
@@ -128,12 +130,11 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
       ),
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
-        body: CustomScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          slivers: [
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
             _buildHeader(),
-            _buildUserList(),
           ],
+          body: _buildUserList(),
         ),
       ),
     );
@@ -143,49 +144,90 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     return SliverAppBar(
       backgroundColor: Color(0xFF121212),
       elevation: 0,
-      floating: true,
-      pinned: true,
-      expandedHeight: 120,
+      floating: false,
+      pinned: false,
+      snap: false,
+      expandedHeight: 140,
+      automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          padding: EdgeInsets.fromLTRB(20, 60, 20, 20),
-          child: AnimatedBuilder(
-            animation: _searchAnimation,
-            builder: (context, child) {
-              return Row(
-                children: [
-                  if (!isSearchMode) ...[
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Sync Users',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 10, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              AnimatedBuilder(
+                animation: _searchAnimation,
+                builder: (context, child) {
+                  return Row(
+                    children: [
+                      if (!isSearchMode) ...[
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Sync Users',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (isSearchMode) ...[
+                        Expanded(
+                          child: Transform.translate(
+                            offset: Offset(
+                              (1 - _searchAnimation.value) * 100, 
+                              0
+                            ),
+                            child: Opacity(
+                              opacity: _searchAnimation.value,
+                              child: Container(
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF1E1E1E),
+                                  borderRadius: BorderRadius.circular(25),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: TextField(
+                                  controller: _searchTextController,
+                                  onChanged: _onSearchChanged,
+                                  style: TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search users...',
+                                    hintStyle: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 15,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      color: Colors.white.withOpacity(0.7),
+                                    ),
+                                  ),
+                                  autofocus: true,
+                                ),
+                              ),
                             ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
-                            '${filteredUsers.length} users found',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  if (isSearchMode) ...[
-                    Expanded(
-                      child: Transform.scale(
-                        scale: _searchAnimation.value,
+                        ),
+                        SizedBox(width: 10),
+                      ],
+                      GestureDetector(
+                        onTap: _toggleSearch,
                         child: Container(
-                          height: 45,
+                          width: 50,
+                          height: 50,
                           decoration: BoxDecoration(
                             color: Color(0xFF1E1E1E),
                             borderRadius: BorderRadius.circular(25),
@@ -193,53 +235,25 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
                               color: Colors.white.withOpacity(0.2),
                             ),
                           ),
-                          child: TextField(
-                            controller: _searchTextController,
-                            onChanged: _onSearchChanged,
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Search by username or email...',
-                              hintStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: Colors.white.withOpacity(0.7),
-                              ),
-                            ),
-                            autofocus: true,
+                          child: Icon(
+                            isSearchMode ? Icons.close : Icons.search,
+                            color: Colors.white.withOpacity(0.8),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 10),
-                  ],
-                  GestureDetector(
-                    onTap: _toggleSearch,
-                    child: Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: Color(0xFF1E1E1E),
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Icon(
-                        isSearchMode ? Icons.close : Icons.search,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+                    ],
+                  );
+                },
+              ),
+              SizedBox(height: 15),
+              Text(
+                '${filteredUsers.length} users found',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -248,59 +262,52 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
 
   Widget _buildUserList() {
     if (isLoading) {
-      return SliverFillRemaining(
-        child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF8C00),
-          ),
+      return Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFFF8C00),
         ),
       );
     }
 
     if (filteredUsers.isEmpty) {
-      return SliverFillRemaining(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.person_search,
-                size: 80,
-                color: Colors.white.withOpacity(0.3),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_search,
+              size: 80,
+              color: Colors.white.withOpacity(0.3),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'No users found',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 18,
               ),
-              SizedBox(height: 20),
-              Text(
-                'No users found',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 18,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
 
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          return SlideTransition(
-            position: _slideAnimation,
-            child: FadeTransition(
-              opacity: _searchAnimation,
-              child: _buildUserCard(filteredUsers[index], index),
-            ),
-          );
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ListView.builder(
+        padding: EdgeInsets.all(20),
+        physics: AlwaysScrollableScrollPhysics(),
+        itemCount: filteredUsers.length,
+        itemBuilder: (context, index) {
+          return _buildUserCard(filteredUsers[index], index);
         },
-        childCount: filteredUsers.length,
       ),
     );
   }
 
   Widget _buildUserCard(Map<String, dynamic> user, int index) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
         color: Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(15),
@@ -317,7 +324,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
               backgroundImage: AssetImage(_getProfileImagePath(user)),
               backgroundColor: Color(0xFF2A2A2A),
             ),
-            if (user['is_online'] == true)
+            if (user['is_active'] == true)
               Positioned(
                 bottom: 0,
                 right: 0,
@@ -349,7 +356,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
           children: [
             SizedBox(height: 4),
             Text(
-              user['email'] ?? '',
+              user['display_name'] ?? user['email'] ?? '',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.6),
                 fontSize: 14,
@@ -359,15 +366,15 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
             Row(
               children: [
                 Icon(
-                  user['is_online'] == true ? Icons.circle : Icons.circle_outlined,
+                  user['is_active'] == true ? Icons.circle : Icons.circle_outlined,
                   size: 12,
-                  color: user['is_online'] == true ? Colors.green : Colors.grey,
+                  color: user['is_active'] == true ? Colors.green : Colors.grey,
                 ),
                 SizedBox(width: 4),
                 Text(
-                  user['is_online'] == true ? 'Online' : 'Offline',
+                  user['is_active'] == true ? 'Active' : 'Inactive',
                   style: TextStyle(
-                    color: user['is_online'] == true 
+                    color: user['is_active'] == true 
                         ? Colors.green 
                         : Colors.white.withOpacity(0.5),
                     fontSize: 12,
