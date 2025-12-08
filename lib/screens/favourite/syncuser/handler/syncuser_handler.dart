@@ -75,14 +75,14 @@ class SyncUserHandler {
           filters: {'id': userId},
         );
         
-        if (result != null && result.isNotEmpty) {
+        if (result != null) {
           // Send login notification for returning user
           await _sendLoginNotification(userId, username);
           
           return {
             'success': true,
             'message': 'User updated successfully',
-            'user': result.first,
+            'user': existingUser.first,
             'isNewUser': false,
           };
         } else {
@@ -125,21 +125,22 @@ class SyncUserHandler {
       }).toList();
       
       if (favoriteData.isNotEmpty) {
-        final result = await SupabaseHandler.insertData(
-          table: 'user_favorites',
-          data: favoriteData,
-        );
-        
-        if (result != null) {
-          // Send favorites sync notification
-          await _sendFavoritesSyncNotification(userId, favorites.length);
-          
-          return {
-            'success': true,
-            'message': 'Favorites synced successfully',
-            'count': favorites.length,
-          };
+        // Insert each favorite individually
+        for (var favorite in favoriteData) {
+          await SupabaseHandler.insertData(
+            table: 'user_favorites',
+            data: favorite,
+          );
         }
+        
+        // Send favorites sync notification
+        await _sendFavoritesSyncNotification(userId, favorites.length);
+        
+        return {
+          'success': true,
+          'message': 'Favorites synced successfully',
+          'count': favorites.length,
+        };
       }
       
       return {
@@ -284,7 +285,7 @@ class SyncUserHandler {
         filters: {'id': userId},
       );
       
-      if (result != null && result.isNotEmpty) {
+      if (result != null) {
         return {
           'success': true,
           'message': 'Notification settings updated',

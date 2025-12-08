@@ -27,8 +27,8 @@ class NotificationService {
       
       // Add optional fields
       if (animeId != null) payload['anime_id'] = animeId;
-      if (episodeNumber != null) payload['episode_number'] = episodeNumber;
-      if (extraData != null) payload['data'] = extraData;
+      if (episodeNumber != null) payload['episode_number'] = episodeNumber.toString();
+      if (extraData != null) payload.addAll(extraData);
       
       final response = await http.post(
         Uri.parse(AppConfig.notificationEndpoint),
@@ -67,7 +67,7 @@ class NotificationService {
       
       // Add optional fields
       if (animeId != null) payload['anime_id'] = animeId;
-      if (extraData != null) payload['data'] = extraData;
+      if (extraData != null) payload.addAll(extraData);
       
       final response = await http.post(
         Uri.parse(AppConfig.notificationEndpoint),
