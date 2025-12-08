@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'handler/syncuser_handler.dart';
+import '../../errors/no_internet.dart';
 
 class SyncUserPage extends StatefulWidget {
   @override
@@ -13,6 +14,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
   late AnimationController _listController;
   late Animation<double> _searchAnimation;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   
   TextEditingController _searchTextController = TextEditingController();
   Timer? _searchTimer;
@@ -21,28 +23,37 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
   List<Map<String, dynamic>> filteredUsers = [];
   bool isLoading = true;
   bool isSearchMode = false;
+  bool hasNetworkError = false;
 
   @override
   void initState() {
     super.initState();
     _searchController = AnimationController(
-      duration: Duration(milliseconds: 400),
+      duration: Duration(milliseconds: 500),
       vsync: this,
     );
     _listController = AnimationController(
-      duration: Duration(milliseconds: 600),
+      duration: Duration(milliseconds: 800),
       vsync: this,
     );
     
     _searchAnimation = CurvedAnimation(
       parent: _searchController, 
-      curve: Curves.easeInOutCubic,
+      curve: Curves.elasticOut,
     );
     
     _fadeAnimation = CurvedAnimation(
       parent: _listController, 
-      curve: Curves.easeOut,
+      curve: Curves.elasticOut,
     );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3), 
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _listController, 
+      curve: Curves.elasticOut,
+    ));
     
     _loadUsers();
   }
@@ -57,19 +68,39 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
   }
 
   void _loadUsers() async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+      hasNetworkError = false;
+    });
     
-    final result = await SyncUserHandler.getAllUsers();
-    
-    if (result['success']) {
+    try {
+      final result = await SyncUserHandler.getAllUsers()
+          .timeout(Duration(seconds: 10));
+      
+      if (result['success']) {
+        setState(() {
+          users = List<Map<String, dynamic>>.from(result['users']);
+          filteredUsers = users;
+          isLoading = false;
+          hasNetworkError = false;
+        });
+        _listController.forward();
+      } else {
+        setState(() {
+          isLoading = false;
+          hasNetworkError = true;
+        });
+      }
+    } on TimeoutException {
       setState(() {
-        users = List<Map<String, dynamic>>.from(result['users']);
-        filteredUsers = users;
         isLoading = false;
+        hasNetworkError = true;
       });
-      _listController.forward();
-    } else {
-      setState(() => isLoading = false);
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        hasNetworkError = true;
+      });
     }
   }
 
@@ -86,11 +117,28 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
       return;
     }
 
-    final result = await SyncUserHandler.getAllUsers(searchQuery: query);
-    
-    if (result['success']) {
+    try {
+      final result = await SyncUserHandler.getAllUsers(searchQuery: query)
+          .timeout(Duration(seconds: 5));
+      
+      if (result['success']) {
+        setState(() {
+          filteredUsers = List<Map<String, dynamic>>.from(result['users']);
+        });
+      }
+    } catch (e) {
+      // Fallback to local search if API fails
       setState(() {
-        filteredUsers = List<Map<String, dynamic>>.from(result['users']);
+        filteredUsers = users.where((user) {
+          final username = (user['username'] ?? '').toLowerCase();
+          final email = (user['email'] ?? '').toLowerCase();
+          final displayName = (user['display_name'] ?? '').toLowerCase();
+          final searchLower = query.toLowerCase();
+          
+          return username.contains(searchLower) || 
+                 email.contains(searchLower) ||
+                 displayName.contains(searchLower);
+        }).toList();
       });
     }
   }
@@ -101,9 +149,10 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     if (isSearchMode) {
       _searchController.forward();
     } else {
-      _searchController.reverse();
-      _searchTextController.clear();
-      setState(() => filteredUsers = users);
+      _searchController.reverse().then((_) {
+        _searchTextController.clear();
+        setState(() => filteredUsers = users);
+      });
     }
   }
 
@@ -123,6 +172,12 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    if (hasNetworkError) {
+      return NoInternetScreen(
+        onRetry: _loadUsers,
+      );
+    }
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -130,11 +185,17 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
       ),
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
-        body: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            _buildHeader(),
-          ],
-          body: _buildUserList(),
+        body: RefreshIndicator(
+          onRefresh: () async => _loadUsers(),
+          color: Color(0xFFFF8C00),
+          backgroundColor: Color(0xFF1E1E1E),
+          child: CustomScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            slivers: [
+              _buildHeader(),
+              _buildUserList(),
+            ],
+          ),
         ),
       ),
     );
@@ -144,7 +205,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     return SliverAppBar(
       backgroundColor: Color(0xFF121212),
       elevation: 0,
-      floating: false,
+      floating: true,
       pinned: false,
       snap: false,
       expandedHeight: 140,
@@ -163,18 +224,27 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
                     children: [
                       if (!isSearchMode) ...[
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Sync Users',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                          child: Transform.translate(
+                            offset: Offset(
+                              _searchAnimation.value * -100, 
+                              0
+                            ),
+                            child: Opacity(
+                              opacity: 1 - _searchAnimation.value,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Sync Users',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -185,8 +255,8 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
                               (1 - _searchAnimation.value) * 100, 
                               0
                             ),
-                            child: Opacity(
-                              opacity: _searchAnimation.value,
+                            child: Transform.scale(
+                              scale: _searchAnimation.value,
                               child: Container(
                                 height: 50,
                                 decoration: BoxDecoration(
@@ -223,21 +293,24 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
                         ),
                         SizedBox(width: 10),
                       ],
-                      GestureDetector(
-                        onTap: _toggleSearch,
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF1E1E1E),
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
+                      Transform.scale(
+                        scale: isSearchMode ? _searchAnimation.value : 1.0,
+                        child: GestureDetector(
+                          onTap: _toggleSearch,
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF1E1E1E),
+                              borderRadius: BorderRadius.circular(25),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                              ),
                             ),
-                          ),
-                          child: Icon(
-                            isSearchMode ? Icons.close : Icons.search,
-                            color: Colors.white.withOpacity(0.8),
+                            child: Icon(
+                              isSearchMode ? Icons.close : Icons.search,
+                              color: Colors.white.withOpacity(0.8),
+                            ),
                           ),
                         ),
                       ),
@@ -262,52 +335,59 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
 
   Widget _buildUserList() {
     if (isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFFFF8C00),
+      return SliverFillRemaining(
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF8C00),
+          ),
         ),
       );
     }
 
     if (filteredUsers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_search,
-              size: 80,
-              color: Colors.white.withOpacity(0.3),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'No users found',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 18,
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.person_search,
+                size: 80,
+                color: Colors.white.withOpacity(0.3),
               ),
-            ),
-          ],
+              SizedBox(height: 20),
+              Text(
+                'No users found',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: ListView.builder(
-        padding: EdgeInsets.all(20),
-        physics: AlwaysScrollableScrollPhysics(),
-        itemCount: filteredUsers.length,
-        itemBuilder: (context, index) {
-          return _buildUserCard(filteredUsers[index], index);
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          return SlideTransition(
+            position: _slideAnimation,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: _buildUserCard(filteredUsers[index], index),
+            ),
+          );
         },
+        childCount: filteredUsers.length,
       ),
     );
   }
 
   Widget _buildUserCard(Map<String, dynamic> user, int index) {
     return Container(
-      margin: EdgeInsets.only(bottom: 15),
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(15),
@@ -324,7 +404,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
               backgroundImage: AssetImage(_getProfileImagePath(user)),
               backgroundColor: Color(0xFF2A2A2A),
             ),
-            if (user['is_active'] == true)
+            if (user['is_online'] == true)
               Positioned(
                 bottom: 0,
                 right: 0,
@@ -366,15 +446,15 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
             Row(
               children: [
                 Icon(
-                  user['is_active'] == true ? Icons.circle : Icons.circle_outlined,
+                  user['is_online'] == true ? Icons.circle : Icons.circle_outlined,
                   size: 12,
-                  color: user['is_active'] == true ? Colors.green : Colors.grey,
+                  color: user['is_online'] == true ? Colors.green : Colors.grey,
                 ),
                 SizedBox(width: 4),
                 Text(
-                  user['is_active'] == true ? 'Active' : 'Inactive',
+                  user['is_online'] == true ? 'Online' : 'Offline',
                   style: TextStyle(
-                    color: user['is_active'] == true 
+                    color: user['is_online'] == true 
                         ? Colors.green 
                         : Colors.white.withOpacity(0.5),
                     fontSize: 12,
