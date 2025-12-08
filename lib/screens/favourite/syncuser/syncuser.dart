@@ -380,7 +380,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                                           'Try adjusting your search or check back later',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.white40,
+                                            color: Colors.white.withOpacity(0.4),
                                           ),
                                         ),
                                       ],
@@ -479,7 +479,7 @@ class _SyncUserPageState extends State<SyncUserPage>
                                                 ),
                                                 Icon(
                                                   Icons.arrow_forward_ios,
-                                                  color: Colors.white40,
+                                                  color: Colors.white.withOpacity(0.4),
                                                   size: 16,
                                                 ),
                                               ],
