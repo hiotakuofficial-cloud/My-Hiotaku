@@ -101,7 +101,7 @@ class UserProfileHandler {
       final publicFavoritesData = await SupabaseHandler.getData(
         table: 'favorites',
         select: 'anime_id,anime_title,anime_image,created_at',
-        filters: {'user_id': userId, 'is_public': 'true'}, // String instead of boolean
+        filters: {'user_id': userId, 'is_public': true}, // Boolean back
       );
       
       print('📊 Public favorites query result: ${publicFavoritesData?.length ?? 0} items');
