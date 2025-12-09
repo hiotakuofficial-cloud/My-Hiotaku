@@ -146,21 +146,20 @@ class UserProfileHandler {
       
       final targetUserId = targetUserData.first['id'];
       
-      // Check if already synced
-      final existingSync = await SupabaseHandler.getData(
-        table: 'user_sync',
+      // Check if already merged
+      final existingMerge = await SupabaseHandler.getData(
+        table: 'merged_accounts',
         select: 'id',
         filters: {
-          'user_id': currentUserId,
-          'target_user_id': targetUserId,
-          'is_active': true,
+          'user1_id': currentUserId,
+          'user2_id': targetUserId,
         },
       );
       
-      if (existingSync != null && existingSync.isNotEmpty) {
+      if (existingMerge != null && existingMerge.isNotEmpty) {
         return {
           'success': false,
-          'message': 'Already synced with this user',
+          'message': 'Already merged with this user',
         };
       }
       
