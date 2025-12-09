@@ -81,7 +81,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         // Debug toast for favorites
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Profile count: ${userProfile!['public_favorites_count']}, Actual loaded: ${favoritesResult['count']}'),
+            content: Text('Profile count: ${userProfile?['public_favorites_count'] ?? 0}, Actual loaded: ${favoritesResult['count']}'),
             backgroundColor: Colors.blue,
             duration: Duration(seconds: 3),
           ),
@@ -331,13 +331,13 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: userProfile!['is_online'] == true ? Colors.green : Colors.transparent,
+                  color: (userProfile?['is_online'] == true) ? Colors.green : Colors.transparent,
                   width: 3,
                 ),
               ),
               child: CircleAvatar(
                 radius: 65,
-                backgroundImage: AssetImage(_getProfileImagePath(userProfile!['avatar_url'])),
+                backgroundImage: AssetImage(_getProfileImagePath(userProfile?['avatar_url'] ?? 'default.png')),
                 backgroundColor: Color(0xFF2A2A2A),
               ),
             ),
@@ -368,7 +368,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         ),
         SizedBox(height: 8),
         Text(
-          '@${userProfile!['username']}',
+          '@${userProfile?['username'] ?? 'unknown'}',
           style: TextStyle(
             color: Colors.white.withOpacity(0.7),
             fontSize: 16,
@@ -378,12 +378,12 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         Container(
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: userProfile!['is_online'] == true 
+            color: (userProfile?['is_online'] == true) 
                 ? Colors.green.withOpacity(0.2) 
                 : Colors.grey.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
+              color: (userProfile?['is_online'] == true) ? Colors.green : Colors.grey,
               width: 1,
             ),
           ),
@@ -393,13 +393,13 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               Icon(
                 Icons.circle,
                 size: 8,
-                color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
+                color: (userProfile?['is_online'] == true) ? Colors.green : Colors.grey,
               ),
               SizedBox(width: 6),
               Text(
-                userProfile!['is_online'] == true ? 'Online' : 'Offline',
+                (userProfile?['is_online'] == true) ? 'Online' : 'Offline',
                 style: TextStyle(
-                  color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
+                  color: (userProfile?['is_online'] == true) ? Colors.green : Colors.grey,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -422,9 +422,9 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatItem('Public Saved', userProfile!['public_favorites_count'].toString()),
+          _buildStatItem('Public Saved', (userProfile?['public_favorites_count'] ?? 0).toString()),
           Container(width: 1, height: 40, color: Colors.white.withOpacity(0.1)),
-          _buildStatItem('Synced With', userProfile!['synced_accounts_count'].toString()),
+          _buildStatItem('Synced With', (userProfile?['synced_accounts_count'] ?? 0).toString()),
           Container(width: 1, height: 40, color: Colors.white.withOpacity(0.1)),
           _buildStatItem('Max Sync', '2'),
         ],

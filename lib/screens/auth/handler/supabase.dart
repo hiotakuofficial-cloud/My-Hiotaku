@@ -238,7 +238,24 @@ class SupabaseHandler {
     );
   }
   
-  /// Get public favorites
+  /// Update user's last seen timestamp for online status
+  static Future<bool> updateUserLastSeen(String firebaseUID) async {
+    try {
+      final userData = await getUserByFirebaseUID(firebaseUID);
+      if (userData == null) return false;
+      
+      final result = await updateData(
+        table: 'users',
+        data: {'updated_at': DateTime.now().toIso8601String()},
+        filters: {'id': userData['id']},
+      );
+      
+      return result != null;
+    } catch (e) {
+      print('Update last seen error: $e');
+      return false;
+    }
+  }
   static Future<List<Map<String, dynamic>>?> getPublicFavorites() async {
     try {
       // Query favorites with is_public=true and JOIN with users table to get username and avatar

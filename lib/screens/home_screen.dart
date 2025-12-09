@@ -17,6 +17,7 @@ import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../notifications/handler/firebase_messaging_handler.dart';
+import 'auth/handler/supabase.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -58,6 +59,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (firebaseUser != null) {
         print('✅ User logged in, initializing FCM...');
         await FirebaseMessagingHandler.initialize();
+        
+        // Update user's last seen for online status
+        await SupabaseHandler.updateUserLastSeen(firebaseUser.uid);
+        
         print('✅ FCM initialized successfully on home screen');
       } else {
         print('❌ User not logged in, skipping FCM initialization');
@@ -881,6 +886,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         },
       ),
     );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      switch (state) {
+        case AppLifecycleState.resumed:
+          // App foreground mein aaya - online status update
+          SupabaseHandler.updateUserLastSeen(firebaseUser.uid);
+          break;
+        case AppLifecycleState.paused:
+        case AppLifecycleState.inactive:
+          // App background/minimized - last seen update
+          SupabaseHandler.updateUserLastSeen(firebaseUser.uid);
+          break;
+        case AppLifecycleState.detached:
+        case AppLifecycleState.hidden:
+          break;
+      }
+    }
   }
 
   @override

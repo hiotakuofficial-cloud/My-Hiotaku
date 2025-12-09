@@ -37,13 +37,13 @@ class UserProfileHandler {
         filters: {'user1_id': userId}, // Check if user is primary in merge
       );
       
-      // Calculate online status (last updated within 30 minutes)
+      // Calculate online status (last updated within 5 minutes)
       bool isOnline = false;
       if (user['updated_at'] != null) {
         try {
           DateTime lastUpdate = DateTime.parse(user['updated_at']);
           Duration difference = DateTime.now().difference(lastUpdate);
-          isOnline = difference.inMinutes <= 30;
+          isOnline = difference.inMinutes <= 5;
         } catch (e) {
           isOnline = false;
         }
