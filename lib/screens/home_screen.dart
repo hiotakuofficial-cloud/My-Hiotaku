@@ -74,16 +74,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
         _stopAutoSlide();
+        // Update last seen when app goes to background
+        if (firebaseUser != null) {
+          SupabaseHandler.updateUserLastSeen(firebaseUser.uid);
+        }
         break;
       case AppLifecycleState.resumed:
         _startAutoSlide();
         _loadUserData(); // Reload user data when app resumes
+        // Update online status when app comes to foreground
+        if (firebaseUser != null) {
+          SupabaseHandler.updateUserLastSeen(firebaseUser.uid);
+        }
         break;
-      default:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
         break;
     }
   }
@@ -886,29 +897,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         },
       ),
     );
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    
-    final User? firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser != null) {
-      switch (state) {
-        case AppLifecycleState.resumed:
-          // App foreground mein aaya - online status update
-          SupabaseHandler.updateUserLastSeen(firebaseUser.uid);
-          break;
-        case AppLifecycleState.paused:
-        case AppLifecycleState.inactive:
-          // App background/minimized - last seen update
-          SupabaseHandler.updateUserLastSeen(firebaseUser.uid);
-          break;
-        case AppLifecycleState.detached:
-        case AppLifecycleState.hidden:
-          break;
-      }
-    }
   }
 
   @override
