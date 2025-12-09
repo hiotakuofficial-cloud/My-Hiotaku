@@ -89,10 +89,10 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         
         setState(() {
           userProfile = profileResult['user'];
-          userFavorites = favoritesResult['success'] ? 
-              List<Map<String, dynamic>>.from(favoritesResult['favorites']) : [];
-          syncedAccounts = syncedResult['success'] ? 
-              List<Map<String, dynamic>>.from(syncedResult['synced_accounts']) : [];
+          userFavorites = favoritesResult['success'] == true ? 
+              List<Map<String, dynamic>>.from(favoritesResult['favorites'] ?? []) : [];
+          syncedAccounts = syncedResult['success'] == true ? 
+              List<Map<String, dynamic>>.from(syncedResult['synced_accounts'] ?? []) : [];
           isLoading = false;
           hasNetworkError = false;
         });
