@@ -25,9 +25,9 @@ class UserProfileHandler {
       
       // Get public favorites count
       final favoritesData = await SupabaseHandler.getData(
-        table: 'user_favorites',
+        table: 'favorites',
         select: 'id',
-        filters: {'user_id': userId, 'is_active': true},
+        filters: {'user_id': userId, 'is_public': true},
       );
       
       // Get synced accounts count (users who synced with this user)
@@ -77,6 +77,8 @@ class UserProfileHandler {
   /// Get user's public favorites
   static Future<Map<String, dynamic>> getUserFavorites(String username) async {
     try {
+      print('🔍 Getting favorites for username: $username');
+      
       // First get user ID
       final userData = await SupabaseHandler.getData(
         table: 'users',
@@ -85,6 +87,7 @@ class UserProfileHandler {
       );
       
       if (userData == null || userData.isEmpty) {
+        print('❌ User not found for username: $username');
         return {
           'success': false,
           'message': 'User not found',
@@ -92,6 +95,7 @@ class UserProfileHandler {
       }
       
       final userId = userData.first['id'];
+      print('✅ Found user ID: $userId');
       
       // Get user's public favorites from favorites table where is_public=true
       final publicFavoritesData = await SupabaseHandler.getData(
@@ -100,12 +104,18 @@ class UserProfileHandler {
         filters: {'user_id': userId, 'is_public': true},
       );
       
+      print('📊 Public favorites query result: ${publicFavoritesData?.length ?? 0} items');
+      if (publicFavoritesData != null && publicFavoritesData.isNotEmpty) {
+        print('📝 First favorite: ${publicFavoritesData.first}');
+      }
+      
       return {
         'success': true,
         'favorites': publicFavoritesData ?? [],
         'count': publicFavoritesData?.length ?? 0,
       };
     } catch (e) {
+      print('❌ Error getting favorites: $e');
       return {
         'success': false,
         'message': 'Failed to load favorites',
