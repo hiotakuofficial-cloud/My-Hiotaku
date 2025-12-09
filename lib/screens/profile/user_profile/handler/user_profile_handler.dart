@@ -30,11 +30,11 @@ class UserProfileHandler {
         filters: {'user_id': userId, 'is_public': true},
       );
       
-      // Get synced accounts count (users who synced with this user)
+      // Get synced accounts count (users who merged with this user)
       final syncedAccountsData = await SupabaseHandler.getData(
-        table: 'user_sync',
+        table: 'merged_accounts',
         select: 'id',
-        filters: {'target_user_id': userId, 'is_active': true},
+        filters: {'user1_id': userId}, // Check if user is primary in merge
       );
       
       // Calculate online status (last updated within 30 minutes)
