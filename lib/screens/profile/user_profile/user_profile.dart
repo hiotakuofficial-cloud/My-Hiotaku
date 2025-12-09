@@ -81,9 +81,9 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         // Debug toast for favorites
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Favorites loaded: ${favoritesResult['count']} items'),
+            content: Text('Profile count: ${userProfile!['public_favorites_count']}, Actual loaded: ${favoritesResult['count']}'),
             backgroundColor: Colors.blue,
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 3),
           ),
         );
         
