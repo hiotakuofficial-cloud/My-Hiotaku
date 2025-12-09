@@ -163,31 +163,31 @@ class UserProfileHandler {
         };
       }
       
-      // Check sync limit for current user
-      final currentUserSyncs = await SupabaseHandler.getData(
-        table: 'user_sync',
+      // Check merge limit for current user (max 2 merges)
+      final currentUserMerges = await SupabaseHandler.getData(
+        table: 'merged_accounts',
         select: 'id',
-        filters: {'user_id': currentUserId, 'is_active': true},
+        filters: {'user1_id': currentUserId},
       );
       
-      if ((currentUserSyncs?.length ?? 0) >= 2) {
+      if ((currentUserMerges?.length ?? 0) >= 2) {
         return {
           'success': false,
-          'message': 'Maximum sync limit reached (2 accounts)',
+          'message': 'Maximum merge limit reached (2 accounts)',
         };
       }
       
-      // Create sync record
-      final syncData = {
-        'user_id': currentUserId,
-        'target_user_id': targetUserId,
-        'synced_at': DateTime.now().toIso8601String(),
-        'is_active': true,
+      // Create merge request
+      final mergeRequestData = {
+        'sender_id': currentUserId,
+        'receiver_id': targetUserId,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
       };
       
       final result = await SupabaseHandler.insertData(
-        table: 'user_sync',
-        data: syncData,
+        table: 'merge_requests',
+        data: mergeRequestData,
       );
       
       if (result != null && result.isNotEmpty) {
@@ -229,14 +229,14 @@ class UserProfileHandler {
       
       final userId = userData.first['id'];
       
-      // Get synced accounts with user details
-      final syncData = await SupabaseHandler.getData(
-        table: 'user_sync',
-        select: 'target_user_id,synced_at',
-        filters: {'user_id': userId, 'is_active': true},
+      // Get merged accounts with user details
+      final mergeData = await SupabaseHandler.getData(
+        table: 'merged_accounts',
+        select: 'user2_id,merged_at',
+        filters: {'user1_id': userId},
       );
       
-      if (syncData == null || syncData.isEmpty) {
+      if (mergeData == null || mergeData.isEmpty) {
         return {
           'success': true,
           'synced_accounts': [],
@@ -244,19 +244,19 @@ class UserProfileHandler {
         };
       }
       
-      // Get details of synced users
+      // Get details of merged users
       List<Map<String, dynamic>> syncedAccounts = [];
-      for (var sync in syncData) {
+      for (var merge in mergeData) {
         final syncedUserData = await SupabaseHandler.getData(
           table: 'users',
           select: 'username,display_name,avatar_url',
-          filters: {'id': sync['target_user_id']},
+          filters: {'id': merge['user2_id']},
         );
         
         if (syncedUserData != null && syncedUserData.isNotEmpty) {
           syncedAccounts.add({
             ...syncedUserData.first,
-            'synced_at': sync['synced_at'],
+            'merged_at': merge['merged_at'],
           });
         }
       }
