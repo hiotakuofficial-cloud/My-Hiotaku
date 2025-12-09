@@ -78,6 +78,15 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         final favoritesResult = await UserProfileHandler.getUserFavorites(widget.username);
         final syncedResult = await UserProfileHandler.getUserSyncedAccounts(widget.username);
         
+        // Debug toast for favorites
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Favorites loaded: ${favoritesResult['count']} items'),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
         setState(() {
           userProfile = profileResult['user'];
           userFavorites = favoritesResult['success'] ? 
@@ -89,12 +98,26 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         });
         _animationController.forward();
       } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Profile load failed: ${profileResult['message']}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
         setState(() {
           isLoading = false;
           hasNetworkError = true;
         });
       }
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
       setState(() {
         isLoading = false;
         hasNetworkError = true;
