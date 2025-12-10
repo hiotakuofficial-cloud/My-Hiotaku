@@ -26,7 +26,7 @@ class UserProfileHandler {
       // Get public favorites count
       final favoritesData = await SupabaseHandler.getData(
         table: 'favorites',
-        select: 'id',
+        select: 'anime_id,anime_title,anime_image,created_at',
         filters: {'user_id': userId, 'is_public': true},
       );
       
