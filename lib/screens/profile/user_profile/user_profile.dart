@@ -75,17 +75,40 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           .timeout(Duration(seconds: 10));
       
       if (profileResult['success']) {
+        // Debug toast for favorites with detailed info
         final favoritesResult = await UserProfileHandler.getUserFavorites(widget.username);
         final syncedResult = await UserProfileHandler.getUserSyncedAccounts(widget.username);
         
-        // Debug toast for favorites
+        // Show detailed debug info
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Profile count: ${userProfile?['public_favorites_count'] ?? 0}, Actual loaded: ${favoritesResult['count']}'),
+            content: Text('Profile: ${userProfile?['public_favorites_count'] ?? 0}, Loaded: ${favoritesResult['count']}, Success: ${favoritesResult['success']}'),
             backgroundColor: Colors.blue,
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 4),
           ),
         );
+        
+        // Show debug info if available
+        if (favoritesResult['debug_info'] != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Debug: ${favoritesResult['debug_info']}'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        
+        // Show all favorites info
+        if (favoritesResult['all_favorites'] != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('All favs: ${favoritesResult['all_favorites']}'),
+              backgroundColor: Colors.purple,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
         
         setState(() {
           userProfile = profileResult['user'];

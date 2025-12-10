@@ -77,8 +77,6 @@ class UserProfileHandler {
   /// Get user's public favorites
   static Future<Map<String, dynamic>> getUserFavorites(String username) async {
     try {
-      print('🔍 Getting favorites for username: $username');
-      
       // First get user ID
       final userData = await SupabaseHandler.getData(
         table: 'users',
@@ -87,38 +85,47 @@ class UserProfileHandler {
       );
       
       if (userData == null || userData.isEmpty) {
-        print('❌ User not found for username: $username');
         return {
           'success': false,
-          'message': 'User not found',
+          'message': 'User not found for username: $username',
         };
       }
       
       final userId = userData.first['id'];
-      print('✅ Found user ID: $userId');
       
       // Get user's public favorites from favorites table where is_public=true
       final publicFavoritesData = await SupabaseHandler.getData(
         table: 'favorites',
         select: 'anime_id,anime_title,anime_image,created_at',
-        filters: {'user_id': userId, 'is_public': true}, // Boolean back
+        filters: {'user_id': userId, 'is_public': true},
       );
       
-      print('📊 Public favorites query result: ${publicFavoritesData?.length ?? 0} items');
-      if (publicFavoritesData != null && publicFavoritesData.isNotEmpty) {
-        print('📝 First favorite: ${publicFavoritesData.first}');
+      // If no public favorites, check total favorites for debugging
+      if (publicFavoritesData == null || publicFavoritesData.isEmpty) {
+        final allFavorites = await SupabaseHandler.getData(
+          table: 'favorites',
+          select: 'anime_id,is_public',
+          filters: {'user_id': userId},
+        );
+        
+        return {
+          'success': true,
+          'favorites': [],
+          'count': 0,
+          'debug_info': 'No public favorites. Total favorites: ${allFavorites?.length ?? 0}',
+          'all_favorites': allFavorites?.map((f) => '${f['anime_id']}:${f['is_public']}').join(', ') ?? 'none',
+        };
       }
       
       return {
         'success': true,
-        'favorites': publicFavoritesData ?? [],
-        'count': publicFavoritesData?.length ?? 0,
+        'favorites': publicFavoritesData,
+        'count': publicFavoritesData.length,
       };
     } catch (e) {
-      print('❌ Error getting favorites: $e');
       return {
         'success': false,
-        'message': 'Failed to load favorites',
+        'message': 'Error: $e',
         'error': e.toString(),
       };
     }
