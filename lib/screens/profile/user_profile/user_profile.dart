@@ -79,37 +79,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         final favoritesResult = await UserProfileHandler.getUserFavorites(widget.username);
         final syncedResult = await UserProfileHandler.getUserSyncedAccounts(widget.username);
         
-        // Show detailed debug info
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Profile: ${userProfile?['public_favorites_count'] ?? 0}, Loaded: ${favoritesResult['count']}, Success: ${favoritesResult['success']}'),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 4),
-          ),
-        );
-        
-        // Show debug info if available
-        if (favoritesResult['debug_info'] != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Debug: ${favoritesResult['debug_info']}'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
-        
-        // Show all favorites info
-        if (favoritesResult['all_favorites'] != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('All favs: ${favoritesResult['all_favorites']}'),
-              backgroundColor: Colors.purple,
-              duration: Duration(seconds: 5),
-            ),
-          );
-        }
-        
         setState(() {
           userProfile = profileResult['user'];
           userFavorites = favoritesResult['success'] == true ? 
@@ -121,30 +90,43 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         });
         _animationController.forward();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Profile load failed: ${profileResult['message']}'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
+        // Profile load failed
         setState(() {
           isLoading = false;
           hasNetworkError = true;
         });
+        
+        // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Profile not found or unavailable'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      // Log error for debugging
+      print('Profile load error: $e');
+      
+      // Network or other errors
       setState(() {
         isLoading = false;
         hasNetworkError = true;
       });
+      
+      // Show user-friendly error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Something went wrong. Please try again later.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 

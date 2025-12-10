@@ -77,6 +77,15 @@ class UserProfileHandler {
   /// Get user's public favorites
   static Future<Map<String, dynamic>> getUserFavorites(String username) async {
     try {
+      if (username.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Invalid user profile',
+          'favorites': [],
+          'count': 0,
+        };
+      }
+      
       // Direct query to public_favorites table with username match
       final publicFavoritesData = await SupabaseHandler.getData(
         table: 'public_favorites',
@@ -90,10 +99,14 @@ class UserProfileHandler {
         'count': publicFavoritesData?.length ?? 0,
       };
     } catch (e) {
+      // Log error for debugging but don't expose to user
+      print('getUserFavorites error: $e');
+      
       return {
         'success': false,
-        'message': 'Error: $e',
-        'error': e.toString(),
+        'message': 'Unable to load favorites at the moment',
+        'favorites': [],
+        'count': 0,
       };
     }
   }

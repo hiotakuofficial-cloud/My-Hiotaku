@@ -1,10 +1,12 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../screens/auth/handler/supabase.dart';
 import '../models/notification_model.dart';
 import 'local_notification_handler.dart';
+import '../../main.dart'; // For navigatorKey
 
 class FirebaseMessagingHandler {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -25,9 +27,31 @@ class FirebaseMessagingHandler {
       // Initialize local notifications
       await LocalNotificationHandler.initialize();
       
+      // Handle app launch from notification (when app was completely closed)
+      await _handleInitialMessage();
+      
       print('FCM initialized successfully');
     } catch (e) {
       print('FCM initialization error: $e');
+    }
+  }
+  
+  // Handle app launch from notification
+  static Future<void> _handleInitialMessage() async {
+    try {
+      // Check if app was opened from a notification
+      final RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
+      
+      if (initialMessage != null) {
+        print('App launched from notification: ${initialMessage.messageId}');
+        
+        // Handle the notification tap after a short delay to ensure app is ready
+        Future.delayed(Duration(milliseconds: 1000), () {
+          _handleNotificationTap(initialMessage);
+        });
+      }
+    } catch (e) {
+      print('Handle initial message error: $e');
     }
   }
   
@@ -204,14 +228,63 @@ class FirebaseMessagingHandler {
   
   // Handle merge request notification tap
   static void _handleMergeRequestTap(Map<String, dynamic> data) {
-    // TODO: Navigate to merge requests page
-    print('Navigate to merge request: ${data['request_id']}');
+    try {
+      final requestId = data['request_id'] ?? '';
+      final senderUsername = data['sender_username'] ?? '';
+      
+      print('Navigate to merge request: $requestId from $senderUsername');
+      
+      // Navigate to sync user page or profile page
+      if (senderUsername.isNotEmpty) {
+        _navigateToPage('/profile/$senderUsername');
+      } else {
+        _navigateToPage('/sync');
+      }
+    } catch (e) {
+      print('Handle merge request tap error: $e');
+    }
   }
   
   // Handle merge response notification tap
   static void _handleMergeResponseTap(Map<String, dynamic> data) {
-    // TODO: Navigate to favorites page
-    print('Navigate to favorites page');
+    try {
+      final status = data['status'] ?? '';
+      print('Navigate to favorites page - merge $status');
+      
+      // Navigate to favorites page
+      _navigateToPage('/favorites');
+    } catch (e) {
+      print('Handle merge response tap error: $e');
+    }
+  }
+  
+  // Generic navigation helper
+  static void _navigateToPage(String route) {
+    try {
+      // Get current context from navigator key
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        // Navigate based on route
+        switch (route) {
+          case '/favorites':
+            Navigator.of(context).pushNamed('/favorites');
+            break;
+          case '/sync':
+            Navigator.of(context).pushNamed('/sync');
+            break;
+          default:
+            if (route.startsWith('/profile/')) {
+              final username = route.split('/profile/')[1];
+              Navigator.of(context).pushNamed('/profile', arguments: username);
+            }
+            break;
+        }
+      } else {
+        print('No context available for navigation');
+      }
+    } catch (e) {
+      print('Navigation error: $e');
+    }
   }
   
   // Handle token refresh
