@@ -77,50 +77,17 @@ class UserProfileHandler {
   /// Get user's public favorites
   static Future<Map<String, dynamic>> getUserFavorites(String username) async {
     try {
-      // First get user ID
-      final userData = await SupabaseHandler.getData(
-        table: 'users',
-        select: 'id',
+      // Direct query to public_favorites table with username match
+      final publicFavoritesData = await SupabaseHandler.getData(
+        table: 'public_favorites',
+        select: 'anime_id,anime_title,anime_image,added_at',
         filters: {'username': username},
       );
       
-      if (userData == null || userData.isEmpty) {
-        return {
-          'success': false,
-          'message': 'User not found for username: $username',
-        };
-      }
-      
-      final userId = userData.first['id'];
-      
-      // Get user's public favorites from favorites table where is_public=true
-      final publicFavoritesData = await SupabaseHandler.getData(
-        table: 'favorites',
-        select: 'anime_id,anime_title,anime_image,created_at',
-        filters: {'user_id': userId, 'is_public': true},
-      );
-      
-      // If no public favorites, check total favorites for debugging
-      if (publicFavoritesData == null || publicFavoritesData.isEmpty) {
-        final allFavorites = await SupabaseHandler.getData(
-          table: 'favorites',
-          select: 'anime_id,is_public',
-          filters: {'user_id': userId},
-        );
-        
-        return {
-          'success': true,
-          'favorites': [],
-          'count': 0,
-          'debug_info': 'No public favorites. Total favorites: ${allFavorites?.length ?? 0}',
-          'all_favorites': allFavorites?.map((f) => '${f['anime_id']}:${f['is_public']}').join(', ') ?? 'none',
-        };
-      }
-      
       return {
         'success': true,
-        'favorites': publicFavoritesData,
-        'count': publicFavoritesData.length,
+        'favorites': publicFavoritesData ?? [],
+        'count': publicFavoritesData?.length ?? 0,
       };
     } catch (e) {
       return {
