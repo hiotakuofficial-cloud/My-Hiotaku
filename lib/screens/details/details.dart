@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'handler/details_handler.dart';
 import '../../services/api_service.dart';
 import '../../models/api_models.dart';
-import '../auth/handler/supabase.dart';
+import '../favourite/handler/favourite_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../player/player/player.dart';
 
@@ -127,21 +127,10 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         return;
       }
       
-      // Get Supabase user data
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) {
-        if (mounted) {
-          setState(() {
-            isBookmarked = false;
-            isCheckingFavorite = false;
-          });
-        }
-        return;
-      }
-      
       // Check if anime exists in user's favorites
-      final favorites = await SupabaseHandler.getUserFavorites(userData['id']);
-      final isFavorited = favorites?.any((fav) => fav['anime_id'] == widget.animeId) ?? false;
+      final isFavorited = await FavouriteHandler.isInFavorites(
+        animeId: widget.animeId,
+      );
       
       if (mounted) {
         setState(() {
@@ -180,21 +169,13 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
 
   Future<void> _addToFavorites() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return;
-      
-      // Get Supabase user data
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return;
-      
-      final result = await SupabaseHandler.addToFavorites(
-        userId: userData['id'],
+      final result = await FavouriteHandler.addToFavorites(
         animeId: widget.animeId,
         animeTitle: widget.title,
         animeImage: _getBestPosterUrl(),
       );
       
-      if (result != null && mounted) {
+      if (result && mounted) {
         setState(() {
           isBookmarked = true;
         });
@@ -210,15 +191,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
 
   Future<void> _removeFromFavorites() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return;
-      
-      // Get Supabase user data
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return;
-      
-      final success = await SupabaseHandler.removeFromFavorites(
-        userId: userData['id'],
+      final success = await FavouriteHandler.removeFromFavorites(
         animeId: widget.animeId,
       );
       
