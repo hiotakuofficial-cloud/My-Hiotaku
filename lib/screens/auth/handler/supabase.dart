@@ -365,4 +365,63 @@ class SupabaseHandler {
       return null;
     }
   }
+
+  /// Get user favorites
+  static Future<List<Map<String, dynamic>>?> getUserFavorites(String userId) async {
+    try {
+      return await getData(
+        table: 'favorites',
+        filters: {'user_id': userId},
+        orderBy: 'added_at',
+        ascending: false,
+      );
+    } catch (e) {
+      print('Get user favorites error: $e');
+      return null;
+    }
+  }
+
+  /// Add to favorites
+  static Future<Map<String, dynamic>?> addToFavorites({
+    required String userId,
+    required String animeId,
+    required String animeTitle,
+    String? animeImage,
+    bool isPublic = true,
+  }) async {
+    try {
+      return await insertData(
+        table: 'favorites',
+        data: {
+          'user_id': userId,
+          'anime_id': animeId,
+          'anime_title': animeTitle,
+          'anime_image': animeImage,
+          'is_public': isPublic,
+        },
+      );
+    } catch (e) {
+      print('Add to favorites error: $e');
+      return null;
+    }
+  }
+
+  /// Remove from favorites
+  static Future<bool> removeFromFavorites({
+    required String userId,
+    required String animeId,
+  }) async {
+    try {
+      return await deleteData(
+        table: 'favorites',
+        filters: {
+          'user_id': userId,
+          'anime_id': animeId,
+        },
+      );
+    } catch (e) {
+      print('Remove from favorites error: $e');
+      return false;
+    }
+  }
 }

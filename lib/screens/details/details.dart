@@ -785,8 +785,8 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                   GestureDetector(
                     onTap: _handleFavoriteToggle,
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         boxShadow: [
@@ -810,8 +810,8 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
                               isBookmarked 
                                   ? 'assets/icons/saved.png'
                                   : 'assets/icons/unsaved.png',
-                              width: 12,
-                              height: 12,
+                              width: 16,
+                              height: 16,
                               color: isBookmarked ? Color(0xFFFF8C00) : Colors.white,
                             ),
                     ),
