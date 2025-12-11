@@ -12,6 +12,7 @@ import 'screens/favourite/favourite.dart';
 import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'notifications/handler/firebase_messaging_handler.dart';
 
@@ -27,6 +28,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Supabase first
+  try {
+    print('🔗 Initializing Supabase...');
+    await Supabase.initialize(
+      url: 'https://brwzqawoncblbxqoqyua.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA',
+      debug: false,
+    );
+    print('✅ Supabase initialized successfully');
+  } catch (e) {
+    print('❌ Supabase initialization failed: $e');
+  }
   
   // Initialize Firebase with platform-specific options
   try {

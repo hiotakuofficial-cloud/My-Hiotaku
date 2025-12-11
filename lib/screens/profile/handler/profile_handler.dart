@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/handler/supabase.dart';
 
 class ProfileHandler {
+  static RealtimeChannel? _profileSubscription;
   
-  // TODO: Get current user data from Supabase
+  // Get current user data from Supabase with real-time updates
   static Future<Map<String, dynamic>?> getCurrentUserData() async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
@@ -14,7 +16,7 @@ class ProfileHandler {
       
       print('Firebase user found: ${firebaseUser.email}');
       
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) {
         print('No Supabase user data found for UID: ${firebaseUser.uid}');
       } else {
@@ -28,11 +30,34 @@ class ProfileHandler {
     }
   }
   
-  // TODO: Update user profile data
+  // Subscribe to real-time profile updates
+  static RealtimeChannel subscribeToProfile({
+    required Function(Map<String, dynamic>?) onUpdate,
+  }) {
+    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) throw Exception('User not authenticated');
+    
+    _profileSubscription?.unsubscribe();
+    
+    _profileSubscription = SupabaseHandler.subscribeToTable(
+      table: 'users',
+      filter: 'firebase_uid=${firebaseUser.uid}',
+      onData: (payload) async {
+        // Refresh user data when profile changes
+        final userData = await getCurrentUserData();
+        onUpdate(userData);
+      },
+    );
+    
+    return _profileSubscription!;
+  }
+  
+  // Update user profile data
   static Future<bool> updateUserProfile({
     required String displayName,
     String? avatarUrl,
     String? username,
+    String? bio,
   }) async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
@@ -48,7 +73,8 @@ class ProfileHandler {
           'display_name': displayName,
           'avatar_url': avatarUrl,
           'username': username,
-          'updated_at': SupabaseHandler.getCurrentTimestamp(),
+          'bio': bio,
+          'updated_at': DateTime.now().toIso8601String(),
         },
         filters: {'firebase_uid': firebaseUser.uid},
       );
@@ -60,51 +86,113 @@ class ProfileHandler {
     }
   }
   
-  // TODO: Update avatar only
-  static Future<bool> updateAvatar(String avatarId) async {
+  // Create or update user profile
+  static Future<Map<String, dynamic>?> createOrUpdateUser({
+    required String firebaseUID,
+    required String email,
+    String? displayName,
+    String? avatarUrl,
+    String? username,
+  }) async {
+    try {
+      final userData = {
+        'firebase_uid': firebaseUID,
+        'email': email,
+        'display_name': displayName ?? email.split('@')[0],
+        'avatar_url': avatarUrl,
+        'username': username,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      final result = await SupabaseHandler.upsertData(
+        table: 'users',
+        data: userData,
+        onConflict: 'firebase_uid',
+      );
+      
+      return result;
+    } catch (e) {
+      print('Create/Update user error: $e');
+      return null;
+    }
+  }
+  
+  // Get user statistics
+  static Future<Map<String, int>> getUserStats() async {
+    try {
+      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) return {};
+      
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
+      if (userData == null) return {};
+      
+      // Get favorites count
+      final favorites = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {'user_id': userData['id']},
+      );
+      
+      // Get watch history count (if you have this table)
+      final watchHistory = await SupabaseHandler.getData(
+        table: 'watch_history',
+        filters: {'user_id': userData['id']},
+      );
+      
+      return {
+        'favorites': favorites?.length ?? 0,
+        'watchHistory': watchHistory?.length ?? 0,
+      };
+    } catch (e) {
+      print('Get user stats error: $e');
+      return {};
+    }
+  }
+  
+  // Delete user account
+  static Future<bool> deleteUserAccount() async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
-      // Save only the avatar filename (e.g., "male1.png") to Supabase
-      final success = await SupabaseHandler.updateData(
+      // Delete from Supabase first
+      final supabaseSuccess = await SupabaseHandler.deleteData(
         table: 'users',
-        data: {
-          'avatar_url': avatarId,
-          'updated_at': SupabaseHandler.getCurrentTimestamp(),
-        },
         filters: {'firebase_uid': firebaseUser.uid},
       );
       
-      return success;
-    } catch (e) {
-      print('Update avatar error: $e');
-      return false;
-    }
-  }
-  
-  // TODO: Get user favorites count
-  static Future<int> getUserFavoritesCount() async {
-    try {
-      final userData = await getCurrentUserData();
-      if (userData == null) return 0;
+      if (supabaseSuccess) {
+        // Delete Firebase user
+        await firebaseUser.delete();
+        return true;
+      }
       
-      final favorites = await SupabaseHandler.getUserFavorites(userData['id']);
-      return favorites?.length ?? 0;
+      return false;
     } catch (e) {
-      print('Get favorites count error: $e');
-      return 0;
+      print('Delete user account error: $e');
+      return false;
     }
   }
   
-  // TODO: Logout user
-  static Future<bool> logoutUser() async {
+  // Helper method to get user by Firebase UID
+  static Future<Map<String, dynamic>?> _getUserByFirebaseUID(String firebaseUID) async {
     try {
-      await FirebaseAuth.instance.signOut();
-      return true;
+      final result = await SupabaseHandler.getData(
+        table: 'users',
+        filters: {'firebase_uid': firebaseUID},
+        limit: 1,
+      );
+      
+      return result != null && result.isNotEmpty ? result.first : null;
     } catch (e) {
-      print('Logout error: $e');
-      return false;
+      print('Get user by Firebase UID error: $e');
+      return null;
     }
+  }
+  
+  // Cleanup subscriptions
+  static void dispose() {
+    _profileSubscription?.unsubscribe();
+    _profileSubscription = null;
   }
 }

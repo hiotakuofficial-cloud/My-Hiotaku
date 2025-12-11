@@ -1,363 +1,237 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseHandler {
-  // Supabase Configuration
-  static const String _supabaseUrl = 'https://brwzqawoncblbxqoqyua.supabase.co';
-  static const String _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA';
+  // Get Supabase client instance
+  static SupabaseClient get client => Supabase.instance.client;
   
-  // Base headers for all requests
-  static Map<String, String> get _headers => {
-    'apikey': _supabaseAnonKey,
-    'Authorization': 'Bearer $_supabaseAnonKey',
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
-  };
-
-  // Generic REST API methods
-  
-  /// GET request to Supabase REST API
+  /// GET request using Supabase SDK
   static Future<List<Map<String, dynamic>>?> getData({
     required String table,
     String? select,
     Map<String, dynamic>? filters,
+    String? orderBy,
+    bool ascending = true,
+    int? limit,
   }) async {
     try {
-      String url = '$_supabaseUrl/rest/v1/$table';
-      
-      // Add select parameter
-      if (select != null) {
-        url += '?select=$select';
-      } else {
-        url += '?select=*';
-      }
+      var query = client.from(table).select(select ?? '*');
       
       // Add filters
       if (filters != null) {
         filters.forEach((key, value) {
-          url += '&$key=eq.$value';
+          query = query.eq(key, value);
         });
       }
       
-      final response = await http.get(
-        Uri.parse(url),
-        headers: _headers,
-      );
-      
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        print('GET Error: ${response.statusCode} - ${response.body}');
-        return null;
+      // Add ordering
+      if (orderBy != null) {
+        query = query.order(orderBy, ascending: ascending);
       }
+      
+      // Add limit
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+      
+      final response = await query;
+      return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       print('GET Exception: $e');
       return null;
     }
   }
   
-  /// POST request to insert data
+  /// INSERT data using Supabase SDK
   static Future<Map<String, dynamic>?> insertData({
     required String table,
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_supabaseUrl/rest/v1/$table'),
-        headers: _headers,
-        body: json.encode(data),
-      );
+      final response = await client
+          .from(table)
+          .insert(data)
+          .select()
+          .single();
       
-      if (response.statusCode == 201) {
-        final List<dynamic> result = json.decode(response.body);
-        return result.isNotEmpty ? result[0] : null;
-      } else {
-        print('POST Error: ${response.statusCode} - ${response.body}');
-        return null;
-      }
+      return response;
     } catch (e) {
-      print('POST Exception: $e');
+      print('INSERT Exception: $e');
       return null;
     }
   }
   
-  /// PATCH request to update data
+  /// UPDATE data using Supabase SDK
   static Future<bool> updateData({
     required String table,
     required Map<String, dynamic> data,
     required Map<String, dynamic> filters,
   }) async {
     try {
-      String url = '$_supabaseUrl/rest/v1/$table?';
+      var query = client.from(table).update(data);
       
       // Add filters
       filters.forEach((key, value) {
-        url += '$key=eq.$value&';
+        query = query.eq(key, value);
       });
-      url = url.substring(0, url.length - 1); // Remove last &
       
-      final response = await http.patch(
-        Uri.parse(url),
-        headers: _headers,
-        body: json.encode(data),
-      );
-      
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return true;
-      } else {
-        print('PATCH Error: ${response.statusCode} - ${response.body}');
-        return false;
-      }
+      await query;
+      return true;
     } catch (e) {
-      print('PATCH Exception: $e');
+      print('UPDATE Exception: $e');
       return false;
     }
   }
   
-  /// DELETE request to remove data
+  /// DELETE data using Supabase SDK
   static Future<bool> deleteData({
     required String table,
     required Map<String, dynamic> filters,
   }) async {
     try {
-      String url = '$_supabaseUrl/rest/v1/$table?';
+      var query = client.from(table).delete();
       
       // Add filters
       filters.forEach((key, value) {
-        url += '$key=eq.$value&';
+        query = query.eq(key, value);
       });
-      url = url.substring(0, url.length - 1); // Remove last &
       
-      final response = await http.delete(
-        Uri.parse(url),
-        headers: _headers,
-      );
-      
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return true;
-      } else {
-        print('DELETE Error: ${response.statusCode} - ${response.body}');
-        return false;
-      }
+      await query;
+      return true;
     } catch (e) {
       print('DELETE Exception: $e');
       return false;
     }
   }
-
-  // User-organized methods for specific tables
   
-  /// Get user by Firebase UID
-  static Future<Map<String, dynamic>?> getUserByFirebaseUID(String firebaseUID) async {
-    final users = await getData(
-      table: 'users',
-      filters: {'firebase_uid': firebaseUID},
-    );
-    return users?.isNotEmpty == true ? users![0] : null;
+  /// UPSERT data using Supabase SDK
+  static Future<Map<String, dynamic>?> upsertData({
+    required String table,
+    required Map<String, dynamic> data,
+    String? onConflict,
+  }) async {
+    try {
+      final response = await client
+          .from(table)
+          .upsert(data, onConflict: onConflict)
+          .select()
+          .single();
+      
+      return response;
+    } catch (e) {
+      print('UPSERT Exception: $e');
+      return null;
+    }
   }
   
-  /// Create or update user
-  static Future<Map<String, dynamic>?> upsertUser({
-    required String firebaseUID,
-    required String email,
-    String? displayName,
-    String? avatarUrl,
-    String? username,
-  }) async {
-    // Check if user exists
-    final existingUser = await getUserByFirebaseUID(firebaseUID);
+  /// Real-time subscription
+  static RealtimeChannel subscribeToTable({
+    required String table,
+    required Function(PostgresChangePayload) onData,
+    PostgresChangeEvent event = PostgresChangeEvent.all,
+    String? filter,
+  }) {
+    final channel = client
+        .channel('public:$table')
+        .onPostgresChanges(
+          event: event,
+          schema: 'public',
+          table: table,
+          filter: filter != null ? PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: filter.split('=')[0],
+            value: filter.split('=')[1],
+          ) : null,
+          callback: onData,
+        )
+        .subscribe();
     
-    if (existingUser != null) {
-      // Update existing user
-      final success = await updateData(
+    return channel;
+  }
+  
+  /// Get current user
+  static User? get currentUser => client.auth.currentUser;
+  
+  /// Check if user is authenticated
+  static bool get isAuthenticated => client.auth.currentUser != null;
+  
+  /// Sign in with email and password
+  static Future<AuthResponse?> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      return response;
+    } catch (e) {
+      print('Sign in error: $e');
+      return null;
+    }
+  }
+  
+  /// Sign up with email and password
+  static Future<AuthResponse?> signUpWithEmail({
+    required String email,
+    required String password,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      final response = await client.auth.signUp(
+        email: email,
+        password: password,
+        data: data,
+      );
+      return response;
+    } catch (e) {
+      print('Sign up error: $e');
+      return null;
+    }
+  }
+  
+  /// Sign out
+  static Future<void> signOut() async {
+    try {
+      await client.auth.signOut();
+    } catch (e) {
+      print('Sign out error: $e');
+    }
+  }
+  
+  /// Listen to auth state changes
+  static Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
+  
+  /// Update user's last seen timestamp for online status
+  static Future<void> updateUserLastSeen(String firebaseUID) async {
+    try {
+      await updateData(
         table: 'users',
         data: {
-          'email': email,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'username': username,
-          'updated_at': getCurrentTimestamp(),
+          'last_seen': DateTime.now().toIso8601String(),
+          'is_online': true,
         },
         filters: {'firebase_uid': firebaseUID},
       );
-      return success ? existingUser : null;
-    } else {
-      // Create new user
-      return await insertData(
-        table: 'users',
-        data: {
-          'firebase_uid': firebaseUID,
-          'email': email,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'username': username,
-        },
-      );
-    }
-  }
-
-  // Favorites methods
-  
-  /// Get user's favorites
-  static Future<List<Map<String, dynamic>>?> getUserFavorites(String userId) async {
-    return await getData(
-      table: 'favorites',
-      filters: {'user_id': userId},
-    );
-  }
-  
-  /// Add to favorites
-  static Future<Map<String, dynamic>?> addToFavorites({
-    required String userId,
-    required String animeId,
-    required String animeTitle,
-    String? animeImage,
-    bool isPublic = false,
-  }) async {
-    return await insertData(
-      table: 'favorites',
-      data: {
-        'user_id': userId,
-        'anime_id': animeId,
-        'anime_title': animeTitle,
-        'anime_image': animeImage,
-        'is_public': isPublic,
-      },
-    );
-  }
-  
-  /// Remove from favorites
-  static Future<bool> removeFromFavorites({
-    required String userId,
-    required String animeId,
-  }) async {
-    return await deleteData(
-      table: 'favorites',
-      filters: {'user_id': userId, 'anime_id': animeId},
-    );
-  }
-  
-  /// Update user's last seen timestamp for online status
-  static Future<bool> updateUserLastSeen(String firebaseUID) async {
-    try {
-      final userData = await getUserByFirebaseUID(firebaseUID);
-      if (userData == null) return false;
-      
-      final result = await updateData(
-        table: 'users',
-        data: {'updated_at': DateTime.now().toIso8601String()},
-        filters: {'id': userData['id']},
-      );
-      
-      return result != null;
     } catch (e) {
       print('Update last seen error: $e');
-      return false;
     }
   }
-  static Future<List<Map<String, dynamic>>?> getPublicFavorites() async {
+  
+  /// Set user offline status
+  static Future<void> setUserOffline(String firebaseUID) async {
     try {
-      // Query favorites with is_public=true and JOIN with users table to get username and avatar
-      String url = '$_supabaseUrl/rest/v1/favorites?is_public=eq.true&select=*,users(username,avatar_url)';
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'apikey': _supabaseAnonKey,
-          'Authorization': 'Bearer $_supabaseAnonKey',
-          'Content-Type': 'application/json',
+      await updateData(
+        table: 'users',
+        data: {
+          'is_online': false,
+          'last_seen': DateTime.now().toIso8601String(),
         },
+        filters: {'firebase_uid': firebaseUID},
       );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        // Flatten the user data for easier access
-        return data.map((item) {
-          final Map<String, dynamic> favorite = Map<String, dynamic>.from(item);
-          if (favorite['users'] != null && favorite['users'] is Map) {
-            final userData = favorite['users'] as Map<String, dynamic>;
-            favorite['username'] = userData['username'];
-            favorite['avatar_url'] = userData['avatar_url'];
-            favorite.remove('users'); // Remove nested object
-          }
-          return favorite;
-        }).toList();
-      }
-      return null;
     } catch (e) {
-      print('Get public favorites error: $e');
-      return null;
+      print('Set user offline error: $e');
     }
   }
-
-  // Merge request methods
-  
-  /// Send merge request
-  static Future<Map<String, dynamic>?> sendMergeRequest({
-    required String senderId,
-    required String receiverId,
-    String? message,
-  }) async {
-    return await insertData(
-      table: 'merge_requests',
-      data: {
-        'sender_id': senderId,
-        'receiver_id': receiverId,
-        'message': message ?? 'Would like to merge favorites with you!',
-      },
-    );
-  }
-  
-  /// Get pending merge requests for user
-  static Future<List<Map<String, dynamic>>?> getPendingMergeRequests(String userId) async {
-    return await getData(
-      table: 'merge_requests',
-      filters: {'receiver_id': userId, 'status': 'pending'},
-    );
-  }
-  
-  /// Respond to merge request
-  static Future<bool> respondToMergeRequest({
-    required String requestId,
-    required bool accept,
-  }) async {
-    return await updateData(
-      table: 'merge_requests',
-      data: {
-        'status': accept ? 'accepted' : 'rejected',
-        'responded_at': getCurrentTimestamp(),
-      },
-      filters: {'id': requestId},
-    );
-  }
-  
-  /// Get shared favorites for user
-  static Future<List<Map<String, dynamic>>?> getSharedFavorites(String userId) async {
-    return await getData(
-      table: 'shared_favorites',
-      filters: {'user1_id': userId},
-    );
-  }
-
-  // Utility methods
-  
-  /// Get current timestamp
-  static String getCurrentTimestamp() {
-    return DateTime.now().toIso8601String();
-  }
-  
-  /// Check if connection is working
-  static Future<bool> testConnection() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_supabaseUrl/rest/v1/'),
-        headers: _headers,
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Connection test failed: $e');
-      return false;
-    }
-  }
+}
 }

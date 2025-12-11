@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../screens/auth/handler/supabase.dart';
 import '../models/notification_model.dart';
 import 'firebase_messaging_handler.dart';
 import 'local_notification_handler.dart';
 
 class NotificationHandler {
+  static RealtimeChannel? _notificationSubscription;
   
   // Initialize notification system
   static Future<void> initialize() async {
@@ -21,6 +23,55 @@ class NotificationHandler {
     }
   }
   
+  // Subscribe to real-time notifications
+  static RealtimeChannel subscribeToNotifications({
+    required Function(List<Map<String, dynamic>>) onNotifications,
+  }) {
+    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) throw Exception('User not authenticated');
+    
+    _notificationSubscription?.unsubscribe();
+    
+    _notificationSubscription = SupabaseHandler.subscribeToTable(
+      table: 'notifications',
+      onData: (payload) async {
+        // Get user data first
+        final userData = await _getUserByFirebaseUID(firebaseUser.uid);
+        if (userData != null) {
+          // Refresh notifications when any change occurs
+          final notifications = await getUserNotifications();
+          onNotifications(notifications);
+        }
+      },
+    );
+    
+    return _notificationSubscription!;
+  }
+  
+  // Get user notifications
+  static Future<List<Map<String, dynamic>>> getUserNotifications() async {
+    try {
+      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) return [];
+      
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
+      if (userData == null) return [];
+      
+      final notifications = await SupabaseHandler.getData(
+        table: 'notifications',
+        filters: {'user_id': userData['id']},
+        orderBy: 'created_at',
+        ascending: false,
+        limit: 50,
+      );
+      
+      return notifications ?? [];
+    } catch (e) {
+      print('Get notifications error: $e');
+      return [];
+    }
+  }
+  
   // Send merge request notification
   static Future<bool> sendMergeRequestNotification({
     required String receiverUserId,
@@ -29,10 +80,6 @@ class NotificationHandler {
     required String requestId,
   }) async {
     try {
-      // Get receiver's FCM tokens
-      final tokens = await _getUserFCMTokens(receiverUserId);
-      if (tokens.isEmpty) return false;
-      
       // Create notification
       final notification = NotificationModel.createMergeRequest(
         requestId: requestId,
@@ -41,113 +88,98 @@ class NotificationHandler {
       );
       
       // Store notification in database
-      await _storeNotification(receiverUserId, notification);
+      final success = await _storeNotification(receiverUserId, notification);
       
-      // Send FCM notification (would need server-side implementation)
-      // For now, just return true
-      return true;
+      return success;
     } catch (e) {
       print('Send merge request notification error: $e');
       return false;
     }
   }
   
-  // Send merge accepted notification
-  static Future<bool> sendMergeAcceptedNotification({
-    required String senderUserId,
-    required String receiverName,
-    required String receiverUsername,
-  }) async {
+  // Store notification in database
+  static Future<bool> _storeNotification(String userId, NotificationModel notification) async {
     try {
-      final tokens = await _getUserFCMTokens(senderUserId);
-      if (tokens.isEmpty) return false;
-      
-      final notification = NotificationModel.createMergeAccepted(
-        receiverName: receiverName,
-        receiverUsername: receiverUsername,
-      );
-      
-      await _storeNotification(senderUserId, notification);
-      return true;
-    } catch (e) {
-      print('Send merge accepted notification error: $e');
-      return false;
-    }
-  }
-  
-  // Send merge rejected notification
-  static Future<bool> sendMergeRejectedNotification({
-    required String senderUserId,
-    required String receiverName,
-    required String receiverUsername,
-  }) async {
-    try {
-      final tokens = await _getUserFCMTokens(senderUserId);
-      if (tokens.isEmpty) return false;
-      
-      final notification = NotificationModel.createMergeRejected(
-        receiverName: receiverName,
-        receiverUsername: receiverUsername,
-      );
-      
-      await _storeNotification(senderUserId, notification);
-      return true;
-    } catch (e) {
-      print('Send merge rejected notification error: $e');
-      return false;
-    }
-  }
-  
-  // Get user notifications
-  static Future<List<NotificationModel>> getUserNotifications({
-    int limit = 50,
-    int offset = 0,
-  }) async {
-    try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return [];
-      
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return [];
-      
-      final notifications = await SupabaseHandler.getData(
+      final result = await SupabaseHandler.insertData(
         table: 'notifications',
-        filters: {'user_id': userData['id']},
+        data: {
+          'user_id': userId,
+          'type': notification.type,
+          'title': notification.title,
+          'message': notification.message,
+          'data': notification.data,
+          'is_read': false,
+          'created_at': DateTime.now().toIso8601String(),
+        },
       );
       
-      if (notifications == null) return [];
-      
-      return notifications
-          .map((json) => NotificationModel.fromJson(json))
-          .toList()
-        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return result != null;
     } catch (e) {
-      print('Get user notifications error: $e');
-      return [];
+      print('Store notification error: $e');
+      return false;
     }
   }
   
   // Mark notification as read
   static Future<bool> markAsRead(String notificationId) async {
     try {
-      return await SupabaseHandler.updateData(
+      final success = await SupabaseHandler.updateData(
         table: 'notifications',
         data: {'is_read': true},
         filters: {'id': notificationId},
       );
+      
+      return success;
     } catch (e) {
-      print('Mark notification as read error: $e');
+      print('Mark as read error: $e');
       return false;
     }
   }
   
-  // Get unread notification count
+  // Mark all notifications as read
+  static Future<bool> markAllAsRead() async {
+    try {
+      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) return false;
+      
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
+      if (userData == null) return false;
+      
+      final success = await SupabaseHandler.updateData(
+        table: 'notifications',
+        data: {'is_read': true},
+        filters: {'user_id': userData['id']},
+      );
+      
+      return success;
+    } catch (e) {
+      print('Mark all as read error: $e');
+      return false;
+    }
+  }
+  
+  // Delete notification
+  static Future<bool> deleteNotification(String notificationId) async {
+    try {
+      final success = await SupabaseHandler.deleteData(
+        table: 'notifications',
+        filters: {'id': notificationId},
+      );
+      
+      return success;
+    } catch (e) {
+      print('Delete notification error: $e');
+      return false;
+    }
+  }
+  
+  // Get unread notifications count
   static Future<int> getUnreadCount() async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return 0;
       
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return 0;
       
       final notifications = await SupabaseHandler.getData(
@@ -165,67 +197,25 @@ class NotificationHandler {
     }
   }
   
-  // Clear all notifications
-  static Future<bool> clearAllNotifications() async {
+  // Helper method to get user by Firebase UID
+  static Future<Map<String, dynamic>?> _getUserByFirebaseUID(String firebaseUID) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return false;
-      
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return false;
-      
-      return await SupabaseHandler.updateData(
-        table: 'notifications',
-        data: {'is_read': true},
-        filters: {'user_id': userData['id']},
+      final result = await SupabaseHandler.getData(
+        table: 'users',
+        filters: {'firebase_uid': firebaseUID},
+        limit: 1,
       );
+      
+      return result != null && result.isNotEmpty ? result.first : null;
     } catch (e) {
-      print('Clear all notifications error: $e');
-      return false;
+      print('Get user by Firebase UID error: $e');
+      return null;
     }
   }
   
-  // Get user's FCM tokens
-  static Future<List<String>> _getUserFCMTokens(String userId) async {
-    try {
-      final tokens = await SupabaseHandler.getData(
-        table: 'fcm_tokens',
-        filters: {
-          'user_id': userId,
-          'is_active': true,
-        },
-      );
-      
-      if (tokens == null) return [];
-      
-      return tokens
-          .map((token) => token['fcm_token']?.toString())
-          .where((token) => token != null)
-          .cast<String>()
-          .toList();
-    } catch (e) {
-      print('Get user FCM tokens error: $e');
-      return [];
-    }
-  }
-  
-  // Store notification in database
-  static Future<void> _storeNotification(String userId, NotificationModel notification) async {
-    try {
-      await SupabaseHandler.insertData(
-        table: 'notifications',
-        data: {
-          'user_id': userId,
-          'title': notification.title,
-          'body': notification.body,
-          'type': notification.type,
-          'data': notification.data,
-          'is_read': false,
-          'is_sent': false,
-        },
-      );
-    } catch (e) {
-      print('Store notification error: $e');
-    }
+  // Cleanup subscriptions
+  static void dispose() {
+    _notificationSubscription?.unsubscribe();
+    _notificationSubscription = null;
   }
 }

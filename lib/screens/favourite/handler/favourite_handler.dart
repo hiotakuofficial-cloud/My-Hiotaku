@@ -1,23 +1,52 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/handler/supabase.dart';
 
 class FavouriteHandler {
+  static RealtimeChannel? _favoritesSubscription;
   
-  // Get current user's favorites
+  // Get current user's favorites with real-time updates
   static Future<List<Map<String, dynamic>>> getUserFavorites() async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return [];
       
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return [];
       
-      final favorites = await SupabaseHandler.getUserFavorites(userData['id'].toString());
+      final favorites = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {'user_id': userData['id']},
+        orderBy: 'created_at',
+        ascending: false,
+      );
+      
       return favorites ?? [];
     } catch (e) {
       print('Get user favorites error: $e');
       return [];
     }
+  }
+  
+  // Subscribe to real-time favorites updates
+  static RealtimeChannel subscribeToFavorites({
+    required Function(List<Map<String, dynamic>>) onUpdate,
+  }) {
+    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) throw Exception('User not authenticated');
+    
+    _favoritesSubscription?.unsubscribe();
+    
+    _favoritesSubscription = SupabaseHandler.subscribeToTable(
+      table: 'favorites',
+      onData: (payload) async {
+        // Refresh favorites when any change occurs
+        final favorites = await getUserFavorites();
+        onUpdate(favorites);
+      },
+    );
+    
+    return _favoritesSubscription!;
   }
   
   // Add anime to favorites
@@ -31,15 +60,19 @@ class FavouriteHandler {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return false;
       
-      final result = await SupabaseHandler.addToFavorites(
-        userId: userData['id'].toString(),
-        animeId: animeId,
-        animeTitle: animeTitle,
-        animeImage: animeImage,
-        isPublic: isPublic,
+      final result = await SupabaseHandler.insertData(
+        table: 'favorites',
+        data: {
+          'user_id': userData['id'],
+          'anime_id': animeId,
+          'anime_title': animeTitle,
+          'anime_image': animeImage,
+          'is_public': isPublic,
+          'created_at': DateTime.now().toIso8601String(),
+        },
       );
       
       return result != null;
@@ -49,19 +82,26 @@ class FavouriteHandler {
     }
   }
   
-  // Remove anime from favorites
-  static Future<bool> removeFromFavorites(String animeId) async {
+  // Remove from favorites
+  static Future<bool> removeFromFavorites({
+    required String animeId,
+  }) async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return false;
       
-      return await SupabaseHandler.removeFromFavorites(
-        userId: userData['id'].toString(),
-        animeId: animeId,
+      final result = await SupabaseHandler.deleteData(
+        table: 'favorites',
+        filters: {
+          'user_id': userData['id'],
+          'anime_id': animeId,
+        },
       );
+      
+      return result;
     } catch (e) {
       print('Remove from favorites error: $e');
       return false;
@@ -69,120 +109,29 @@ class FavouriteHandler {
   }
   
   // Check if anime is in favorites
-  static Future<bool> isInFavorites(String animeId) async {
-    try {
-      final favorites = await getUserFavorites();
-      return favorites.any((fav) => fav['anime_id'] == animeId);
-    } catch (e) {
-      print('Check favorites error: $e');
-      return false;
-    }
-  }
-  
-  // Get public favorites from all users
-  static Future<List<Map<String, dynamic>>> getPublicFavorites() async {
-    try {
-      final publicFavorites = await SupabaseHandler.getPublicFavorites();
-      return publicFavorites ?? [];
-    } catch (e) {
-      print('Get public favorites error: $e');
-      return [];
-    }
-  }
-  
-  // Send merge request to another user
-  static Future<bool> sendMergeRequest({
-    required String receiverUserId,
-    String? message,
+  static Future<bool> isInFavorites({
+    required String animeId,
   }) async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      final userData = await _getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return false;
       
-      final result = await SupabaseHandler.sendMergeRequest(
-        senderId: userData['id'].toString(),
-        receiverId: receiverUserId,
-        message: message,
+      final result = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {
+          'user_id': userData['id'],
+          'anime_id': animeId,
+        },
+        limit: 1,
       );
       
-      return result != null;
+      return result != null && result.isNotEmpty;
     } catch (e) {
-      print('Send merge request error: $e');
+      print('Check favorites error: $e');
       return false;
-    }
-  }
-  
-  // Get pending merge requests for current user
-  static Future<List<Map<String, dynamic>>> getPendingMergeRequests() async {
-    try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return [];
-      
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return [];
-      
-      final requests = await SupabaseHandler.getPendingMergeRequests(userData['id'].toString());
-      return requests ?? [];
-    } catch (e) {
-      print('Get pending requests error: $e');
-      return [];
-    }
-  }
-  
-  // Accept merge request
-  static Future<bool> acceptMergeRequest(String requestId) async {
-    try {
-      return await SupabaseHandler.respondToMergeRequest(
-        requestId: requestId,
-        accept: true,
-      );
-    } catch (e) {
-      print('Accept merge request error: $e');
-      return false;
-    }
-  }
-  
-  // Reject merge request
-  static Future<bool> rejectMergeRequest(String requestId) async {
-    try {
-      return await SupabaseHandler.respondToMergeRequest(
-        requestId: requestId,
-        accept: false,
-      );
-    } catch (e) {
-      print('Reject merge request error: $e');
-      return false;
-    }
-  }
-  
-  // Get shared favorites (merged with other users)
-  static Future<List<Map<String, dynamic>>> getSharedFavorites() async {
-    try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return [];
-      
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return [];
-      
-      final sharedFavorites = await SupabaseHandler.getSharedFavorites(userData['id'].toString());
-      return sharedFavorites ?? [];
-    } catch (e) {
-      print('Get shared favorites error: $e');
-      return [];
-    }
-  }
-  
-  // Get favorites count
-  static Future<int> getFavoritesCount() async {
-    try {
-      final favorites = await getUserFavorites();
-      return favorites.length;
-    } catch (e) {
-      print('Get favorites count error: $e');
-      return 0;
     }
   }
   
@@ -191,22 +140,61 @@ class FavouriteHandler {
     required String animeId,
     required String animeTitle,
     String? animeImage,
+    bool isPublic = false,
+  }) async {
+    final isCurrentlyFavorite = await isInFavorites(animeId: animeId);
+    
+    if (isCurrentlyFavorite) {
+      return await removeFromFavorites(animeId: animeId);
+    } else {
+      return await addToFavorites(
+        animeId: animeId,
+        animeTitle: animeTitle,
+        animeImage: animeImage,
+        isPublic: isPublic,
+      );
+    }
+  }
+  
+  // Get public favorites
+  static Future<List<Map<String, dynamic>>> getPublicFavorites({
+    int limit = 50,
   }) async {
     try {
-      final isCurrentlyFavorite = await isInFavorites(animeId);
+      final favorites = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {'is_public': true},
+        orderBy: 'created_at',
+        ascending: false,
+        limit: limit,
+      );
       
-      if (isCurrentlyFavorite) {
-        return await removeFromFavorites(animeId);
-      } else {
-        return await addToFavorites(
-          animeId: animeId,
-          animeTitle: animeTitle,
-          animeImage: animeImage,
-        );
-      }
+      return favorites ?? [];
     } catch (e) {
-      print('Toggle favorite error: $e');
-      return false;
+      print('Get public favorites error: $e');
+      return [];
     }
+  }
+  
+  // Helper method to get user by Firebase UID
+  static Future<Map<String, dynamic>?> _getUserByFirebaseUID(String firebaseUID) async {
+    try {
+      final result = await SupabaseHandler.getData(
+        table: 'users',
+        filters: {'firebase_uid': firebaseUID},
+        limit: 1,
+      );
+      
+      return result != null && result.isNotEmpty ? result.first : null;
+    } catch (e) {
+      print('Get user by Firebase UID error: $e');
+      return null;
+    }
+  }
+  
+  // Cleanup subscriptions
+  static void dispose() {
+    _favoritesSubscription?.unsubscribe();
+    _favoritesSubscription = null;
   }
 }
