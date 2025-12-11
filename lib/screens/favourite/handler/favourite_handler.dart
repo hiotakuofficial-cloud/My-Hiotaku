@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/handler/supabase.dart';
 
@@ -8,7 +8,7 @@ class FavouriteHandler {
   // Get current user's favorites with real-time updates
   static Future<List<Map<String, dynamic>>> getUserFavorites() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return [];
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
@@ -32,7 +32,7 @@ class FavouriteHandler {
   static RealtimeChannel subscribeToFavorites({
     required Function(List<Map<String, dynamic>>) onUpdate,
   }) {
-    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
     if (firebaseUser == null) throw Exception('User not authenticated');
     
     _favoritesSubscription?.unsubscribe();
@@ -57,7 +57,7 @@ class FavouriteHandler {
     bool isPublic = false,
   }) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
@@ -87,7 +87,7 @@ class FavouriteHandler {
     required String animeId,
   }) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
@@ -113,7 +113,7 @@ class FavouriteHandler {
     required String animeId,
   }) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);

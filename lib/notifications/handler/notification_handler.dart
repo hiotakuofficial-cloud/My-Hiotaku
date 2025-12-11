@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../screens/auth/handler/supabase.dart';
 import '../models/notification_model.dart';
@@ -27,7 +27,7 @@ class NotificationHandler {
   static RealtimeChannel subscribeToNotifications({
     required Function(List<Map<String, dynamic>>) onNotifications,
   }) {
-    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
     if (firebaseUser == null) throw Exception('User not authenticated');
     
     _notificationSubscription?.unsubscribe();
@@ -51,7 +51,7 @@ class NotificationHandler {
   // Get user notifications
   static Future<List<Map<String, dynamic>>> getUserNotifications() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return [];
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
@@ -139,7 +139,7 @@ class NotificationHandler {
   // Mark all notifications as read
   static Future<bool> markAllAsRead() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
@@ -176,7 +176,7 @@ class NotificationHandler {
   // Get unread notifications count
   static Future<int> getUnreadCount() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return 0;
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);

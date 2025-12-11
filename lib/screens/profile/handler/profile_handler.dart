@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/handler/supabase.dart';
 
@@ -8,7 +8,7 @@ class ProfileHandler {
   // Get current user data from Supabase with real-time updates
   static Future<Map<String, dynamic>?> getCurrentUserData() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) {
         print('No Firebase user logged in');
         return null;
@@ -34,7 +34,7 @@ class ProfileHandler {
   static RealtimeChannel subscribeToProfile({
     required Function(Map<String, dynamic>?) onUpdate,
   }) {
-    final User? firebaseUser = FirebaseAuth.instance.currentUser;
+    final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
     if (firebaseUser == null) throw Exception('User not authenticated');
     
     _profileSubscription?.unsubscribe();
@@ -60,7 +60,7 @@ class ProfileHandler {
     String? bio,
   }) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       // Update Firebase display name
@@ -82,6 +82,50 @@ class ProfileHandler {
       return success;
     } catch (e) {
       print('Update profile error: $e');
+      return false;
+    }
+  }
+  
+  // Update avatar
+  static Future<bool> updateAvatar(String avatarId) async {
+    try {
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) return false;
+      
+      final success = await SupabaseHandler.updateData(
+        table: 'users',
+        data: {
+          'avatar_url': avatarId,
+          'updated_at': DateTime.now().toIso8601String(),
+        },
+        filters: {'firebase_uid': firebaseUser.uid},
+      );
+      
+      return success;
+    } catch (e) {
+      print('Update avatar error: $e');
+      return false;
+    }
+  }
+  
+  // Logout user
+  static Future<bool> logoutUser() async {
+    try {
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        // Set user offline before logout
+        await SupabaseHandler.setUserOffline(firebaseUser.uid);
+      }
+      
+      // Sign out from Firebase
+      await firebase_auth.FirebaseAuth.instance.signOut();
+      
+      // Sign out from Supabase
+      await SupabaseHandler.signOut();
+      
+      return true;
+    } catch (e) {
+      print('Logout error: $e');
       return false;
     }
   }
@@ -121,7 +165,7 @@ class ProfileHandler {
   // Get user statistics
   static Future<Map<String, int>> getUserStats() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return {};
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
@@ -152,7 +196,7 @@ class ProfileHandler {
   // Delete user account
   static Future<bool> deleteUserAccount() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       // Delete from Supabase first

@@ -233,5 +233,137 @@ class SupabaseHandler {
       print('Set user offline error: $e');
     }
   }
+  
+  /// Get user by Firebase UID
+  static Future<Map<String, dynamic>?> getUserByFirebaseUID(String firebaseUID) async {
+    try {
+      final result = await getData(
+        table: 'users',
+        filters: {'firebase_uid': firebaseUID},
+        limit: 1,
+      );
+      
+      return result != null && result.isNotEmpty ? result.first : null;
+    } catch (e) {
+      print('Get user by Firebase UID error: $e');
+      return null;
+    }
+  }
+  
+  /// Get user favorites
+  static Future<List<Map<String, dynamic>>?> getUserFavorites(String userId) async {
+    try {
+      final favorites = await getData(
+        table: 'favorites',
+        filters: {'user_id': userId},
+        orderBy: 'created_at',
+        ascending: false,
+      );
+      
+      return favorites;
+    } catch (e) {
+      print('Get user favorites error: $e');
+      return null;
+    }
+  }
+  
+  /// Add to favorites
+  static Future<Map<String, dynamic>?> addToFavorites({
+    required String userId,
+    required String animeId,
+    required String animeTitle,
+    String? animeImage,
+    bool isPublic = false,
+  }) async {
+    try {
+      final result = await insertData(
+        table: 'favorites',
+        data: {
+          'user_id': userId,
+          'anime_id': animeId,
+          'anime_title': animeTitle,
+          'anime_image': animeImage,
+          'is_public': isPublic,
+          'created_at': DateTime.now().toIso8601String(),
+        },
+      );
+      
+      return result;
+    } catch (e) {
+      print('Add to favorites error: $e');
+      return null;
+    }
+  }
+  
+  /// Remove from favorites
+  static Future<bool> removeFromFavorites({
+    required String userId,
+    required String animeId,
+  }) async {
+    try {
+      final success = await deleteData(
+        table: 'favorites',
+        filters: {
+          'user_id': userId,
+          'anime_id': animeId,
+        },
+      );
+      
+      return success;
+    } catch (e) {
+      print('Remove from favorites error: $e');
+      return false;
+    }
+  }
+  
+  /// Get public favorites
+  static Future<List<Map<String, dynamic>>?> getPublicFavorites() async {
+    try {
+      final favorites = await getData(
+        table: 'favorites',
+        filters: {'is_public': true},
+        orderBy: 'created_at',
+        ascending: false,
+        limit: 50,
+      );
+      
+      return favorites;
+    } catch (e) {
+      print('Get public favorites error: $e');
+      return null;
+    }
+  }
+  
+  /// Upsert user
+  static Future<Map<String, dynamic>?> upsertUser({
+    required String firebaseUID,
+    required String email,
+    String? displayName,
+    String? avatarUrl,
+    String? username,
+  }) async {
+    try {
+      final userData = {
+        'firebase_uid': firebaseUID,
+        'email': email,
+        'display_name': displayName ?? email.split('@')[0],
+        'avatar_url': avatarUrl,
+        'username': username,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      final result = await upsertData(
+        table: 'users',
+        data: userData,
+        onConflict: 'firebase_uid',
+      );
+      
+      return result;
+    } catch (e) {
+      print('Upsert user error: $e');
+      return null;
+    }
+  }
 }
 }
