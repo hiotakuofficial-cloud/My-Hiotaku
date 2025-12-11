@@ -37,6 +37,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            
+            <!-- FCM notification click handling -->
+            <intent-filter>
+                <action android:name="FLUTTER_NOTIFICATION_CLICK" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            
             <!-- Deep linking for email confirmation -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -52,6 +59,16 @@
                 <data android:scheme="hiotaku" />
             </intent-filter>
         </activity>
+        
+        <!-- Firebase Cloud Messaging Service -->
+        <service
+            android:name="io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
