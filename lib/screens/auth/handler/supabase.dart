@@ -14,7 +14,7 @@ class SupabaseHandler {
     int? limit,
   }) async {
     try {
-      var query = client.from(table).select(select ?? '*');
+      dynamic query = client.from(table).select(select ?? '*');
       
       // Add filters
       if (filters != null) {
@@ -66,7 +66,7 @@ class SupabaseHandler {
     required Map<String, dynamic> filters,
   }) async {
     try {
-      var query = client.from(table).update(data);
+      dynamic query = client.from(table).update(data);
       
       // Add filters
       filters.forEach((key, value) {
@@ -87,7 +87,7 @@ class SupabaseHandler {
     required Map<String, dynamic> filters,
   }) async {
     try {
-      var query = client.from(table).delete();
+      dynamic query = client.from(table).delete();
       
       // Add filters
       filters.forEach((key, value) {
