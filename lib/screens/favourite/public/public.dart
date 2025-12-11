@@ -114,20 +114,23 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
   
   Future<void> _loadTopUsers() async {
     try {
-      // Get users with most public favorites (mock implementation)
+      // Get users with most public favorites
       final users = await PublicHandler.getPublicFavoritesWithUserInfo();
       final userCounts = <String, Map<String, dynamic>>{};
       
       for (var fav in users) {
         final userId = fav['user_id']?.toString();
-        if (userId != null) {
+        final userInfo = fav['users'] as Map<String, dynamic>?;
+        
+        if (userId != null && userInfo != null) {
           if (userCounts.containsKey(userId)) {
             userCounts[userId]!['count'] = (userCounts[userId]!['count'] ?? 0) + 1;
           } else {
             userCounts[userId] = {
               'user_id': userId,
-              'username': fav['username'] ?? 'User',
-              'avatar_url': fav['avatar_url'] ?? 'default.png',
+              'username': userInfo['username'] ?? 'user',
+              'display_name': userInfo['display_name'] ?? 'Anonymous',
+              'avatar_url': userInfo['avatar_url'] ?? 'male1.png',
               'count': 1,
             };
           }
@@ -455,7 +458,7 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
         ),
         SizedBox(height: 8),
         Text(
-          user['username'] ?? 'User',
+          user['display_name'] ?? user['username'] ?? 'User',
           style: TextStyle(
             color: Colors.white,
             fontSize: 12,
@@ -463,14 +466,16 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
         Text(
-          '${user['count'] ?? 0}',
+          '${user['count'] ?? 0} favorites',
           style: TextStyle(
             color: Color(0xFFFF8C00),
             fontSize: 10,
             fontWeight: FontWeight.w600,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
