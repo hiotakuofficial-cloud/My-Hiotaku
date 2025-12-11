@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../../auth/handler/supabase.dart';
 
 class PublicHandler {
@@ -108,7 +108,7 @@ class PublicHandler {
   // Make current user's favorite public (using updateData)
   static Future<bool> makePublic(String animeId) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
@@ -131,7 +131,7 @@ class PublicHandler {
   // Make current user's favorite private (using updateData)
   static Future<bool> makePrivate(String animeId) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
@@ -154,7 +154,7 @@ class PublicHandler {
   // Toggle favorite visibility (public/private)
   static Future<bool> toggleVisibility(String animeId) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
@@ -219,7 +219,7 @@ class PublicHandler {
   // Check if current user has anime in public favorites
   static Future<bool> isPubliclyFavorited(String animeId) async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return false;
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
@@ -284,6 +284,17 @@ class PublicHandler {
         'total_users_with_public': 0,
         'most_favorited_anime': null,
       };
+    }
+  }
+  
+  // Get public favorites with user info (for top users calculation)
+  static Future<List<Map<String, dynamic>>> getPublicFavoritesWithUserInfo() async {
+    try {
+      final publicFavorites = await SupabaseHandler.getPublicFavorites();
+      return publicFavorites ?? [];
+    } catch (e) {
+      print('Get public favorites with user info error: $e');
+      return [];
     }
   }
 }

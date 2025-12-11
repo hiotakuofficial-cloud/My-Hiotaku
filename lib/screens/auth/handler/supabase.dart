@@ -321,7 +321,7 @@ class SupabaseHandler {
       final favorites = await getData(
         table: 'favorites',
         filters: {'is_public': true},
-        orderBy: 'created_at',
+        orderBy: 'added_at',
         ascending: false,
         limit: 50,
       );
