@@ -286,15 +286,4 @@ class PublicHandler {
       };
     }
   }
-  
-  // Get public favorites with user info (for top users calculation)
-  static Future<List<Map<String, dynamic>>> getPublicFavoritesWithUserInfo() async {
-    try {
-      final publicFavorites = await SupabaseHandler.getPublicFavorites();
-      return publicFavorites ?? [];
-    } catch (e) {
-      print('Get public favorites with user info error: $e');
-      return [];
-    }
-  }
 }
