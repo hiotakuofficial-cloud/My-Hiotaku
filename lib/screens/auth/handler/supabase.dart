@@ -23,12 +23,11 @@ class SupabaseHandler {
         });
       }
       
-      // Add ordering
+      // Add ordering and limit in chain
       if (orderBy != null) {
         query = query.order(orderBy, ascending: ascending);
       }
       
-      // Add limit
       if (limit != null) {
         query = query.limit(limit);
       }
@@ -365,5 +364,4 @@ class SupabaseHandler {
       return null;
     }
   }
-}
 }

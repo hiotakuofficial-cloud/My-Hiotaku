@@ -531,7 +531,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
   
   Future<void> _removeFavorite(String animeId, int index) async {
     try {
-      final success = await FavouriteHandler.removeFromFavorites(animeId);
+      final success = await FavouriteHandler.removeFromFavorites(animeId: animeId);
       if (success) {
         setState(() => favorites.removeAt(index));
         ScaffoldMessenger.of(context).showSnackBar(
