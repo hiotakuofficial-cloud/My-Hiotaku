@@ -96,6 +96,9 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/bord_login': (context) => BordLoginScreen(),
         '/main': (context) => MainScreen(),
+        '/favorites': (context) => MainScreen(), // Navigate to main with favorites tab
+        '/profile': (context) => MainScreen(), // Navigate to main with profile tab
+        '/sync': (context) => MainScreen(), // Navigate to main screen
       },
       debugShowCheckedModeBanner: false,
     );
@@ -131,6 +134,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
   late PageController _pageController;
   late AnimationController _navAnimationController;
+  
+  // Static reference for external tab switching
+  static _MainScreenState? _instance;
 
   final List<Widget> _screens = [
     HomeScreen(),
@@ -142,6 +148,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _instance = this; // Set static reference
     _pageController = PageController();
     _navAnimationController = AnimationController(
       duration: Duration(milliseconds: 300),
@@ -152,9 +159,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _instance = null; // Clear static reference
     _pageController.dispose();
     _navAnimationController.dispose();
     super.dispose();
+  }
+  
+  // Static method to switch tabs from external classes
+  static void switchToTab(int tabIndex) {
+    if (_instance != null && tabIndex >= 0 && tabIndex < 4) {
+      _instance!._onNavTap(tabIndex);
+    }
   }
 
   void _onNavTap(int index) {

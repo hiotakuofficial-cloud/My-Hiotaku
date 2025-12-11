@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // Required for Color class
 import 'dart:convert';
+import '../../main.dart'; // For MainScreen navigation
 
 class LocalNotificationHandler {
   static final FlutterLocalNotificationsPlugin _localNotifications = 
@@ -254,20 +255,39 @@ class LocalNotificationHandler {
   static void _handleNotificationTap(Map<String, dynamic> data) {
     final notificationType = data['type'] ?? '';
     
-    switch (notificationType) {
-      case 'merge_request':
-        // TODO: Navigate to merge requests page
-        print('Navigate to merge requests');
-        break;
-      case 'merge_accepted':
-      case 'merge_rejected':
-        // TODO: Navigate to favorites page
-        print('Navigate to favorites');
-        break;
-      default:
-        // TODO: Navigate to notifications page
-        print('Navigate to notifications');
-        break;
+    try {
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        switch (notificationType) {
+          case 'merge_request':
+            // Navigate to profile tab for merge requests
+            Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+            Future.delayed(Duration(milliseconds: 500), () {
+              MainScreen.switchToTab(3); // Profile tab
+            });
+            break;
+          case 'merge_accepted':
+          case 'merge_rejected':
+            // Navigate to favorites tab
+            Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+            Future.delayed(Duration(milliseconds: 500), () {
+              MainScreen.switchToTab(2); // Favorites tab
+            });
+            break;
+          default:
+            // Navigate to home tab for general notifications
+            Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+            Future.delayed(Duration(milliseconds: 500), () {
+              MainScreen.switchToTab(0); // Home tab
+            });
+            break;
+        }
+        print('Navigated for notification type: $notificationType');
+      } else {
+        print('No context available for navigation');
+      }
+    } catch (e) {
+      print('Navigation error: $e');
     }
   }
   

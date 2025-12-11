@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../screens/auth/handler/supabase.dart';
 import '../models/notification_model.dart';
 import 'local_notification_handler.dart';
-import '../../main.dart'; // For navigatorKey
+import '../../main.dart'; // For navigatorKey and MainScreen
 
 class FirebaseMessagingHandler {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -267,15 +267,30 @@ class FirebaseMessagingHandler {
         // Navigate based on route
         switch (route) {
           case '/favorites':
-            Navigator.of(context).pushNamed('/favorites');
+            // Navigate to main screen and switch to favorites tab (index 2)
+            Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+            // Switch to favorites tab after navigation
+            Future.delayed(Duration(milliseconds: 500), () {
+              _switchToTab(2); // Favorites tab index
+            });
             break;
           case '/sync':
-            Navigator.of(context).pushNamed('/sync');
+            // Navigate to main screen and switch to profile tab (index 3)
+            Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+            Future.delayed(Duration(milliseconds: 500), () {
+              _switchToTab(3); // Profile tab index
+            });
             break;
           default:
             if (route.startsWith('/profile/')) {
-              final username = route.split('/profile/')[1];
-              Navigator.of(context).pushNamed('/profile', arguments: username);
+              // Navigate to main screen and switch to profile tab
+              Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+              Future.delayed(Duration(milliseconds: 500), () {
+                _switchToTab(3); // Profile tab index
+              });
+            } else {
+              // Default: navigate to home
+              Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
             }
             break;
         }
@@ -284,6 +299,19 @@ class FirebaseMessagingHandler {
       }
     } catch (e) {
       print('Navigation error: $e');
+    }
+  }
+  
+  // Helper method to switch tabs in MainScreen
+  static void _switchToTab(int tabIndex) {
+    try {
+      Future.delayed(Duration(milliseconds: 100), () {
+        // Call MainScreen's static method to switch tabs
+        MainScreen.switchToTab(tabIndex);
+        print('Switched to tab: $tabIndex');
+      });
+    } catch (e) {
+      print('Tab switch error: $e');
     }
   }
   
