@@ -626,6 +626,22 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
   }
   
   Widget _buildFavoriteItem(Map<String, dynamic> favorite) {
+    // Extract user info from joined data
+    final userInfo = favorite['users'] as Map<String, dynamic>?;
+    final displayName = userInfo?['display_name'] ?? 'Anonymous';
+    final username = userInfo?['username'] ?? 'user';
+    final avatarUrl = userInfo?['avatar_url'] ?? 'male1.png';
+    
+    // Build avatar path
+    String avatarPath = 'assets/profile/male/male1.png'; // default
+    if (avatarUrl.isNotEmpty && !avatarUrl.startsWith('http')) {
+      if (avatarUrl.startsWith('male')) {
+        avatarPath = 'assets/profile/male/$avatarUrl';
+      } else if (avatarUrl.startsWith('female')) {
+        avatarPath = 'assets/profile/female/$avatarUrl';
+      }
+    }
+    
     return GestureDetector(
       onTap: () => _navigateToDetails(favorite),
       child: Container(
@@ -671,16 +687,50 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.person, color: Colors.white54, size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        favorite['username'] ?? 'Anonymous',
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 12,
+                      // User avatar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          child: Image.asset(
+                            avatarPath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.white.withOpacity(0.2),
+                              child: Icon(Icons.person, color: Colors.white54, size: 16),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              '@$username',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 10,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
                     ],

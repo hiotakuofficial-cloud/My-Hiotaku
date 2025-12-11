@@ -315,11 +315,12 @@ class SupabaseHandler {
     }
   }
   
-  /// Get public favorites
+  /// Get public favorites with user info
   static Future<List<Map<String, dynamic>>?> getPublicFavorites() async {
     try {
       final favorites = await getData(
         table: 'favorites',
+        select: '*, users!inner(id, display_name, username, avatar_url)',
         filters: {'is_public': true},
         orderBy: 'added_at',
         ascending: false,
