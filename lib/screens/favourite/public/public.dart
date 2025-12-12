@@ -44,7 +44,7 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: Duration(milliseconds: 800),
+      duration: Duration(milliseconds: 200),
       vsync: this,
     );
     
