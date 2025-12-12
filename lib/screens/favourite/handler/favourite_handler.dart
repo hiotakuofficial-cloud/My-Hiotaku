@@ -9,10 +9,20 @@ class FavouriteHandler {
   static Future<List<Map<String, dynamic>>> getUserFavorites() async {
     try {
       final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return [];
+      if (firebaseUser == null) {
+        print('❌ No Firebase user logged in');
+        return [];
+      }
+      
+      print('🔐 Firebase user found: ${firebaseUser.email}');
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return [];
+      if (userData == null) {
+        print('❌ No Supabase user data found for UID: ${firebaseUser.uid}');
+        return [];
+      }
+      
+      print('✅ Supabase user found: ${userData['email']} (ID: ${userData['id']})');
       
       final favorites = await SupabaseHandler.getData(
         table: 'favorites',
@@ -21,6 +31,7 @@ class FavouriteHandler {
         ascending: false,
       );
       
+      print('📊 Favorites query result: ${favorites?.length ?? 0} items');
       return favorites ?? [];
     } catch (e) {
       print('Get user favorites error: $e');

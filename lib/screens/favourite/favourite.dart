@@ -51,6 +51,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
   }
   
   Future<void> _loadFavorites() async {
+    print('📱 Loading user favorites...');
     setState(() {
       isLoading = true;
       hasNetworkError = false;
@@ -62,6 +63,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     try {
       final userFavorites = await FavouriteHandler.getUserFavorites()
           .timeout(Duration(seconds: 10));
+      print('✅ Favorites loaded: ${userFavorites.length} items');
       setState(() {
         favorites = userFavorites;
         _sortFavorites();
@@ -71,16 +73,17 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       // Always trigger animation
       _animationController.forward();
     } on TimeoutException {
+      print('❌ Favorites loading timeout');
       setState(() {
         isLoading = false;
         hasNetworkError = true;
       });
     } catch (e) {
+      print('❌ Load favorites error: $e');
       setState(() {
         isLoading = false;
         hasNetworkError = true;
       });
-      print('Load favorites error: $e');
     }
   }
   
