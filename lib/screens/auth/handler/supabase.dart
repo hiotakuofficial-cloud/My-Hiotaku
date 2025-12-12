@@ -46,15 +46,18 @@ class SupabaseHandler {
     required Map<String, dynamic> data,
   }) async {
     try {
+      print('📝 Inserting into $table: $data');
+      
       final response = await client
           .from(table)
           .insert(data)
           .select()
           .single();
       
+      print('✅ Insert successful: $response');
       return response;
     } catch (e) {
-      print('INSERT Exception: $e');
+      print('❌ INSERT Exception: $e');
       return null;
     }
   }

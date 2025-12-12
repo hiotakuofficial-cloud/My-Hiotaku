@@ -68,11 +68,23 @@ class FavouriteHandler {
     bool isPublic = false,
   }) async {
     try {
+      print('💾 Adding to favorites: $animeTitle (ID: $animeId)');
+      
       final firebase_auth.User? firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return false;
+      if (firebaseUser == null) {
+        print('❌ No Firebase user logged in');
+        return false;
+      }
+      
+      print('🔐 Firebase user: ${firebaseUser.email}');
       
       final userData = await _getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return false;
+      if (userData == null) {
+        print('❌ No Supabase user data found');
+        return false;
+      }
+      
+      print('✅ Supabase user ID: ${userData['id']}');
       
       final result = await SupabaseHandler.insertData(
         table: 'favorites',
@@ -86,9 +98,15 @@ class FavouriteHandler {
         },
       );
       
-      return result != null;
+      if (result != null) {
+        print('✅ Successfully added to favorites');
+        return true;
+      } else {
+        print('❌ Failed to insert into database');
+        return false;
+      }
     } catch (e) {
-      print('Add to favorites error: $e');
+      print('❌ Add to favorites error: $e');
       return false;
     }
   }
