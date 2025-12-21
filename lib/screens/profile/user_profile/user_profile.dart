@@ -87,8 +87,11 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           
           // Check if current user after profile loads
           final currentUser = FirebaseAuth.instance.currentUser;
-          if (currentUser != null && currentUser.displayName != null) {
-            isCurrentUser = currentUser.displayName!.toLowerCase() == widget.username.toLowerCase();
+          if (currentUser != null && userProfile != null) {
+            // Compare with user ID or email instead of displayName
+            String currentUserIdentifier = currentUser.email ?? currentUser.uid;
+            String profileUserIdentifier = userProfile!['email'] ?? userProfile!['id'];
+            isCurrentUser = currentUserIdentifier == profileUserIdentifier;
           } else {
             isCurrentUser = false;
           }
