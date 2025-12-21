@@ -185,7 +185,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             padding: EdgeInsets.all(8),
             child: Icon(
               Icons.arrow_back_ios_new,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withOpacity(0.8),
               size: 24,
             ),
           ),
@@ -229,11 +229,11 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person_off, size: 80, color: Colors.white.withValues(alpha: 0.3)),
+              Icon(Icons.person_off, size: 80, color: Colors.white.withOpacity(0.3)),
               SizedBox(height: 20),
               Text(
                 'User not found',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 18),
+                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 18),
               ),
             ],
           ),
@@ -310,7 +310,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         Text(
           '@${userProfile!['username']}',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withOpacity(0.7),
             fontSize: 16,
           ),
         ),
@@ -319,8 +319,8 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: userProfile!['is_online'] == true 
-                ? Colors.green.withValues(alpha: 0.2) 
-                : Colors.grey.withValues(alpha: 0.2),
+                ? Colors.green.withOpacity(0.2) 
+                : Colors.grey.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
@@ -357,15 +357,15 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       decoration: BoxDecoration(
         color: Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem('Public Saved', userProfile!['public_favorites_count'].toString()),
-          Container(width: 1, height: 40, color: Colors.white.withValues(alpha: 0.1)),
+          Container(width: 1, height: 40, color: Colors.white.withOpacity(0.1)),
           _buildStatItem('Synced With', userProfile!['synced_accounts_count'].toString()),
-          Container(width: 1, height: 40, color: Colors.white.withValues(alpha: 0.1)),
+          Container(width: 1, height: 40, color: Colors.white.withOpacity(0.1)),
           _buildStatItem('Max Sync', '2'),
         ],
       ),
@@ -387,7 +387,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withOpacity(0.7),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -417,7 +417,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               decoration: BoxDecoration(
                 color: Color(0xFF1E1E1E),
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -453,7 +453,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: isCurrentUser ? Color(0xFF1E1E1E).withValues(alpha: 0.5) : Color(0xFFFF8C00),
+                color: isCurrentUser ? Color(0xFF1E1E1E).withOpacity(0.5) : Color(0xFFFF8C00),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Row(
@@ -461,14 +461,14 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                 children: [
                   Icon(
                     Icons.sync_rounded, 
-                    color: isCurrentUser ? Colors.white.withValues(alpha: 0.3) : Colors.white, 
+                    color: isCurrentUser ? Colors.white.withOpacity(0.3) : Colors.white, 
                     size: 20
                   ),
                   SizedBox(width: 10),
                   Text(
                     'Request Sync',
                     style: TextStyle(
-                      color: isCurrentUser ? Colors.white.withValues(alpha: 0.3) : Colors.white,
+                      color: isCurrentUser ? Colors.white.withOpacity(0.3) : Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -503,7 +503,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           decoration: BoxDecoration(
             color: Color(0xFF1E1E1E),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: Row(
             children: [
@@ -529,7 +529,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                     Text(
                       '@${account['username']}',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7), 
+                        color: Colors.white.withOpacity(0.7), 
                         fontSize: 13,
                       ),
                     ),
@@ -562,20 +562,20 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             decoration: BoxDecoration(
               color: Color(0xFF1E1E1E),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
             child: Column(
               children: [
                 Icon(
                   Icons.favorite_outline,
                   size: 60,
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withOpacity(0.3),
                 ),
                 SizedBox(height: 20),
                 Text(
                   'No public saved anime yet',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: Colors.white.withOpacity(0.5),
                     fontSize: 16,
                   ),
                 ),
@@ -630,7 +630,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                 decoration: BoxDecoration(
                   color: Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
@@ -669,7 +669,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                               colors: [
-                                Colors.black.withValues(alpha: 0.9),
+                                Colors.black.withOpacity(0.9),
                                 Colors.transparent,
                               ],
                             ),
@@ -701,7 +701,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Color(0xFFFF8C00).withValues(alpha: 0.2),
+                  color: Color(0xFFFF8C00).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Color(0xFFFF8C00)),
                 ),
