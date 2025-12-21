@@ -25,9 +25,9 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
+# .flutter-plugins - Keep for GitHub Actions
+# .flutter-plugins-dependencies - Keep for GitHub Actions  
+# .packages - Keep for GitHub Actions
 .pub-cache/
 .pub/
 /build/
@@ -91,8 +91,8 @@ coverage/
 # *.keystore
 # android/app/*.keystore
 
-# Local configuration file (sdk path, etc)
-local.properties
+# Local configuration file (sdk path, etc) - Keep for GitHub Actions
+# local.properties
 
 # Log files
 *.log
