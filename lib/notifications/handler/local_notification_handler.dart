@@ -95,6 +95,7 @@ class LocalNotificationHandler {
         enableVibration: true,
         playSound: true,
         icon: '@drawable/ic_notification',
+        largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
         color: const Color(0xFFFF8C00),
         actions: [
           AndroidNotificationAction(
@@ -152,6 +153,7 @@ class LocalNotificationHandler {
       enableVibration: true,
       playSound: true,
       icon: '@drawable/ic_notification',
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       color: const Color(0xFFFF8C00),
     );
   }
