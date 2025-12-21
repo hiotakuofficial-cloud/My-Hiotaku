@@ -1,0 +1,365 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/material.dart';
+import 'supabase.dart';
+
+class FirebaseHandler {
+  // Singleton GoogleSignIn instance for better performance
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile', 'openid'],
+  );
+
+  // Pre-initialize Google Sign In for faster response
+  static Future<void> preInitializeGoogleSignIn() async {
+    try {
+      // Trigger initialization by checking sign-in status
+      await _googleSignIn.isSignedIn();
+      print('✅ Google Sign In pre-initialized');
+    } catch (e) {
+      print('⚠️ Google Sign In pre-initialization failed: $e');
+    }
+  }
+
+  // Show error message only
+  static void _showError(BuildContext? context, String message) {
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // Show professional iOS-style success message
+  static void _showSuccess(BuildContext? context, String message) {
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check,
+                  color: Colors.green,
+                  size: 14,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.black87,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.all(16),
+        ),
+      );
+    }
+  }
+
+  // Google Sign In with clean error handling and account selection
+  Future<User?> signInWithGoogle({BuildContext? context}) async {
+    try {
+      // Force account selection by signing out first (if needed)
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+      }
+
+      // Step 1: Google Login Popup with account selection
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        return null; // User cancelled the login
+      }
+      
+      // Step 2: Auth details
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        _showError(context, 'Failed to get authentication tokens');
+        return null;
+      }
+
+      // Step 3: Create Firebase credential
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Step 4: Sign-in to Firebase
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      if (userCredential.user != null) {
+        // TODO: Sync user data with Supabase
+        await _syncUserWithSupabase(userCredential.user!);
+        _showSuccess(context, 'Welcome back, ${userCredential.user!.displayName?.split(' ')[0] ?? 'User'}');
+        return userCredential.user;
+      } else {
+        _showError(context, 'Firebase authentication failed');
+        return null;
+      }
+
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Login failed: ';
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          errorMessage += 'Account exists with different credential';
+          break;
+        case 'invalid-credential':
+          errorMessage += 'Invalid credential provided';
+          break;
+        case 'operation-not-allowed':
+          errorMessage += 'Google sign-in not enabled';
+          break;
+        case 'user-disabled':
+          errorMessage += 'User account disabled';
+          break;
+        case 'user-not-found':
+          errorMessage += 'User not found';
+          break;
+        case 'wrong-password':
+          errorMessage += 'Wrong password';
+          break;
+        case 'network-request-failed':
+          errorMessage += 'Network error - check internet connection';
+          break;
+        default:
+          errorMessage += e.message ?? 'Unknown error';
+      }
+      _showError(context, errorMessage);
+      return null;
+    } on Exception catch (e) {
+      _showError(context, 'Google Sign-in Error: ${e.toString()}');
+      return null;
+    } catch (e) {
+      _showError(context, 'Unexpected error: ${e.toString()}');
+      return null;
+    }
+  }
+
+  // Logout with error handling and proper disconnect
+  Future<bool> signOut({BuildContext? context}) async {
+    try {
+      await _googleSignIn.disconnect(); // Complete disconnect instead of signOut
+      await FirebaseAuth.instance.signOut();
+      return true;
+    } catch (e) {
+      _showError(context, 'Sign-out Error: ${e.toString()}');
+      return false;
+    }
+  }
+
+  // Get current user with error handling
+  User? getCurrentUser({BuildContext? context}) {
+    try {
+      return FirebaseAuth.instance.currentUser;
+    } catch (e) {
+      _showError(context, 'Error getting current user: ${e.toString()}');
+      return null;
+    }
+  }
+
+  // Check if user is logged in
+  bool isLoggedIn({BuildContext? context}) {
+    try {
+      return FirebaseAuth.instance.currentUser != null;
+    } catch (e) {
+      _showError(context, 'Error checking login status: ${e.toString()}');
+      return false;
+    }
+  }
+
+  // Auth state changes stream
+  Stream<User?> get authStateChanges {
+    return FirebaseAuth.instance.authStateChanges();
+  }
+
+  // Check Firebase connection
+  Future<bool> checkFirebaseConnection({BuildContext? context}) async {
+    try {
+      // Try to get current user to test connection
+      User? user = FirebaseAuth.instance.currentUser;
+      return true;
+    } catch (e) {
+      _showError(context, 'Firebase connection failed: ${e.toString()}');
+      return false;
+    }
+  }
+
+  // Check Google Play Services
+  Future<bool> checkGooglePlayServices({BuildContext? context}) async {
+    try {
+      bool isAvailable = await _googleSignIn.isSignedIn();
+      return true;
+    } catch (e) {
+      _showError(context, 'Google Play Services error: ${e.toString()}');
+      return false;
+    }
+  }
+
+  // Email/Password Sign Up
+  Future<User?> signUpWithEmailPassword({
+    required String email,
+    required String password,
+    required String name,
+    BuildContext? context,
+  }) async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      // Update display name
+      await userCredential.user?.updateDisplayName(name);
+      
+      if (userCredential.user != null) {
+        // TODO: Create user in Supabase
+        await _syncUserWithSupabase(userCredential.user!);
+        _showSuccess(context, 'Account created successfully!');
+        return userCredential.user;
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Sign up failed: ';
+      switch (e.code) {
+        case 'weak-password':
+          errorMessage += 'Password is too weak';
+          break;
+        case 'email-already-in-use':
+          errorMessage += 'Email already registered';
+          break;
+        case 'invalid-email':
+          errorMessage += 'Invalid email address';
+          break;
+        default:
+          errorMessage += e.message ?? 'Unknown error';
+      }
+      _showError(context, errorMessage);
+      return null;
+    } catch (e) {
+      _showError(context, 'Sign up error: ${e.toString()}');
+      return null;
+    }
+  }
+
+  // Email/Password Sign In
+  Future<User?> signInWithEmailPassword({
+    required String email,
+    required String password,
+    BuildContext? context,
+  }) async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      if (userCredential.user != null) {
+        // TODO: Sync user data with Supabase
+        await _syncUserWithSupabase(userCredential.user!);
+        _showSuccess(context, 'Welcome back!');
+        return userCredential.user;
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Login failed: ';
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage += 'No account found with this email';
+          break;
+        case 'wrong-password':
+          errorMessage += 'Incorrect password';
+          break;
+        case 'invalid-email':
+          errorMessage += 'Invalid email address';
+          break;
+        case 'user-disabled':
+          errorMessage += 'Account has been disabled';
+          break;
+        default:
+          errorMessage += e.message ?? 'Unknown error';
+      }
+      _showError(context, errorMessage);
+      return null;
+    } catch (e) {
+      _showError(context, 'Login error: ${e.toString()}');
+      return null;
+    }
+  }
+
+  // TODO: Sync Firebase user with Supabase database
+  static Future<void> _syncUserWithSupabase(User firebaseUser) async {
+    try {
+      // Check if user exists in Supabase
+      final existingUser = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
+      
+      if (existingUser != null) {
+        // User exists, update only name/email - DON'T touch avatar if custom set
+        String? currentAvatar = existingUser['avatar_url'];
+        
+        // Only update avatar if it's still a Google URL or null
+        String? avatarToUpdate;
+        if (currentAvatar == null || currentAvatar.startsWith('http')) {
+          // User has Google photo or no avatar, can update
+          avatarToUpdate = firebaseUser.photoURL ?? 'default.png';
+        } else {
+          // User has custom avatar (male1.png, female2.png etc), keep it
+          avatarToUpdate = currentAvatar;
+        }
+        
+        await SupabaseHandler.upsertUser(
+          firebaseUID: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName,
+          avatarUrl: avatarToUpdate,
+          username: _generateUsername(firebaseUser),
+        );
+        print('User updated in Supabase: ${firebaseUser.email}');
+      } else {
+        // New user, create with default avatar ID
+        await SupabaseHandler.upsertUser(
+          firebaseUID: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName,
+          avatarUrl: 'default.png', // Always default for new users
+          username: _generateUsername(firebaseUser),
+        );
+        print('New user created in Supabase: ${firebaseUser.email}');
+      }
+    } catch (e) {
+      print('Supabase sync error: $e');
+    }
+  }
+
+  // TODO: Generate username from display name or email
+  static String? _generateUsername(User firebaseUser) {
+    if (firebaseUser.displayName != null) {
+      return firebaseUser.displayName!
+          .toLowerCase()
+          .replaceAll(' ', '_')
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+    } else if (firebaseUser.email != null) {
+      return firebaseUser.email!.split('@')[0].toLowerCase();
+    }
+    return null;
+  }
+}

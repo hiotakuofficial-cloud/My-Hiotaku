@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "472385734556",
+    "project_id": "hiotaku-flutter",
+    "storage_bucket": "hiotaku-flutter.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:472385734556:android:77791fc6850b29d0c7aa59",
+        "android_client_info": {
+          "package_name": "com.hiotaku.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "472385734556-9tmsk803pnkcutr4ouut8a4ee3902j94.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hiotaku.app",
+            "certificate_hash": "86df9e9e70746d43664fe686437a8442146df647"
+          }
+        },
+        {
+          "client_id": "472385734556-tjqlfiqabkcvmcgkgr01nls4bvl0fjn4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaXrw9gChrWZ2Nj_Hlj0yODppaJOhBNt8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "472385734556-tjqlfiqabkcvmcgkgr01nls4bvl0fjn4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
