@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lottie/lottie.dart';
 import 'handler/user_profile_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../../components/details_sheet.dart';
+import '../../auth/handler/supabase.dart';
 
 class UserProfilePage extends StatefulWidget {
   final String username;
@@ -26,6 +28,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   bool isLoading = true;
   bool hasNetworkError = false;
   bool isCurrentUser = false;
+  String syncStatus = 'none'; // none, requested, connected
 
   @override
   void initState() {
@@ -96,6 +99,20 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             isCurrentUser = false;
           }
         });
+
+        // Check sync status separately if not current user
+        if (!isCurrentUser) {
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null && userProfile != null) {
+            final status = await SupabaseHandler.getSyncStatus(
+              currentUserId: currentUser.uid,
+              targetUserId: userProfile!['firebase_uid'] ?? userProfile!['id'],
+            );
+            setState(() {
+              syncStatus = status;
+            });
+          }
+        }
         _animationController.forward();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -400,6 +417,151 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     );
   }
 
+  Color _getSyncButtonColor() {
+    if (isCurrentUser) return Color(0xFF121212);
+    switch (syncStatus) {
+      case 'requested':
+      case 'connected':
+        return Color(0xFF121212);
+      default:
+        return Color(0xFFFF8C00);
+    }
+  }
+
+  String _getSyncButtonText() {
+    switch (syncStatus) {
+      case 'requested':
+        return 'Requested';
+      case 'connected':
+        return 'Connected';
+      default:
+        return 'Request Sync';
+    }
+  }
+
+  IconData _getSyncButtonIcon() {
+    switch (syncStatus) {
+      case 'requested':
+        return Icons.schedule;
+      case 'connected':
+        return Icons.link;
+      default:
+        return Icons.sync_rounded;
+    }
+  }
+
+  void _handleSyncAction() async {
+    HapticFeedback.lightImpact();
+    
+    if (syncStatus == 'connected') {
+      _showDisconnectDialog();
+    } else if (syncStatus == 'none') {
+      await _sendSyncRequest();
+    }
+    // Do nothing if status is 'requested'
+  }
+
+  Future<void> _sendSyncRequest() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || userProfile == null) return;
+
+    setState(() => isLoading = true);
+
+    final success = await SupabaseHandler.sendSyncRequest(
+      senderId: currentUser.uid,
+      receiverId: userProfile!['firebase_uid'] ?? userProfile!['id'],
+      senderUsername: currentUser.displayName ?? currentUser.email ?? 'Unknown',
+    );
+
+    if (success) {
+      setState(() {
+        syncStatus = 'requested';
+        isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync request sent successfully!'),
+          backgroundColor: Color(0xFF4CAF50),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      setState(() => isLoading = false);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send sync request'),
+          backgroundColor: Color(0xFFFF5252),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _showDisconnectDialog() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text('Disconnect Sync'),
+        content: Text(
+          'By confirming you\'re breaking your connection with ${userProfile!['username'] ?? 'this user'}',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: Text('Confirm'),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _disconnectSync();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _disconnectSync() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || userProfile == null) return;
+
+    setState(() => isLoading = true);
+
+    final success = await SupabaseHandler.disconnectSync(
+      userId1: currentUser.uid,
+      userId2: userProfile!['firebase_uid'] ?? userProfile!['id'],
+    );
+
+    if (success) {
+      setState(() {
+        syncStatus = 'none';
+        isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully disconnected'),
+          backgroundColor: Color(0xFF4CAF50),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      setState(() => isLoading = false);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to disconnect'),
+          backgroundColor: Color(0xFFFF5252),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Widget _buildActionButtons() {
     return Row(
       children: [
@@ -442,37 +604,40 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         ),
         SizedBox(width: 15),
         Expanded(
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: isCurrentUser ? Color(0xFF121212) : Color(0xFFFF8C00),
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isCurrentUser) ...[
-                  Text(
-                    'You',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+          child: GestureDetector(
+            onTap: isCurrentUser ? null : () => _handleSyncAction(),
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: _getSyncButtonColor(),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isCurrentUser) ...[
+                    Text(
+                      'You',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ] else ...[
-                  Icon(Icons.sync_rounded, color: Colors.white, size: 20),
-                  SizedBox(width: 10),
-                  Text(
-                    'Request Sync',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  ] else ...[
+                    Icon(_getSyncButtonIcon(), color: Colors.white, size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      _getSyncButtonText(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

@@ -323,6 +323,158 @@ class SupabaseHandler {
     );
   }
 
+  // Sync Request System
+  
+  /// Send sync request to another user
+  static Future<bool> sendSyncRequest({
+    required String senderId,
+    required String receiverId,
+    required String senderUsername,
+  }) async {
+    try {
+      // Check if request already exists
+      final existing = await getData(
+        table: 'merge_requests',
+        filters: {
+          'sender_id': senderId,
+          'receiver_id': receiverId,
+        },
+      );
+
+      if (existing != null && existing.isNotEmpty) {
+        return false; // Request already exists
+      }
+
+      // Insert sync request
+      final result = await insertData(
+        table: 'merge_requests',
+        data: {
+          'sender_id': senderId,
+          'receiver_id': receiverId,
+          'message': 'Sync request from $senderUsername',
+          'status': 'pending',
+          'created_at': getCurrentTimestamp(),
+        },
+      );
+
+      if (result != null) {
+        // Send notification to receiver
+        await _sendSyncNotification(receiverId, senderUsername);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error sending sync request: $e');
+      return false;
+    }
+  }
+
+  /// Check sync request status between two users
+  static Future<String> getSyncStatus({
+    required String currentUserId,
+    required String targetUserId,
+  }) async {
+    try {
+      // Check if current user sent request to target
+      final sentRequests = await getData(
+        table: 'merge_requests',
+        filters: {
+          'sender_id': currentUserId,
+          'receiver_id': targetUserId,
+        },
+      );
+
+      if (sentRequests != null && sentRequests.isNotEmpty) {
+        final status = sentRequests.first['status'];
+        if (status == 'pending') return 'requested';
+        if (status == 'accepted') return 'connected';
+      }
+
+      // Check if target sent request to current user
+      final receivedRequests = await getData(
+        table: 'merge_requests',
+        filters: {
+          'sender_id': targetUserId,
+          'receiver_id': currentUserId,
+        },
+      );
+
+      if (receivedRequests != null && receivedRequests.isNotEmpty) {
+        final status = receivedRequests.first['status'];
+        if (status == 'accepted') return 'connected';
+      }
+
+      return 'none';
+    } catch (e) {
+      print('Error checking sync status: $e');
+      return 'none';
+    }
+  }
+
+  /// Disconnect from synced user
+  static Future<bool> disconnectSync({
+    required String userId1,
+    required String userId2,
+  }) async {
+    try {
+      // Delete all merge requests between users
+      await deleteData(
+        table: 'merge_requests',
+        filters: {
+          'sender_id': userId1,
+          'receiver_id': userId2,
+        },
+      );
+
+      await deleteData(
+        table: 'merge_requests',
+        filters: {
+          'sender_id': userId2,
+          'receiver_id': userId1,
+        },
+      );
+
+      return true;
+    } catch (e) {
+      print('Error disconnecting sync: $e');
+      return false;
+    }
+  }
+
+  /// Send notification for sync request
+  static Future<void> _sendSyncNotification(String receiverId, String senderUsername) async {
+    try {
+      // Get receiver's FCM token
+      final tokens = await getData(
+        table: 'fcm_tokens',
+        filters: {'user_id': receiverId},
+      );
+
+      if (tokens != null && tokens.isNotEmpty) {
+        final fcmToken = tokens.first['token'];
+        
+        // Insert notification record
+        await insertData(
+          table: 'notifications',
+          data: {
+            'user_id': receiverId,
+            'title': 'Sync Request',
+            'body': '$senderUsername wants to sync favorites with you',
+            'type': 'sync_request',
+            'data': json.encode({'sender_username': senderUsername}),
+            'created_at': getCurrentTimestamp(),
+            'is_read': false,
+          },
+        );
+
+        // TODO: Send FCM notification using fcmToken
+        print('Notification sent to $receiverId for sync request from $senderUsername');
+      }
+    } catch (e) {
+      print('Error sending sync notification: $e');
+    }
+  }
+
   // Utility methods
   
   /// Get current timestamp
