@@ -105,13 +105,21 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         if (!isCurrentUser) {
           final currentUser = FirebaseAuth.instance.currentUser;
           if (currentUser != null && userProfile != null) {
-            final status = await SupabaseHandler.getSyncStatus(
-              currentUserId: currentUser.uid,
-              targetUserId: userProfile!['firebase_uid'] ?? userProfile!['id'],
-            );
-            setState(() {
-              syncStatus = status;
-            });
+            try {
+              // Get current user's Supabase ID
+              final currentUserData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
+              if (currentUserData != null) {
+                final status = await SupabaseHandler.getSyncStatus(
+                  currentUserId: currentUserData['id'],
+                  targetUserId: userProfile!['id'],
+                );
+                setState(() {
+                  syncStatus = status;
+                });
+              }
+            } catch (e) {
+              print('Error getting sync status: $e');
+            }
           }
         }
         _animationController.forward();
@@ -468,31 +476,49 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
 
     setState(() => isLoading = true);
 
-    final success = await SupabaseHandler.sendSyncRequest(
-      senderId: currentUser.uid,
-      receiverId: userProfile!['firebase_uid'] ?? userProfile!['id'],
-      senderUsername: currentUser.displayName ?? currentUser.email ?? 'Unknown',
-    );
+    try {
+      // Get current user's Supabase ID
+      final currentUserData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
+      if (currentUserData == null) {
+        throw Exception('Current user not found in database');
+      }
 
-    if (success) {
-      setState(() {
-        syncStatus = 'requested';
-        isLoading = false;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sync request sent successfully!'),
-          backgroundColor: Color(0xFF4CAF50),
-          behavior: SnackBarBehavior.floating,
-        ),
+      final success = await SupabaseHandler.sendSyncRequest(
+        senderId: currentUserData['id'],
+        receiverId: userProfile!['id'],
+        senderUsername: currentUserData['username'] ?? currentUser.displayName ?? 'Unknown',
       );
-    } else {
+
+      if (success) {
+        setState(() {
+          syncStatus = 'requested';
+          isLoading = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync request sent successfully!'),
+            backgroundColor: Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        setState(() => isLoading = false);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync request already exists or failed'),
+            backgroundColor: Color(0xFFFF9800),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
       setState(() => isLoading = false);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to send sync request'),
+          content: Text('Error: ${e.toString()}'),
           backgroundColor: Color(0xFFFF5252),
           behavior: SnackBarBehavior.floating,
         ),
