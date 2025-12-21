@@ -439,42 +439,37 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         ),
         SizedBox(width: 15),
         Expanded(
-          child: GestureDetector(
-            onTap: isCurrentUser ? null : () {
-              HapticFeedback.lightImpact();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Request Sync feature coming soon!'),
-                  backgroundColor: Color(0xFFFF8C00),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: isCurrentUser ? Color(0xFF1E1E1E).withOpacity(0.5) : Color(0xFFFF8C00),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.sync_rounded, 
-                    color: isCurrentUser ? Colors.white.withOpacity(0.3) : Colors.white, 
-                    size: 20
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: isCurrentUser ? Color(0xFF121212) : Color(0xFFFF8C00),
+              borderRadius: BorderRadius.circular(25),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isCurrentUser) ...[
+                  Text(
+                    'You',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                ] else ...[
+                  Icon(Icons.sync_rounded, color: Colors.white, size: 20),
                   SizedBox(width: 10),
                   Text(
                     'Request Sync',
                     style: TextStyle(
-                      color: isCurrentUser ? Colors.white.withOpacity(0.3) : Colors.white,
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
