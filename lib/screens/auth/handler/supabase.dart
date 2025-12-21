@@ -333,11 +333,6 @@ class SupabaseHandler {
     required String senderUsername,
   }) async {
     try {
-      print('🔍 DEBUG: Starting sync request...');
-      print('🔍 DEBUG: Sender ID: $senderId');
-      print('🔍 DEBUG: Receiver ID: $receiverId');
-      print('🔍 DEBUG: Sender Username: $senderUsername');
-      
       // Check if request already exists
       final existing = await getData(
         table: 'merge_requests',
@@ -348,12 +343,9 @@ class SupabaseHandler {
       );
 
       if (existing != null && existing.isNotEmpty) {
-        print('❌ DEBUG: Sync request already exists');
         return false; // Request already exists
       }
 
-      print('🔍 DEBUG: Creating new sync request...');
-      
       // Insert sync request
       final result = await insertData(
         table: 'merge_requests',
@@ -366,20 +358,14 @@ class SupabaseHandler {
         },
       );
 
-      print('🔍 DEBUG: Database insert result: $result');
-
       if (result != null) {
-        print('🔍 DEBUG: Sending notification...');
         // Send notification to receiver
         await _sendSyncNotification(receiverId, senderUsername);
-        print('✅ DEBUG: Sync request completed successfully');
         return true;
       }
-      
-      print('❌ DEBUG: Database insert failed');
       return false;
     } catch (e) {
-      print('💥 DEBUG: Error sending sync request: $e');
+      print('Error sending sync request: $e');
       return false;
     }
   }
@@ -459,10 +445,6 @@ class SupabaseHandler {
   /// Send notification for sync request
   static Future<void> _sendSyncNotification(String receiverId, String senderUsername) async {
     try {
-      print('🔍 DEBUG: Sending sync notification...');
-      print('🔍 DEBUG: Receiver ID: $receiverId');
-      print('🔍 DEBUG: Sender Username: $senderUsername');
-      
       // Use existing notification service API
       final success = await NotificationService.sendNotification(
         userId: receiverId,
@@ -473,15 +455,13 @@ class SupabaseHandler {
         extraData: {'sender_username': senderUsername},
       );
       
-      print('🔍 DEBUG: Notification success: $success');
-      
       if (success) {
-        print('✅ Sync notification sent to $receiverId from $senderUsername');
+        print('Sync notification sent to $receiverId from $senderUsername');
       } else {
-        print('❌ Failed to send sync notification');
+        print('Failed to send sync notification');
       }
     } catch (e) {
-      print('💥 Error sending sync notification: $e');
+      print('Error sending sync notification: $e');
     }
   }
 
