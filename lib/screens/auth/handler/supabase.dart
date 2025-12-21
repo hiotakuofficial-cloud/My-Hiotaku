@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../notifications/handler/notification_handler.dart';
 
 class SupabaseHandler {
   // Supabase Configuration
@@ -444,32 +445,15 @@ class SupabaseHandler {
   /// Send notification for sync request
   static Future<void> _sendSyncNotification(String receiverId, String senderUsername) async {
     try {
-      // Get receiver's FCM token
-      final tokens = await getData(
-        table: 'fcm_tokens',
-        filters: {'user_id': receiverId},
+      // Use existing notification system
+      await NotificationHandler.sendMergeRequestNotification(
+        receiverUserId: receiverId,
+        senderName: senderUsername,
+        senderUsername: senderUsername,
+        requestId: 'sync_${DateTime.now().millisecondsSinceEpoch}',
       );
-
-      if (tokens != null && tokens.isNotEmpty) {
-        final fcmToken = tokens.first['token'];
-        
-        // Insert notification record
-        await insertData(
-          table: 'notifications',
-          data: {
-            'user_id': receiverId,
-            'title': 'Sync Request',
-            'body': '$senderUsername wants to sync favorites with you',
-            'type': 'sync_request',
-            'data': json.encode({'sender_username': senderUsername}),
-            'created_at': getCurrentTimestamp(),
-            'is_read': false,
-          },
-        );
-
-        // TODO: Send FCM notification using fcmToken
-        print('Notification sent to $receiverId for sync request from $senderUsername');
-      }
+      
+      print('Sync notification sent to $receiverId from $senderUsername');
     } catch (e) {
       print('Error sending sync notification: $e');
     }

@@ -7,6 +7,7 @@ import 'handler/user_profile_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../../components/details_sheet.dart';
 import '../../auth/handler/supabase.dart';
+import '../../../notifications/handler/notification_handler.dart';
 
 class UserProfilePage extends StatefulWidget {
   final String username;
