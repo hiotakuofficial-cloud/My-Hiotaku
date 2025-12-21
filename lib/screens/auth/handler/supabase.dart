@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../notifications/handler/notification_handler.dart';
+import '../../../services/notification_service.dart';
 
 class SupabaseHandler {
   // Supabase Configuration
@@ -445,15 +445,21 @@ class SupabaseHandler {
   /// Send notification for sync request
   static Future<void> _sendSyncNotification(String receiverId, String senderUsername) async {
     try {
-      // Use existing notification system
-      await NotificationHandler.sendMergeRequestNotification(
-        receiverUserId: receiverId,
-        senderName: senderUsername,
-        senderUsername: senderUsername,
-        requestId: 'sync_${DateTime.now().millisecondsSinceEpoch}',
+      // Use existing notification service API
+      final success = await NotificationService.sendNotification(
+        userId: receiverId,
+        title: 'Sync Request',
+        body: '$senderUsername wants to sync favorites with you',
+        type: 'sync_request',
+        screen: '/favourite',
+        extraData: {'sender_username': senderUsername},
       );
       
-      print('Sync notification sent to $receiverId from $senderUsername');
+      if (success) {
+        print('Sync notification sent to $receiverId from $senderUsername');
+      } else {
+        print('Failed to send sync notification');
+      }
     } catch (e) {
       print('Error sending sync notification: $e');
     }
