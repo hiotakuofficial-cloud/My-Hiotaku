@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'handler/profile_handler.dart';
+import 'requests/requests.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -337,14 +338,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 );
               } else {
-                // User logged in, show coming soon
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$title - Coming Soon!'),
-                    backgroundColor: Color(0xFFFF8C00),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                // Handle specific options
+                if (title == 'Clear cache') {
+                  _openAppSettings();
+                } else if (title == 'Requests') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RequestsPage()),
+                  );
+                } else {
+                  // Other options - show coming soon
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$title - Coming Soon!'),
+                      backgroundColor: Color(0xFFFF8C00),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               }
             }
           },
