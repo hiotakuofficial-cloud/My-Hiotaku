@@ -67,10 +67,10 @@ class RequestsHandler {
   
   // Get request status with expiry check
   static String getRequestStatus(Map<String, dynamic> request) {
-    final status = request['status'] as String;
-    final createdAt = request['created_at'] as String;
+    final status = request['status'] as String? ?? 'pending';
+    final createdAt = request['created_at'] as String?;
     
-    if (status == 'pending' && isRequestExpired(createdAt)) {
+    if (status == 'pending' && createdAt != null && isRequestExpired(createdAt)) {
       return 'expired';
     }
     return status;
@@ -359,17 +359,15 @@ class RequestsHandler {
       
       print('Creating test request for user: ${userData['id']}');
       
-      final testRequest = await SupabaseHandler.insertData(
-        table: 'merge_requests',
-        data: {
-          'sender_id': userData['id'],
-          'receiver_id': 'test_user_${DateTime.now().millisecondsSinceEpoch}',
-          'message': 'Test sync request created at ${DateTime.now()}',
-        },
+      // Use the sendSyncRequest method from SupabaseHandler
+      final success = await SupabaseHandler.sendSyncRequest(
+        senderId: userData['id'],
+        receiverId: 'test_user_${DateTime.now().millisecondsSinceEpoch}',
+        senderUsername: userData['username'] ?? 'Test User',
       );
       
-      print('Test request result: $testRequest');
-      return testRequest != null;
+      print('Test request result: $success');
+      return success;
     } catch (e) {
       print('Error creating test request: $e');
       return false;
