@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/handler/supabase.dart';
 
 class RequestsHandler {
@@ -8,16 +9,28 @@ class RequestsHandler {
   // Get all sent requests for current user
   static Future<List<Map<String, dynamic>>> getSentRequests() async {
     try {
-      final currentUser = SupabaseHandler.getCurrentUser();
+      final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) return [];
       
-      final response = await SupabaseHandler.supabase
-          .from('sync_requests')
-          .select('*, profiles!sync_requests_to_user_id_fkey(display_name, email)')
-          .eq('from_user_id', currentUser.id)
-          .order('created_at', ascending: false);
+      // Get user data from Supabase
+      final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
+      if (userData == null) return [];
       
-      return List<Map<String, dynamic>>.from(response);
+      final response = await SupabaseHandler.getData(
+        table: 'sync_requests',
+        select: '*, profiles!sync_requests_to_user_id_fkey(display_name, email)',
+        filters: {'from_user_id': userData['id']},
+      );
+      
+      // Sort by created_at descending
+      final sortedResponse = response ?? [];
+      sortedResponse.sort((a, b) {
+        final aTime = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
+        final bTime = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
+        return bTime.compareTo(aTime);
+      });
+      
+      return sortedResponse;
     } catch (e) {
       print('Error fetching sent requests: $e');
       return [];
