@@ -165,7 +165,8 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
 
   Widget _buildRequestItem(Map<String, dynamic> request, int index) {
     final status = RequestsHandler.getRequestStatus(request);
-    final recipientName = request['receiver_id']?.toString() ?? 'Unknown User';
+    final receiverId = request['receiver_id']?.toString() ?? 'Unknown User';
+    final message = request['message']?.toString() ?? 'Sync request';
     final createdAt = request['created_at'] as String?;
     final timeAgo = _getTimeAgo(createdAt);
     
@@ -214,7 +215,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             children: [
               const SizedBox(height: 4),
               Text(
-                'Sent to User ID: $recipientName',
+                message,
                 style: TextStyle(
                   color: Colors.grey[400],
                   fontSize: 14,
@@ -222,7 +223,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               ),
               const SizedBox(height: 4),
               Text(
-                'Request ID: ${request['id']}',
+                'To: $receiverId',
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 12,

@@ -188,13 +188,13 @@ class RequestsHandler {
     Map<String, dynamic> request
   ) async {
     final requestId = request['id'].toString();
-    final recipientName = request['profiles']?['display_name'] ?? 'Unknown User';
+    final receiverId = request['receiver_id']?.toString() ?? 'Unknown User';
     
     // Show toast first (only once)
     await showExpiredToast(context, requestId);
     
     // Show dialog for user interaction
-    await showExpiredDialog(context, recipientName);
+    await showExpiredDialog(context, receiverId);
   }
   
   // Get status color for UI
@@ -343,23 +343,29 @@ class RequestsHandler {
   static Future<bool> createTestRequest() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) return false;
+      if (currentUser == null) {
+        print('No Firebase user logged in');
+        return false;
+      }
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
-      if (userData == null) return false;
+      if (userData == null) {
+        print('No Supabase user found');
+        return false;
+      }
+      
+      print('Creating test request for user: ${userData['id']}');
       
       final testRequest = await SupabaseHandler.insertData(
         table: 'merge_requests',
         data: {
           'sender_id': userData['id'],
-          'receiver_id': 'test_user_123',
-          'message': 'Test sync request',
-          'status': 'pending',
-          'created_at': DateTime.now().toIso8601String(),
+          'receiver_id': 'test_user_${DateTime.now().millisecondsSinceEpoch}',
+          'message': 'Test sync request created at ${DateTime.now()}',
         },
       );
       
-      print('Test request created: $testRequest');
+      print('Test request result: $testRequest');
       return testRequest != null;
     } catch (e) {
       print('Error creating test request: $e');
