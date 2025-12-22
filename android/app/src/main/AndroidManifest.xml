@@ -63,7 +63,7 @@
         <!-- Default notification icon -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_notification_white" />
+            android:resource="@drawable/ic_notification" />
         <!-- Default notification color -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
