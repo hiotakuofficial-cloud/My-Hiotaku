@@ -13,6 +13,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   List<Map<String, dynamic>> _requests = [];
   bool _isLoading = true;
   String? _error;
+  String _debugInfo = '';
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -41,6 +42,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
       setState(() {
         _isLoading = true;
         _error = null;
+        _debugInfo = 'Loading...';
       });
 
       print('Calling RequestsHandler.getSentRequests()');
@@ -51,6 +53,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
         setState(() {
           _requests = requests;
           _isLoading = false;
+          _debugInfo = 'Loaded ${requests.length} requests';
         });
         _animationController.forward();
         print('UI updated with ${requests.length} requests');
@@ -61,6 +64,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
         setState(() {
           _error = 'Failed to load requests. Please check your connection and try again.';
           _isLoading = false;
+          _debugInfo = 'Error: $e';
         });
       }
       print('RequestsPage._loadRequests error: $e');
@@ -328,7 +332,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
           ),
           const SizedBox(height: 16),
           Text(
-            'Debug: Loaded ${_requests.length} requests',
+            _debugInfo,
             style: TextStyle(
               color: Colors.orange[400],
               fontSize: 12,
