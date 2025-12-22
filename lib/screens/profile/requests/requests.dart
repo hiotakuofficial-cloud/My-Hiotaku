@@ -326,6 +326,14 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             ),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 16),
+          Text(
+            'Debug: Loaded ${_requests.length} requests',
+            style: TextStyle(
+              color: Colors.orange[400],
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
