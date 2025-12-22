@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/handler/supabase.dart';
+import '../../../../services/notification_service.dart';
 
 class RequestsHandler {
   static const String _expiredRequestsKey = 'expired_requests_shown';
@@ -233,5 +234,96 @@ class RequestsHandler {
   static Future<void> clearExpiredNotifications() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_expiredRequestsKey);
+  }
+  
+  // Send notification for sync request status updates
+  static Future<void> sendSyncStatusNotification({
+    required String userId,
+    required String status,
+    String? recipientName,
+  }) async {
+    try {
+      String title;
+      String body;
+      
+      switch (status) {
+        case 'accepted':
+          title = 'Accounts Synced';
+          body = 'The user accepted your sync request. You can now access shared favourites.';
+          break;
+        case 'rejected':
+          title = 'Sync Request Update';
+          body = 'Your sync request was not accepted.';
+          break;
+        case 'expired':
+        case 'no_response':
+          title = 'Sync Request Update';
+          body = 'The user did not respond to your sync request.';
+          break;
+        default:
+          return; // Don't send notification for unknown status
+      }
+      
+      final success = await NotificationService.sendNotification(
+        userId: userId,
+        title: title,
+        body: body,
+        type: 'sync_status_update',
+        screen: '/profile/requests',
+        extraData: {
+          'status': status,
+          'recipient_name': recipientName ?? 'Unknown User',
+        },
+      );
+      
+      if (success) {
+        print('Sync status notification sent: $status to $userId');
+      } else {
+        print('Failed to send sync status notification: $status');
+      }
+    } catch (e) {
+      print('Error sending sync status notification: $e');
+    }
+  }
+  
+  // Check and notify for status changes
+  static Future<void> checkAndNotifyStatusChanges() async {
+    try {
+      final requests = await getSentRequests();
+      final prefs = await SharedPreferences.getInstance();
+      const String lastStatusKey = 'last_request_status';
+      
+      for (final request in requests) {
+        final requestId = request['id'].toString();
+        final currentStatus = getRequestStatus(request);
+        final lastStatus = prefs.getString('${lastStatusKey}_$requestId');
+        
+        // If status changed, send notification
+        if (lastStatus != null && lastStatus != currentStatus) {
+          final recipientName = request['profiles']?['display_name'] ?? 'Unknown User';
+          
+          await sendSyncStatusNotification(
+            userId: request['from_user_id'],
+            status: currentStatus,
+            recipientName: recipientName,
+          );
+        }
+        
+        // Update last known status
+        await prefs.setString('${lastStatusKey}_$requestId', currentStatus);
+      }
+    } catch (e) {
+      print('Error checking status changes: $e');
+    }
+  }
+  
+  // Initialize status tracking for new request
+  static Future<void> initializeRequestTracking(String requestId, String status) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_request_status_$requestId', status);
+    } catch (e) {
+      print('Error initializing request tracking: $e');
+    }
   }
 }
