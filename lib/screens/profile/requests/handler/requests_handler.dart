@@ -27,13 +27,16 @@ class RequestsHandler {
       
       print('Supabase user found: ${userData['id']}');
       
-      // Try merge_requests table first (as used in SupabaseHandler)
+      // Get requests from merge_requests table
       final response = await SupabaseHandler.getData(
         table: 'merge_requests',
         filters: {'sender_id': userData['id']},
       );
       
       print('Found ${response?.length ?? 0} requests');
+      if (response != null && response.isNotEmpty) {
+        print('First request: ${response[0]}');
+      }
       
       // Sort by created_at descending
       final sortedResponse = response ?? [];

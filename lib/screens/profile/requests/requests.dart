@@ -36,13 +36,16 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   }
 
   Future<void> _loadRequests() async {
+    print('_loadRequests called');
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
 
+      print('Calling RequestsHandler.getSentRequests()');
       final requests = await RequestsHandler.getSentRequests();
+      print('Got requests: ${requests.length}');
       
       if (mounted) {
         setState(() {
@@ -50,8 +53,10 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
           _isLoading = false;
         });
         _animationController.forward();
+        print('UI updated with ${requests.length} requests');
       }
     } catch (e) {
+      print('Error in _loadRequests: $e');
       if (mounted) {
         setState(() {
           _error = 'Failed to load requests. Please check your connection and try again.';
