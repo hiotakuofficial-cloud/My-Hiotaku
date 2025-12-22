@@ -13,6 +13,8 @@ import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
+import 'notifications/handler/local_notification_handler.dart';
+import 'notifications/models/notification_model.dart';
 import 'notifications/handler/firebase_messaging_handler.dart';
 import 'screens/auth/handler/firebase_handler.dart';
 
