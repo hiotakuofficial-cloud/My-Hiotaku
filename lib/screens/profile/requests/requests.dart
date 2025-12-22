@@ -67,6 +67,39 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     await _loadRequests();
   }
 
+  Future<void> _createTestRequest() async {
+    HapticFeedback.lightImpact();
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Creating test request...'),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    
+    final success = await RequestsHandler.createTestRequest();
+    
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Test request created!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await _loadRequests();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to create test request'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _showRequestOptions(Map<String, dynamic> request) {
     final status = RequestsHandler.getRequestStatus(request);
     
@@ -132,9 +165,11 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
 
   Widget _buildRequestItem(Map<String, dynamic> request, int index) {
     final status = RequestsHandler.getRequestStatus(request);
-    final recipientName = request['profiles']?['display_name'] ?? 'Unknown User';
+    final recipientName = request['receiver_id']?.toString() ?? 'Unknown User';
     final createdAt = request['created_at'] as String?;
     final timeAgo = _getTimeAgo(createdAt);
+    
+    print('Request item: $request'); // Debug info
     
     return SlideTransition(
       position: Tween<Offset>(
@@ -179,10 +214,18 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             children: [
               const SizedBox(height: 4),
               Text(
-                'Sent to $recipientName',
+                'Sent to User ID: $recipientName',
                 style: TextStyle(
                   color: Colors.grey[400],
                   fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Request ID: ${request['id']}',
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 12,
                 ),
               ),
               const SizedBox(height: 8),
@@ -358,6 +401,10 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               icon: const Icon(Icons.refresh, color: Colors.white),
               onPressed: _handleRefresh,
             ),
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.orange),
+            onPressed: _createTestRequest,
+          ),
         ],
       ),
       body: RefreshIndicator(

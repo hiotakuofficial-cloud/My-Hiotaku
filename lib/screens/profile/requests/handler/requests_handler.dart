@@ -11,17 +11,29 @@ class RequestsHandler {
   static Future<List<Map<String, dynamic>>> getSentRequests() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) return [];
+      if (currentUser == null) {
+        print('No Firebase user logged in');
+        return [];
+      }
+      
+      print('Firebase user: ${currentUser.uid}');
       
       // Get user data from Supabase
       final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
-      if (userData == null) return [];
+      if (userData == null) {
+        print('No Supabase user found for Firebase UID: ${currentUser.uid}');
+        return [];
+      }
       
+      print('Supabase user found: ${userData['id']}');
+      
+      // Try merge_requests table first (as used in SupabaseHandler)
       final response = await SupabaseHandler.getData(
-        table: 'sync_requests',
-        select: '*, profiles!sync_requests_to_user_id_fkey(display_name, email)',
-        filters: {'from_user_id': userData['id']},
+        table: 'merge_requests',
+        filters: {'sender_id': userData['id']},
       );
+      
+      print('Found ${response?.length ?? 0} requests');
       
       // Sort by created_at descending
       final sortedResponse = response ?? [];
@@ -324,6 +336,34 @@ class RequestsHandler {
       await prefs.setString('last_request_status_$requestId', status);
     } catch (e) {
       print('Error initializing request tracking: $e');
+    }
+  }
+  
+  // Test method to create dummy requests (for testing only)
+  static Future<bool> createTestRequest() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
+      
+      final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
+      if (userData == null) return false;
+      
+      final testRequest = await SupabaseHandler.insertData(
+        table: 'merge_requests',
+        data: {
+          'sender_id': userData['id'],
+          'receiver_id': 'test_user_123',
+          'message': 'Test sync request',
+          'status': 'pending',
+          'created_at': DateTime.now().toIso8601String(),
+        },
+      );
+      
+      print('Test request created: $testRequest');
+      return testRequest != null;
+    } catch (e) {
+      print('Error creating test request: $e');
+      return false;
     }
   }
 }
