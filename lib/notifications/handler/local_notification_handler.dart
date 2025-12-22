@@ -38,11 +38,46 @@ class LocalNotificationHandler {
         onDidReceiveNotificationResponse: _onNotificationTap,
       );
       
+      // Create notification channels for Android
+      await _createNotificationChannels();
+      
       _isInitialized = true;
       print('Local notifications initialized');
     } catch (e) {
       print('Local notification initialization error: $e');
     }
+  }
+  
+  // Create notification channels
+  static Future<void> _createNotificationChannels() async {
+    const AndroidNotificationChannel mergeRequestChannel = AndroidNotificationChannel(
+      'merge_requests',
+      'Merge Requests',
+      description: 'Notifications for merge requests',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+    
+    const AndroidNotificationChannel generalChannel = AndroidNotificationChannel(
+      'general',
+      'General',
+      description: 'General notifications',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+    
+    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
+        FlutterLocalNotificationsPlugin();
+    
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(mergeRequestChannel);
+        
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(generalChannel);
   }
   
   // Show notification

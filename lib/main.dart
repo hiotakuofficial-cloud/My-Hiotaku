@@ -21,6 +21,18 @@ import 'screens/auth/handler/firebase_handler.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   print('Background message received: ${message.messageId}');
+  
+  // Initialize local notifications for background handling
+  await LocalNotificationHandler.initialize();
+  
+  // Show notification when app is in background
+  await LocalNotificationHandler.showNotification(
+    id: message.hashCode,
+    title: message.notification?.title ?? 'New Message',
+    body: message.notification?.body ?? 'You have a new message',
+    notificationType: NotificationType.general,
+    payload: message.data.toString(),
+  );
 }
 
 // Handle notification that opened the app
