@@ -12,41 +12,48 @@ class RequestsHandler {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        print('No Firebase user logged in');
+        print('❌ No Firebase user logged in');
         return [];
       }
       
-      print('Firebase user: ${currentUser.uid}');
+      print('✅ Firebase user: ${currentUser.uid}');
       
       // Get user data from Supabase
       final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
       if (userData == null) {
-        print('No Supabase user found for Firebase UID: ${currentUser.uid}');
+        print('❌ No Supabase user found for Firebase UID: ${currentUser.uid}');
         return [];
       }
       
-      print('Supabase user found: ${userData['id']}');
+      print('✅ Supabase user found: ${userData['id']} (${userData['email']})');
       
-      // Get requests from merge_requests table
-      final response = await SupabaseHandler.getData(
-        table: 'merge_requests',
-        filters: {'sender_id': userData['id']},
-      );
+      // First, get ALL requests to see what's in the table
+      final allRequests = await SupabaseHandler.getData(table: 'merge_requests');
+      print('📊 Total requests in table: ${allRequests?.length ?? 0}');
       
-      print('Found ${response?.length ?? 0} requests');
-      if (response != null && response.isNotEmpty) {
-        print('First request: ${response[0]}');
+      if (allRequests != null && allRequests.isNotEmpty) {
+        print('📋 Sample request structure: ${allRequests[0]}');
+        
+        // Check if any requests have our user ID
+        final myRequests = allRequests.where((req) => req['sender_id'] == userData['id']).toList();
+        print('🎯 My requests found: ${myRequests.length}');
+        
+        if (myRequests.isNotEmpty) {
+          print('📝 My first request: ${myRequests[0]}');
+        }
+        
+        return myRequests;
       }
       
-      // Sort by created_at descending
-      final sortedResponse = response ?? [];
-      sortedResponse.sort((a, b) {
-        final aTime = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
-        final bTime = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
-        return bTime.compareTo(aTime);
-      });
+      print('❌ No requests found in table');
+      return [];
       
-      return sortedResponse;
+    } catch (e, stackTrace) {
+      print('❌ Error in getSentRequests: $e');
+      print('📍 Stack trace: $stackTrace');
+      return [];
+    }
+  }
     } catch (e) {
       print('Error fetching sent requests: $e');
       return [];
