@@ -542,16 +542,21 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
           },
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            child: Container(
-              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 20),
-                  _buildTabSelector(),
-                  const SizedBox(height: 20),
-                  _buildContent(currentRequests),
-                ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - 40,
+              ),
+              child: Container(
+                padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 20),
+                    _buildTabSelector(),
+                    const SizedBox(height: 20),
+                    _buildContent(currentRequests),
+                  ],
+                ),
               ),
             ),
           ),
@@ -670,7 +675,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
 
   Widget _buildContent(List<Map<String, dynamic>> currentRequests) {
     if (_isLoading) {
-      return Container(
+      return SizedBox(
         height: MediaQuery.of(context).size.height * 0.5,
         child: const Center(
           child: CircularProgressIndicator(
@@ -682,23 +687,29 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     }
     
     if (_error != null) {
-      return Container(
+      return SizedBox(
         height: MediaQuery.of(context).size.height * 0.5,
         child: _buildErrorState(),
       );
     }
     
     if (currentRequests.isEmpty) {
-      return Container(
+      return SizedBox(
         height: MediaQuery.of(context).size.height * 0.5,
         child: _buildEmptyState(),
       );
     }
     
+    // Use flexible layout for cards
     return Column(
-      children: currentRequests.asMap().entries.map((entry) {
-        return _buildRequestItem(entry.value, entry.key);
-      }).toList(),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ...currentRequests.asMap().entries.map((entry) {
+          return _buildRequestItem(entry.value, entry.key);
+        }).toList(),
+        // Add bottom padding for better scroll experience
+        const SizedBox(height: 100),
+      ],
     );
   }
 }
