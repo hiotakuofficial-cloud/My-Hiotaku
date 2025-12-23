@@ -557,7 +557,17 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
 
   Widget _buildHeader() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        const SizedBox(width: 36), // Balance space
+        const Text(
+          'Requests',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
@@ -576,18 +586,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             ),
           ),
         ),
-        const Expanded(
-          child: Text(
-            'Requests',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: 36), // Balance the back button
       ],
     );
   }
