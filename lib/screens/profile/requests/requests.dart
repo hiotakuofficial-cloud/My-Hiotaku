@@ -10,12 +10,14 @@ class RequestsPage extends StatefulWidget {
 }
 
 class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMixin {
-  List<Map<String, dynamic>> _requests = [];
+  List<Map<String, dynamic>> _sentRequests = [];
+  List<Map<String, dynamic>> _receivedRequests = [];
   bool _isLoading = true;
   String? _error;
   String _debugInfo = '';
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  int _selectedTab = 0; // 0 = Sent, 1 = Received
 
   @override
   void initState() {
@@ -45,18 +47,21 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
         _debugInfo = 'Loading...';
       });
 
-      print('Calling RequestsHandler.getSentRequests()');
-      final requests = await RequestsHandler.getSentRequests();
-      print('Got requests: ${requests.length}');
+      print('Loading both sent and received requests');
+      final sentRequests = await RequestsHandler.getSentRequests();
+      final receivedRequests = await RequestsHandler.getReceivedRequests();
+      
+      print('Got sent: ${sentRequests.length}, received: ${receivedRequests.length}');
       
       if (mounted) {
         setState(() {
-          _requests = requests;
+          _sentRequests = sentRequests;
+          _receivedRequests = receivedRequests;
           _isLoading = false;
-          _debugInfo = 'Loaded ${requests.length} requests';
+          _debugInfo = 'Sent: ${sentRequests.length}, Received: ${receivedRequests.length}';
         });
         _animationController.forward();
-        print('UI updated with ${requests.length} requests');
+        print('UI updated with requests');
       }
     } catch (e) {
       print('Error in _loadRequests: $e');
@@ -67,7 +72,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
           _debugInfo = 'Error: $e';
         });
       }
-      print('RequestsPage._loadRequests error: $e');
     }
   }
 
@@ -159,7 +163,11 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   void _removeRequest(Map<String, dynamic> request) {
     HapticFeedback.lightImpact();
     setState(() {
-      _requests.removeWhere((r) => r['id'] == request['id']);
+      if (_selectedTab == 0) {
+        _sentRequests.removeWhere((r) => r['id'] == request['id']);
+      } else {
+        _receivedRequests.removeWhere((r) => r['id'] == request['id']);
+      }
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -174,15 +182,19 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
 
   Widget _buildRequestItem(Map<String, dynamic> request, int index) {
     final status = RequestsHandler.getRequestStatus(request);
-    final receiverUsername = request['receiver_username']?.toString() ?? 
-                           request['receiver_email']?.toString() ?? 
-                           request['receiver_id']?.toString() ?? 
-                           'Unknown User';
+    final isReceived = _selectedTab == 1;
+    
+    final displayName = isReceived 
+        ? (request['sender_username']?.toString() ?? 
+           request['sender_email']?.toString() ?? 
+           'Unknown User')
+        : (request['receiver_username']?.toString() ?? 
+           request['receiver_email']?.toString() ?? 
+           'Unknown User');
+    
     final message = request['message']?.toString() ?? 'Sync request';
     final createdAt = request['created_at'] as String?;
     final timeAgo = _getTimeAgo(createdAt);
-    
-    print('Request item: $request'); // Debug info
     
     return SlideTransition(
       position: Tween<Offset>(
@@ -235,7 +247,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               ),
               const SizedBox(height: 4),
               Text(
-                'To: $receiverUsername',
+                '${isReceived ? 'From' : 'To'}: $displayName',
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 12,
@@ -393,6 +405,8 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final currentRequests = _selectedTab == 0 ? _sentRequests : _receivedRequests;
+    
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -427,6 +441,60 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             onPressed: _createTestRequest,
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedTab = 0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _selectedTab == 0 ? Colors.orange[600] : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Sent (${_sentRequests.length})',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: _selectedTab == 0 ? Colors.white : Colors.grey[400],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedTab = 1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _selectedTab == 1 ? Colors.orange[600] : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Received (${_receivedRequests.length})',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: _selectedTab == 1 ? Colors.white : Colors.grey[400],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
@@ -441,15 +509,15 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             )
           : _error != null
             ? _buildErrorState()
-            : _requests.isEmpty
+            : currentRequests.isEmpty
               ? _buildEmptyState()
               : FadeTransition(
                   opacity: _fadeAnimation,
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _requests.length,
-                    itemBuilder: (context, index) => _buildRequestItem(_requests[index], index),
+                    itemCount: currentRequests.length,
+                    itemBuilder: (context, index) => _buildRequestItem(currentRequests[index], index),
                   ),
                 ),
       ),

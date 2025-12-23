@@ -88,7 +88,72 @@ class RequestsHandler {
     }
   }
 
-  // Check if request is expired (24 hours)
+  // Get all received requests for current user
+  static Future<List<Map<String, dynamic>>> getReceivedRequests() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        print('❌ No Firebase user logged in');
+        return [];
+      }
+      
+      // Get user data from Supabase
+      final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
+      if (userData == null) {
+        // Try to find user by email as fallback
+        final userByEmail = await SupabaseHandler.getData(
+          table: 'users',
+          filters: {'email': currentUser.email ?? ''},
+        );
+        
+        if (userByEmail != null && userByEmail.isNotEmpty) {
+          final userId = userByEmail[0]['id'].toString();
+          
+          // Get received requests for this user
+          final receivedRequests = await SupabaseHandler.getData(
+            table: 'merge_requests',
+            filters: {'receiver_id': userId},
+          );
+          
+          return receivedRequests ?? [];
+        }
+        return [];
+      }
+      
+      final userId = userData['id'].toString();
+      
+      // Get received requests
+      final receivedRequests = await SupabaseHandler.getData(
+        table: 'merge_requests',
+        filters: {'receiver_id': userId},
+      );
+      
+      if (receivedRequests != null && receivedRequests.isNotEmpty) {
+        // Add sender details for better display
+        for (var request in receivedRequests) {
+          final senderId = request['sender_id'];
+          if (senderId != null) {
+            final senderData = await SupabaseHandler.getData(
+              table: 'users',
+              filters: {'id': senderId},
+            );
+            if (senderData != null && senderData.isNotEmpty) {
+              request['sender_username'] = senderData[0]['username'];
+              request['sender_email'] = senderData[0]['email'];
+            }
+          }
+        }
+        
+        return receivedRequests;
+      }
+      
+      return [];
+      
+    } catch (e) {
+      print('❌ Error in getReceivedRequests: $e');
+      return [];
+    }
+  }
   static bool isRequestExpired(String createdAt) {
     try {
       final created = DateTime.parse(createdAt);
