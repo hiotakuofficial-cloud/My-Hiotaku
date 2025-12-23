@@ -127,17 +127,152 @@ class RequestsHandler {
     }
   }
 
-  // Accept request
-  static Future<bool> acceptRequest(String requestId) async {
+  // Check connection limit for user
+  static Future<bool> checkConnectionLimit(String userId) async {
     try {
+      final connections = await SupabaseHandler.getData(
+        table: 'merged_accounts',
+        filters: {},
+      );
+      
+      if (connections == null) return false;
+      
+      int connectionCount = 0;
+      for (var connection in connections) {
+        if (connection['user1_id'].toString() == userId || 
+            connection['user2_id'].toString() == userId) {
+          connectionCount++;
+        }
+      }
+      
+      return connectionCount >= 2;
+    } catch (e) {
+      print('Error checking connection limit: $e');
+      return false;
+    }
+  }
+
+  // Accept request with connection limit check
+  static Future<Map<String, dynamic>> acceptRequest(String requestId) async {
+    try {
+      // Get request details first
+      final requestData = await SupabaseHandler.getData(
+        table: 'merge_requests',
+        filters: {'id': requestId},
+      );
+      
+      if (requestData == null || requestData.isEmpty) {
+        return {'success': false, 'error': 'Request not found'};
+      }
+      
+      final receiverId = requestData[0]['receiver_id'].toString();
+      
+      // Check connection limit for receiver
+      final hasReachedLimit = await checkConnectionLimit(receiverId);
+      if (hasReachedLimit) {
+        return {
+          'success': false, 
+          'error': 'limit_exceeded',
+          'message': 'You have reached your limit of connected experiences. To continue, please remove one connection.'
+        };
+      }
+      
+      // Accept the request
       final success = await SupabaseHandler.updateData(
         table: 'merge_requests',
         filters: {'id': requestId},
         data: {'status': 'accepted', 'responded_at': SupabaseHandler.getCurrentTimestamp()},
       );
-      return success;
+      
+      if (success) {
+        // Add to merged_accounts table
+        final senderId = requestData[0]['sender_id'].toString();
+        await SupabaseHandler.insertData(
+          table: 'merged_accounts',
+          data: {
+            'user1_id': senderId,
+            'user2_id': receiverId,
+            'merged_at': SupabaseHandler.getCurrentTimestamp(),
+          },
+        );
+      }
+      
+      return {'success': success};
     } catch (e) {
+      return {'success': false, 'error': 'Unknown error occurred'};
+    }
+  }
+
+  // Disconnect users (for accepted requests)
+  static Future<bool> disconnectUsers(String requestId) async {
+    try {
+      // Get request details
+      final requestData = await SupabaseHandler.getData(
+        table: 'merge_requests',
+        filters: {'id': requestId},
+      );
+      
+      if (requestData == null || requestData.isEmpty) return false;
+      
+      final senderId = requestData[0]['sender_id'].toString();
+      final receiverId = requestData[0]['receiver_id'].toString();
+      
+      // Delete from merged_accounts
+      await SupabaseHandler.deleteData(
+        table: 'merged_accounts',
+        filters: {
+          'user1_id': senderId,
+          'user2_id': receiverId,
+        },
+      );
+      
+      // Also try reverse order
+      await SupabaseHandler.deleteData(
+        table: 'merged_accounts',
+        filters: {
+          'user1_id': receiverId,
+          'user2_id': senderId,
+        },
+      );
+      
+      // Delete from merge_requests
+      await SupabaseHandler.deleteData(
+        table: 'merge_requests',
+        filters: {'id': requestId},
+      );
+      
+      // Clean shared_favorites between these users only
+      await cleanupSharedFavorites(senderId, receiverId);
+      
+      return true;
+    } catch (e) {
+      print('Error disconnecting users: $e');
       return false;
+    }
+  }
+
+  // Clean shared favorites between specific users
+  static Future<void> cleanupSharedFavorites(String user1Id, String user2Id) async {
+    try {
+      // Remove shared favorites between these two users only
+      await SupabaseHandler.deleteData(
+        table: 'shared_favorites',
+        filters: {
+          'user1_id': user1Id,
+          'user2_id': user2Id,
+        },
+      );
+      
+      // Also try reverse order
+      await SupabaseHandler.deleteData(
+        table: 'shared_favorites',
+        filters: {
+          'user1_id': user2Id,
+          'user2_id': user1Id,
+        },
+      );
+    } catch (e) {
+      print('Error cleaning shared favorites: $e');
     }
   }
 

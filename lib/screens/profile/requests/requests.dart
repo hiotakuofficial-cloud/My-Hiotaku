@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:lottie/lottie.dart';
 import 'handler/requests_handler.dart';
 
 class RequestsPage extends StatefulWidget {
@@ -87,6 +88,9 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   }
 
   void _showRequestOptions(Map<String, dynamic> request) {
+    final status = RequestsHandler.getRequestStatus(request);
+    final isAccepted = status == 'accepted';
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1E1E),
@@ -108,17 +112,84 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('Remove Request', style: TextStyle(color: Colors.red)),
+              leading: Icon(
+                isAccepted ? Icons.link_off : Icons.delete_outline, 
+                color: Colors.red
+              ),
+              title: Text(
+                isAccepted ? 'Disconnect' : 'Remove Request', 
+                style: const TextStyle(color: Colors.red)
+              ),
               onTap: () {
                 Navigator.pop(context);
-                _confirmRemoveRequest(request);
+                if (isAccepted) {
+                  _confirmDisconnect(request);
+                } else {
+                  _confirmRemoveRequest(request);
+                }
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _confirmDisconnect(Map<String, dynamic> request) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Disconnect', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to disconnect? This will remove the connection and shared favorites between you.',
+          style: TextStyle(color: Colors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _disconnectRequest(request);
+            },
+            child: const Text('Disconnect', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _disconnectRequest(Map<String, dynamic> request) async {
+    HapticFeedback.mediumImpact();
+    final requestId = request['id'].toString();
+    final success = await RequestsHandler.disconnectUsers(requestId);
+    
+    if (success) {
+      setState(() {
+        _sentRequests.removeWhere((r) => r['id'] == request['id']);
+        _receivedRequests.removeWhere((r) => r['id'] == request['id']);
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Connection removed successfully'),
+          backgroundColor: Colors.orange[600],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Unable to remove connection'),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _confirmRemoveRequest(Map<String, dynamic> request) {
@@ -175,7 +246,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to remove request'),
+          content: const Text('Unable to remove request'),
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -220,9 +291,9 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   void _acceptRequest(Map<String, dynamic> request) async {
     HapticFeedback.lightImpact();
     final requestId = request['id'].toString();
-    final success = await RequestsHandler.acceptRequest(requestId);
+    final result = await RequestsHandler.acceptRequest(requestId);
     
-    if (success) {
+    if (result['success']) {
       setState(() {
         final index = _receivedRequests.indexWhere((r) => r['id'] == request['id']);
         if (index != -1) {
@@ -234,6 +305,40 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
         SnackBar(
           content: const Text('Request accepted!'),
           backgroundColor: Colors.green[600],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      // Handle different error types
+      String errorMessage = 'Unable to accept request';
+      
+      if (result['error'] == 'limit_exceeded') {
+        // Show limit exceeded dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Connection Limit Reached', style: TextStyle(color: Colors.white)),
+            content: Text(
+              result['message'] ?? 'You have reached your limit of connected experiences. To continue, please remove one connection.',
+              style: TextStyle(color: Colors.grey[300]),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: Colors.orange)),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -255,7 +360,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Request rejected'),
+          content: const Text('Request declined'),
           backgroundColor: Colors.orange[600],
           behavior: SnackBarBehavior.floating,
         ),
@@ -677,10 +782,12 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     if (_isLoading) {
       return SizedBox(
         height: MediaQuery.of(context).size.height * 0.5,
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: Colors.orange,
-            strokeWidth: 2.5,
+        child: Center(
+          child: Lottie.asset(
+            'assets/animations/loading.json',
+            width: 100,
+            height: 100,
+            fit: BoxFit.contain,
           ),
         ),
       );
