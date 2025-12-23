@@ -490,6 +490,19 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                         color: Colors.grey[500],
                         size: 16,
                       ),
+                    ] else ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _showRequestOptions(request);
+                        },
+                        child: Icon(
+                          Icons.more_vert,
+                          color: Colors.grey[500],
+                          size: 18,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -680,17 +693,10 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             HapticFeedback.mediumImpact();
             Navigator.pop(context);
           },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[800]?.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios,
-              color: Colors.white,
-              size: 18,
-            ),
+          child: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+            size: 18,
           ),
         ),
         const Text(
