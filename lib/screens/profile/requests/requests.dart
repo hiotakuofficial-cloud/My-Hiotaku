@@ -440,7 +440,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               borderRadius: BorderRadius.circular(40),
             ),
             child: Icon(
-              isReceived ? CupertinoIcons.tray : CupertinoIcons.paperplane,
+              isReceived ? Icons.inbox_outlined : Icons.send_outlined,
               size: 40,
               color: Colors.grey[600],
             ),
@@ -483,7 +483,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               borderRadius: BorderRadius.circular(40),
             ),
             child: Icon(
-              CupertinoIcons.exclamationmark_triangle,
+              Icons.error_outline,
               size: 40,
               color: Colors.red[400],
             ),
@@ -530,23 +530,34 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: Colors.orange[600],
-        backgroundColor: const Color(0xFF1E1E1E),
-        strokeWidth: 2.5,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          child: Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
-            child: Column(
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                _buildTabSelector(),
-                const SizedBox(height: 20),
-                _buildContent(currentRequests),
-              ],
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity! > 0) {
+            // Swipe right - go to previous tab (Sent)
+            if (_selectedTab == 1) _switchTab(0);
+          } else if (details.primaryVelocity! < 0) {
+            // Swipe left - go to next tab (Received)  
+            if (_selectedTab == 0) _switchTab(1);
+          }
+        },
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          color: Colors.orange[600],
+          backgroundColor: const Color(0xFF1E1E1E),
+          strokeWidth: 2.5,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 20),
+                  _buildTabSelector(),
+                  const SizedBox(height: 20),
+                  _buildContent(currentRequests),
+                ],
+              ),
             ),
           ),
         ),
@@ -558,15 +569,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const SizedBox(width: 36),
-        const Text(
-          'Requests',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
         GestureDetector(
           onTapDown: (_) => HapticFeedback.lightImpact(),
           onTap: () {
@@ -586,66 +588,92 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             ),
           ),
         ),
+        const Text(
+          'Requests',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 36),
       ],
     );
   }
 
   Widget _buildTabSelector() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTapDown: (_) => HapticFeedback.lightImpact(),
-              onTap: () => _switchTab(0),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: _selectedTab == 0 ? Colors.orange[600] : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Sent (${_sentRequests.length})',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _selectedTab == 0 ? Colors.white : Colors.grey[400],
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTapDown: (_) => HapticFeedback.lightImpact(),
+                  onTap: () => _switchTab(0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Sent (${_sentRequests.length})',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _selectedTab == 0 ? Colors.white : Colors.grey[400],
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTapDown: (_) => HapticFeedback.lightImpact(),
-              onTap: () => _switchTab(1),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: _selectedTab == 1 ? Colors.orange[600] : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Received (${_receivedRequests.length})',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _selectedTab == 1 ? Colors.white : Colors.grey[400],
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+              Expanded(
+                child: GestureDetector(
+                  onTapDown: (_) => HapticFeedback.lightImpact(),
+                  onTap: () => _switchTab(1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Received (${_receivedRequests.length})',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _selectedTab == 1 ? Colors.white : Colors.grey[400],
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          left: _selectedTab == 0 ? 0 : MediaQuery.of(context).size.width * 0.5 - 20,
+          right: _selectedTab == 0 ? MediaQuery.of(context).size.width * 0.5 - 20 : 0,
+          top: 0,
+          bottom: 0,
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: Colors.orange[600],
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
