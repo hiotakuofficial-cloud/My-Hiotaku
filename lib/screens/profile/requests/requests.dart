@@ -205,7 +205,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: RequestsHandler.getStatusColor(status).withValues(alpha: 0.2),
+              color: RequestsHandler.getStatusColor(status).withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -247,7 +247,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: RequestsHandler.getStatusColor(status).withValues(alpha: 0.2),
+                      color: RequestsHandler.getStatusColor(status).withOpacity(0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
