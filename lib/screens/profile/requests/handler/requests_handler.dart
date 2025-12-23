@@ -10,57 +10,33 @@ class RequestsHandler {
   static Future<List<Map<String, dynamic>>> getSentRequests() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        print('❌ No Firebase user logged in');
-        return [];
-      }
+      if (currentUser == null) return [];
       
-      print('✅ Firebase user: ${currentUser.uid}');
-      print('✅ Firebase email: ${currentUser.email}');
-      
-      // Get user data from Supabase
       final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
       if (userData == null) {
-        print('❌ No Supabase user found for Firebase UID: ${currentUser.uid}');
-        
-        // Try to find user by email as fallback
         final userByEmail = await SupabaseHandler.getData(
           table: 'users',
           filters: {'email': currentUser.email ?? ''},
         );
         
         if (userByEmail != null && userByEmail.isNotEmpty) {
-          print('✅ Found user by email: ${userByEmail[0]}');
           final userId = userByEmail[0]['id'].toString();
-          
-          // Get requests for this user
           final myRequests = await SupabaseHandler.getData(
             table: 'merge_requests',
             filters: {'sender_id': userId},
           );
-          
-          print('🎯 My requests found by email: ${myRequests?.length ?? 0}');
           return myRequests ?? [];
         }
-        
         return [];
       }
       
       final userId = userData['id'].toString();
-      print('✅ Supabase user found: $userId (${userData['email']})');
-      
-      // Get requests directly with filter
       final myRequests = await SupabaseHandler.getData(
         table: 'merge_requests',
         filters: {'sender_id': userId},
       );
       
-      print('🎯 My requests found: ${myRequests?.length ?? 0}');
-      
       if (myRequests != null && myRequests.isNotEmpty) {
-        print('📝 My first request: ${myRequests[0]}');
-        
-        // Also get receiver details for better display
         for (var request in myRequests) {
           final receiverId = request['receiver_id'];
           if (receiverId != null) {
@@ -74,16 +50,12 @@ class RequestsHandler {
             }
           }
         }
-        
         return myRequests;
       }
       
-      print('❌ No requests found for user: $userId');
       return [];
       
-    } catch (e, stackTrace) {
-      print('❌ Error in getSentRequests: $e');
-      print('📍 Stack trace: $stackTrace');
+    } catch (e) {
       return [];
     }
   }
@@ -92,15 +64,10 @@ class RequestsHandler {
   static Future<List<Map<String, dynamic>>> getReceivedRequests() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        print('❌ No Firebase user logged in');
-        return [];
-      }
+      if (currentUser == null) return [];
       
-      // Get user data from Supabase
       final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
       if (userData == null) {
-        // Try to find user by email as fallback
         final userByEmail = await SupabaseHandler.getData(
           table: 'users',
           filters: {'email': currentUser.email ?? ''},
@@ -108,28 +75,22 @@ class RequestsHandler {
         
         if (userByEmail != null && userByEmail.isNotEmpty) {
           final userId = userByEmail[0]['id'].toString();
-          
-          // Get received requests for this user
           final receivedRequests = await SupabaseHandler.getData(
             table: 'merge_requests',
             filters: {'receiver_id': userId},
           );
-          
           return receivedRequests ?? [];
         }
         return [];
       }
       
       final userId = userData['id'].toString();
-      
-      // Get received requests
       final receivedRequests = await SupabaseHandler.getData(
         table: 'merge_requests',
         filters: {'receiver_id': userId},
       );
       
       if (receivedRequests != null && receivedRequests.isNotEmpty) {
-        // Add sender details for better display
         for (var request in receivedRequests) {
           final senderId = request['sender_id'];
           if (senderId != null) {
@@ -143,15 +104,54 @@ class RequestsHandler {
             }
           }
         }
-        
         return receivedRequests;
       }
       
       return [];
       
     } catch (e) {
-      print('❌ Error in getReceivedRequests: $e');
       return [];
+    }
+  }
+
+  // Delete request from database
+  static Future<bool> deleteRequest(String requestId) async {
+    try {
+      final success = await SupabaseHandler.deleteData(
+        table: 'merge_requests',
+        filters: {'id': requestId},
+      );
+      return success;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Accept request
+  static Future<bool> acceptRequest(String requestId) async {
+    try {
+      final success = await SupabaseHandler.updateData(
+        table: 'merge_requests',
+        filters: {'id': requestId},
+        data: {'status': 'accepted', 'responded_at': SupabaseHandler.getCurrentTimestamp()},
+      );
+      return success;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Reject request
+  static Future<bool> rejectRequest(String requestId) async {
+    try {
+      final success = await SupabaseHandler.updateData(
+        table: 'merge_requests',
+        filters: {'id': requestId},
+        data: {'status': 'rejected', 'responded_at': SupabaseHandler.getCurrentTimestamp()},
+      );
+      return success;
+    } catch (e) {
+      return false;
     }
   }
   static bool isRequestExpired(String createdAt) {
