@@ -283,32 +283,12 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     final createdAt = request['created_at'] as String?;
     final timeAgo = _getTimeAgo(createdAt);
     
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: Offset(0, 0.3),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _animationController,
-        curve: Interval(
-          index * 0.1, 
-          1.0, 
-          curve: Curves.elasticOut,
-        ),
-      )),
-      child: FadeTransition(
-        opacity: Tween<double>(
-          begin: 0.0,
-          end: 1.0,
-        ).animate(CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(
-            index * 0.05, 
-            1.0, 
-            curve: Curves.easeOut,
-          ),
-        )),
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
         child: Container(
-          margin: EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 12),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -322,54 +302,31 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                 _showRequestOptions(request);
               },
               borderRadius: BorderRadius.circular(12),
-              splashColor: Colors.orange.withOpacity(0.1),
-              highlightColor: Colors.orange.withOpacity(0.05),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+              child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isPending && isReceived 
-                        ? Colors.orange.withOpacity(0.4) 
+                        ? Colors.orange.withOpacity(0.3) 
                         : Colors.grey[800]!, 
-                    width: isPending && isReceived ? 1.5 : 1,
+                    width: 1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isPending && isReceived 
-                          ? Colors.orange.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.1),
-                      blurRadius: isPending && isReceived ? 8 : 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Row(
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
+                    Container(
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
                         color: RequestsHandler.getStatusColor(status).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        duration: Duration(milliseconds: 500 + (index * 100)),
-                        curve: Curves.elasticOut,
-                        builder: (context, value, child) {
-                          return Transform.scale(
-                            scale: value,
-                            child: Icon(
-                              RequestsHandler.getStatusIcon(status),
-                              color: RequestsHandler.getStatusColor(status),
-                              size: 20,
-                            ),
-                          );
-                        },
+                      child: Icon(
+                        RequestsHandler.getStatusIcon(status),
+                        color: RequestsHandler.getStatusColor(status),
+                        size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -380,82 +337,60 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                           Row(
                             children: [
                               Expanded(
-                                child: AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 200),
+                                child: Text(
+                                  '${isReceived ? 'From' : 'To'}: $displayName',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                  child: Text(
-                                    '${isReceived ? 'From' : 'To'}: $displayName',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
+                              Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: RequestsHandler.getStatusColor(status).withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 200),
+                                child: Text(
+                                  RequestsHandler.getStatusText(status),
                                   style: TextStyle(
                                     color: RequestsHandler.getStatusColor(status),
                                     fontSize: 10,
                                     fontWeight: FontWeight.w500,
                                   ),
-                                  child: Text(RequestsHandler.getStatusText(status)),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
-                          AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 200),
+                          Text(
+                            message,
                             style: TextStyle(
                               color: Colors.grey[400],
                               fontSize: 12,
                             ),
-                            child: Text(
-                              message,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
-                          AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 200),
+                          Text(
+                            timeAgo,
                             style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 11,
                             ),
-                            child: Text(timeAgo),
                           ),
                         ],
                       ),
                     ),
                     if (isReceived && isPending) ...[
                       const SizedBox(width: 8),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        duration: Duration(milliseconds: 800 + (index * 100)),
-                        curve: Curves.elasticOut,
-                        builder: (context, value, child) {
-                          return Transform.translate(
-                            offset: Offset((1 - value) * 10, 0),
-                            child: Opacity(
-                              opacity: value,
-                              child: Icon(
-                                CupertinoIcons.chevron_right,
-                                color: Colors.grey[500],
-                                size: 16,
-                              ),
-                            ),
-                          );
-                        },
+                      Icon(
+                        CupertinoIcons.chevron_right,
+                        color: Colors.grey[500],
+                        size: 16,
                       ),
                     ],
                   ],
@@ -620,161 +555,97 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   }
 
   Widget _buildHeader() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, (1 - value) * -20),
-          child: Opacity(
-            opacity: value,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SizedBox(width: 36),
-                Transform.scale(
-                  scale: value,
-                  child: const Text(
-                    'Requests',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.bounceOut,
-                  builder: (context, buttonValue, child) {
-                    return Transform.scale(
-                      scale: buttonValue,
-                      child: GestureDetector(
-                        onTapDown: (_) => HapticFeedback.lightImpact(),
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          Navigator.pop(context);
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[800]?.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            CupertinoIcons.back,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const SizedBox(width: 36),
+        const Text(
+          'Requests',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        GestureDetector(
+          onTapDown: (_) => HapticFeedback.lightImpact(),
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            Navigator.pop(context);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey[800]?.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              CupertinoIcons.back,
+              color: Colors.white,
+              size: 20,
             ),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
   Widget _buildTabSelector() {
-    return AnimatedBuilder(
-      animation: _tabController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 1.0 - (_tabController.value * 0.02),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTapDown: (_) => HapticFeedback.lightImpact(),
+              onTap: () => _switchTab(0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 0 ? Colors.orange[600] : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTapDown: (_) => HapticFeedback.lightImpact(),
-                    onTap: () => _switchTab(0),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.elasticOut,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: _selectedTab == 0 ? Colors.orange[600] : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: _selectedTab == 0 ? [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ] : null,
-                      ),
-                      child: AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 200),
-                        style: TextStyle(
-                          color: _selectedTab == 0 ? Colors.white : Colors.grey[400],
-                          fontWeight: FontWeight.w600,
-                          fontSize: _selectedTab == 0 ? 15 : 14,
-                        ),
-                        child: Text(
-                          'Sent (${_sentRequests.length})',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
+                child: Text(
+                  'Sent (${_sentRequests.length})',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _selectedTab == 0 ? Colors.white : Colors.grey[400],
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                   ),
                 ),
-                Expanded(
-                  child: GestureDetector(
-                    onTapDown: (_) => HapticFeedback.lightImpact(),
-                    onTap: () => _switchTab(1),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.elasticOut,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: _selectedTab == 1 ? Colors.orange[600] : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: _selectedTab == 1 ? [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ] : null,
-                      ),
-                      child: AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 200),
-                        style: TextStyle(
-                          color: _selectedTab == 1 ? Colors.white : Colors.grey[400],
-                          fontWeight: FontWeight.w600,
-                          fontSize: _selectedTab == 1 ? 15 : 14,
-                        ),
-                        child: Text(
-                          'Received (${_receivedRequests.length})',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        );
-      },
+          Expanded(
+            child: GestureDetector(
+              onTapDown: (_) => HapticFeedback.lightImpact(),
+              onTap: () => _switchTab(1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 1 ? Colors.orange[600] : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Received (${_receivedRequests.length})',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _selectedTab == 1 ? Colors.white : Colors.grey[400],
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
