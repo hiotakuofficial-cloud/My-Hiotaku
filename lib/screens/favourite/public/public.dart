@@ -242,18 +242,26 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
           onRefresh: _loadInitialData,
           color: Color(0xFFFF8C00),
           backgroundColor: Color(0xFF1E1E1E),
-          child: Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
-            child: Column(
-              children: [
-                _buildHeader(),
-                SizedBox(height: 20),
-                if (!isSearchMode) ...[
-                  _buildTopUsers(),
-                  SizedBox(height: 20),
-                ],
-                Expanded(child: _buildContent()),
-              ],
+          child: SingleChildScrollView(
+            physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+              ),
+              child: Container(
+                padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    SizedBox(height: 20),
+                    if (!isSearchMode) ...[
+                      _buildTopUsers(),
+                      SizedBox(height: 20),
+                    ],
+                    _buildContent(),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -571,11 +579,8 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
       );
     }
     
-    return ListView.builder(
-      controller: scrollController,
-      physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      itemCount: searchResults.length,
-      itemBuilder: (context, index) => _buildFavoriteItem(searchResults[index]),
+    return Column(
+      children: searchResults.map((result) => _buildFavoriteItem(result)).toList(),
     );
   }
   
@@ -600,13 +605,11 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: ListView.builder(
-          controller: scrollController,
-          physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-          itemCount: publicFavorites.length + (isLoadingMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == publicFavorites.length) {
-              return Center(
+        child: Column(
+          children: [
+            ...publicFavorites.map((favorite) => _buildFavoriteItem(favorite)).toList(),
+            if (isLoadingMore)
+              Center(
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: Lottie.asset(
@@ -616,10 +619,8 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
                     fit: BoxFit.contain,
                   ),
                 ),
-              );
-            }
-            return _buildFavoriteItem(publicFavorites[index]);
-          },
+              ),
+          ],
         ),
       ),
     );
