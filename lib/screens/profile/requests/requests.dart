@@ -16,7 +16,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   bool _isLoading = true;
   String? _error;
   late AnimationController _animationController;
-  late AnimationController _tabController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   int _selectedTab = 0;
@@ -28,24 +27,19 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _tabController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.elasticOut));
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
     _loadRequests();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -87,7 +81,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     if (_selectedTab != tab) {
       HapticFeedback.selectionClick();
       setState(() => _selectedTab = tab);
-      _tabController.forward().then((_) => _tabController.reverse());
       _animationController.reset();
       _animationController.forward();
     }
@@ -530,21 +523,23 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      body: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity! > 0) {
-            // Swipe right - go to previous tab (Sent)
-            if (_selectedTab == 1) _switchTab(0);
-          } else if (details.primaryVelocity! < 0) {
-            // Swipe left - go to next tab (Received)  
-            if (_selectedTab == 0) _switchTab(1);
-          }
-        },
-        child: RefreshIndicator(
-          onRefresh: _handleRefresh,
-          color: Colors.orange[600],
-          backgroundColor: const Color(0xFF1E1E1E),
-          strokeWidth: 2.5,
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: Colors.orange[600],
+        backgroundColor: const Color(0xFF1E1E1E),
+        strokeWidth: 2.5,
+        child: GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (details.primaryVelocity != null) {
+              if (details.primaryVelocity! > 0) {
+                // Swipe right - go to Sent tab
+                if (_selectedTab == 1) _switchTab(0);
+              } else if (details.primaryVelocity! < 0) {
+                // Swipe left - go to Received tab  
+                if (_selectedTab == 0) _switchTab(1);
+              }
+            }
+          },
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             child: Container(
@@ -582,9 +577,9 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
-              CupertinoIcons.back,
+              Icons.arrow_back_ios,
               color: Colors.white,
-              size: 20,
+              size: 18,
             ),
           ),
         ),
@@ -602,14 +597,33 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   }
 
   Widget _buildTabSelector() {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(12),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tabWidth = (screenWidth - 40) / 2; // Account for padding
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Stack(
+        children: [
+          // Background indicator
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            left: _selectedTab == 0 ? 2 : tabWidth + 2,
+            top: 2,
+            bottom: 2,
+            width: tabWidth - 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.orange[600],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
-          child: Row(
+          // Tab buttons
+          Row(
             children: [
               Expanded(
                 child: GestureDetector(
@@ -617,10 +631,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                   onTap: () => _switchTab(0),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                     child: Text(
                       'Sent (${_sentRequests.length})',
                       textAlign: TextAlign.center,
@@ -639,10 +649,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                   onTap: () => _switchTab(1),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                     child: Text(
                       'Received (${_receivedRequests.length})',
                       textAlign: TextAlign.center,
@@ -657,23 +663,8 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               ),
             ],
           ),
-        ),
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          left: _selectedTab == 0 ? 0 : MediaQuery.of(context).size.width * 0.5 - 20,
-          right: _selectedTab == 0 ? MediaQuery.of(context).size.width * 0.5 - 20 : 0,
-          top: 0,
-          bottom: 0,
-          child: Container(
-            margin: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: Colors.orange[600],
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
