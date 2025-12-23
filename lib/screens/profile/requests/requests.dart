@@ -174,7 +174,10 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
 
   Widget _buildRequestItem(Map<String, dynamic> request, int index) {
     final status = RequestsHandler.getRequestStatus(request);
-    final receiverId = request['receiver_id']?.toString() ?? 'Unknown User';
+    final receiverUsername = request['receiver_username']?.toString() ?? 
+                           request['receiver_email']?.toString() ?? 
+                           request['receiver_id']?.toString() ?? 
+                           'Unknown User';
     final message = request['message']?.toString() ?? 'Sync request';
     final createdAt = request['created_at'] as String?;
     final timeAgo = _getTimeAgo(createdAt);
@@ -202,7 +205,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: RequestsHandler.getStatusColor(status).withOpacity(0.2),
+              color: RequestsHandler.getStatusColor(status).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -232,7 +235,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
               ),
               const SizedBox(height: 4),
               Text(
-                'To: $receiverId',
+                'To: $receiverUsername',
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 12,
@@ -244,7 +247,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: RequestsHandler.getStatusColor(status).withOpacity(0.2),
+                      color: RequestsHandler.getStatusColor(status).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(

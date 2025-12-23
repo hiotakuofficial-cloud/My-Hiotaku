@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/handler/supabase.dart';
-import '../../../../services/notification_service.dart';
 
 class RequestsHandler {
   static const String _expiredRequestsKey = 'expired_requests_shown';
@@ -17,35 +16,69 @@ class RequestsHandler {
       }
       
       print('✅ Firebase user: ${currentUser.uid}');
+      print('✅ Firebase email: ${currentUser.email}');
       
       // Get user data from Supabase
       final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
       if (userData == null) {
         print('❌ No Supabase user found for Firebase UID: ${currentUser.uid}');
+        
+        // Try to find user by email as fallback
+        final userByEmail = await SupabaseHandler.getData(
+          table: 'users',
+          filters: {'email': currentUser.email ?? ''},
+        );
+        
+        if (userByEmail != null && userByEmail.isNotEmpty) {
+          print('✅ Found user by email: ${userByEmail[0]}');
+          final userId = userByEmail[0]['id'].toString();
+          
+          // Get requests for this user
+          final myRequests = await SupabaseHandler.getData(
+            table: 'merge_requests',
+            filters: {'sender_id': userId},
+          );
+          
+          print('🎯 My requests found by email: ${myRequests?.length ?? 0}');
+          return myRequests ?? [];
+        }
+        
         return [];
       }
       
-      print('✅ Supabase user found: ${userData['id']} (${userData['email']})');
+      final userId = userData['id'].toString();
+      print('✅ Supabase user found: $userId (${userData['email']})');
       
-      // First, get ALL requests to see what's in the table
-      final allRequests = await SupabaseHandler.getData(table: 'merge_requests');
-      print('📊 Total requests in table: ${allRequests?.length ?? 0}');
+      // Get requests directly with filter
+      final myRequests = await SupabaseHandler.getData(
+        table: 'merge_requests',
+        filters: {'sender_id': userId},
+      );
       
-      if (allRequests != null && allRequests.isNotEmpty) {
-        print('📋 Sample request structure: ${allRequests[0]}');
+      print('🎯 My requests found: ${myRequests?.length ?? 0}');
+      
+      if (myRequests != null && myRequests.isNotEmpty) {
+        print('📝 My first request: ${myRequests[0]}');
         
-        // Check if any requests have our user ID
-        final myRequests = allRequests.where((req) => req['sender_id'] == userData['id']).toList();
-        print('🎯 My requests found: ${myRequests.length}');
-        
-        if (myRequests.isNotEmpty) {
-          print('📝 My first request: ${myRequests[0]}');
+        // Also get receiver details for better display
+        for (var request in myRequests) {
+          final receiverId = request['receiver_id'];
+          if (receiverId != null) {
+            final receiverData = await SupabaseHandler.getData(
+              table: 'users',
+              filters: {'id': receiverId},
+            );
+            if (receiverData != null && receiverData.isNotEmpty) {
+              request['receiver_username'] = receiverData[0]['username'];
+              request['receiver_email'] = receiverData[0]['email'];
+            }
+          }
         }
         
         return myRequests;
       }
       
-      print('❌ No requests found in table');
+      print('❌ No requests found for user: $userId');
       return [];
       
     } catch (e, stackTrace) {
@@ -188,13 +221,15 @@ class RequestsHandler {
     Map<String, dynamic> request
   ) async {
     final requestId = request['id'].toString();
-    final receiverId = request['receiver_id']?.toString() ?? 'Unknown User';
+    final receiverName = request['receiver_username']?.toString() ?? 
+                        request['receiver_email']?.toString() ?? 
+                        'Unknown User';
     
     // Show toast first (only once)
     await showExpiredToast(context, requestId);
     
     // Show dialog for user interaction
-    await showExpiredDialog(context, receiverId);
+    await showExpiredDialog(context, receiverName);
   }
 
   // Clear expired request notifications (for settings)
