@@ -92,8 +92,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   }
 
   void _showRequestOptions(Map<String, dynamic> request) {
-    final status = RequestsHandler.getRequestStatus(request);
-    
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1E1E),
