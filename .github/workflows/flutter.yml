@@ -51,7 +51,13 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release \
+            --dart-define=API_URL=${{ secrets.API_URL }} \
+            --dart-define=API_TOKEN=${{ secrets.API_TOKEN }} \
+            --dart-define=SUPA_URL=${{ secrets.SUPA_URL }} \
+            --dart-define=ANON_KEY=${{ secrets.ANON_KEY }} \
+            --dart-define=ENVIRONMENT=production
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4

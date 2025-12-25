@@ -3,9 +3,9 @@ import 'package:http/http.dart' as http;
 import '../../../services/notification_service.dart';
 
 class SupabaseHandler {
-  // Supabase Configuration
-  static const String _supabaseUrl = 'https://brwzqawoncblbxqoqyua.supabase.co';
-  static const String _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA';
+  // Supabase Configuration - Environment Variables
+  static const String _supabaseUrl = String.fromEnvironment('SUPA_URL');
+  static const String _supabaseAnonKey = String.fromEnvironment('ANON_KEY');
   
   // Base headers for all requests
   static Map<String, String> get _headers => {

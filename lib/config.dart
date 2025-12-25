@@ -1,11 +1,11 @@
 class AppConfig {
-  // API Configuration
-  static const String animeApiBaseUrl = 'https://v1-w3sc.onrender.com';
+  // API Configuration - Environment Variables
+  static const String animeApiBaseUrl = String.fromEnvironment('API_URL');
   static const String animeApiEndpoint = '/api.php';
   static const String hindiApiEndpoint = '/hindiv2.php';
   
-  // App signature hash (base256 encoded)
-  static const String app_hash_base256 = 'afaea552101228848de8f8c7f48a1b7d7a6a042a6094274eaa9d30cb64bf91a7';
+  // App signature hash - Environment Variable
+  static const String app_hash_base256 = String.fromEnvironment('API_TOKEN');
   
   // App Configuration
   static const String appName = 'Hiotaku';
