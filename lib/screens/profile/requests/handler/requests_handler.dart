@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/handler/supabase.dart';
+import '../../../../services/notification_service.dart';
 
 class RequestsHandler {
   static const String _expiredRequestsKey = 'expired_requests_shown';
@@ -117,10 +118,54 @@ class RequestsHandler {
   // Delete request from database
   static Future<bool> deleteRequest(String requestId) async {
     try {
+      // Get request details before deletion
+      final requestData = await SupabaseHandler.getData(
+        table: 'merge_requests',
+        filters: {'id': requestId},
+      );
+      
+      if (requestData == null || requestData.isEmpty) return false;
+      
+      final senderId = requestData[0]['sender_id'].toString();
+      final receiverId = requestData[0]['receiver_id'].toString();
+      
+      // Get usernames for notification
+      final senderData = await SupabaseHandler.getData(
+        table: 'users',
+        filters: {'id': senderId},
+      );
+      final receiverData = await SupabaseHandler.getData(
+        table: 'users',
+        filters: {'id': receiverId},
+      );
+      
+      final senderUsername = senderData?.isNotEmpty == true ? 
+          (senderData![0]['username'] ?? senderData[0]['display_name'] ?? 'Unknown User') : 'Unknown User';
+      final receiverUsername = receiverData?.isNotEmpty == true ? 
+          (receiverData![0]['username'] ?? receiverData[0]['display_name'] ?? 'Unknown User') : 'Unknown User';
+      
+      // Delete the request
       final success = await SupabaseHandler.deleteData(
         table: 'merge_requests',
         filters: {'id': requestId},
       );
+      
+      if (success) {
+        // Send notification to the other user (receiver gets notified when sender removes)
+        try {
+          await NotificationService.sendNotification(
+            userId: receiverId,
+            title: 'Sync Request Removed',
+            body: 'Sync request from $senderUsername has been removed.',
+            type: 'sync_removed',
+            screen: '/favourite',
+          );
+          print('Request removal notification sent to receiver: $receiverId');
+        } catch (e) {
+          print('Error sending removal notification: $e');
+        }
+      }
+      
       return success;
     } catch (e) {
       return false;
@@ -185,8 +230,9 @@ class RequestsHandler {
       );
       
       if (success) {
-        // Add to merged_accounts table
         final senderId = requestData[0]['sender_id'].toString();
+        
+        // Add to merged_accounts table
         await SupabaseHandler.insertData(
           table: 'merged_accounts',
           data: {
@@ -195,6 +241,24 @@ class RequestsHandler {
             'merged_at': SupabaseHandler.getCurrentTimestamp(),
           },
         );
+        
+        // Merge favorites into shared_favorites table
+        await _mergeFavoritesToShared(senderId, receiverId);
+        
+        // Send notification to sender about acceptance
+        try {
+          await NotificationService.sendNotification(
+            userId: senderId,
+            title: 'Sync Request Accepted',
+            body: 'Your favorites have been synced successfully!',
+            type: 'sync_accepted',
+            screen: '/favourite',
+            extraData: {'request_id': requestId},
+          );
+          print('Acceptance notification sent to sender: $senderId');
+        } catch (e) {
+          print('Error sending acceptance notification: $e');
+        }
       }
       
       return {'success': success};
@@ -243,6 +307,44 @@ class RequestsHandler {
       
       // Clean shared_favorites between these users only
       await cleanupSharedFavorites(senderId, receiverId);
+      
+      // Get usernames for notifications
+      final senderData = await SupabaseHandler.getData(
+        table: 'users',
+        filters: {'id': senderId},
+      );
+      final receiverData = await SupabaseHandler.getData(
+        table: 'users',
+        filters: {'id': receiverId},
+      );
+      
+      final senderUsername = senderData?.isNotEmpty == true ? 
+          (senderData![0]['username'] ?? senderData[0]['display_name'] ?? 'Unknown User') : 'Unknown User';
+      final receiverUsername = receiverData?.isNotEmpty == true ? 
+          (receiverData![0]['username'] ?? receiverData[0]['display_name'] ?? 'Unknown User') : 'Unknown User';
+      
+      // Send disconnect notification to both users
+      try {
+        await NotificationService.sendNotification(
+          userId: senderId,
+          title: 'Sync Disconnected',
+          body: 'Your favorites sync has been disconnected with $receiverUsername.',
+          type: 'sync_disconnected',
+          screen: '/favourite',
+        );
+        
+        await NotificationService.sendNotification(
+          userId: receiverId,
+          title: 'Sync Disconnected', 
+          body: 'Your favorites sync has been disconnected with $senderUsername.',
+          type: 'sync_disconnected',
+          screen: '/favourite',
+        );
+        
+        print('Disconnect notifications sent to both users');
+      } catch (e) {
+        print('Error sending disconnect notifications: $e');
+      }
       
       return true;
     } catch (e) {
@@ -467,6 +569,65 @@ class RequestsHandler {
     } catch (e) {
       print('Error creating test request: $e');
       return false;
+    }
+  }
+
+  // Merge both users' favorites into shared_favorites table (no duplicates)
+  static Future<void> _mergeFavoritesToShared(String user1Id, String user2Id) async {
+    try {
+      print('Starting favorites merge for users: $user1Id and $user2Id');
+      
+      // Get both users' favorites
+      final user1Favorites = await SupabaseHandler.getUserFavorites(user1Id) ?? [];
+      final user2Favorites = await SupabaseHandler.getUserFavorites(user2Id) ?? [];
+      
+      print('User1 favorites: ${user1Favorites.length}, User2 favorites: ${user2Favorites.length}');
+      
+      // Combine and deduplicate by anime_id
+      final Map<String, Map<String, dynamic>> uniqueFavorites = {};
+      
+      // Add user1's favorites
+      for (final fav in user1Favorites) {
+        final animeId = fav['anime_id']?.toString();
+        if (animeId != null && animeId.isNotEmpty) {
+          uniqueFavorites[animeId] = fav;
+        }
+      }
+      
+      // Add user2's favorites (will overwrite if same anime_id)
+      for (final fav in user2Favorites) {
+        final animeId = fav['anime_id']?.toString();
+        if (animeId != null && animeId.isNotEmpty) {
+          uniqueFavorites[animeId] = fav;
+        }
+      }
+      
+      print('Unique favorites after merge: ${uniqueFavorites.length}');
+      
+      // Insert unique favorites into shared_favorites table
+      for (final fav in uniqueFavorites.values) {
+        try {
+          await SupabaseHandler.insertData(
+            table: 'shared_favorites',
+            data: {
+              'user1_id': user1Id,
+              'user2_id': user2Id,
+              'anime_id': fav['anime_id'],
+              'anime_title': fav['anime_title'],
+              'anime_image': fav['anime_image'],
+              'added_at': SupabaseHandler.getCurrentTimestamp(),
+              'added_by_username': 'system',
+              'added_by_name': 'Auto Sync',
+            },
+          );
+        } catch (e) {
+          print('Error inserting shared favorite ${fav['anime_id']}: $e');
+        }
+      }
+      
+      print('Favorites merge completed successfully');
+    } catch (e) {
+      print('Error merging favorites: $e');
     }
   }
 }
