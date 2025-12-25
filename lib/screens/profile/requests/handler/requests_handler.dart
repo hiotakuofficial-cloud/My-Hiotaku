@@ -577,16 +577,22 @@ class RequestsHandler {
     try {
       print('Starting favorites merge for users: $user1Id and $user2Id');
       
-      // Get both users' favorites
-      final user1Favorites = await SupabaseHandler.getUserFavorites(user1Id) ?? [];
-      final user2Favorites = await SupabaseHandler.getUserFavorites(user2Id) ?? [];
+      // Get both users' PRIVATE favorites only (is_public=false)
+      final user1Favorites = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {'user_id': user1Id, 'is_public': false},
+      ) ?? [];
+      final user2Favorites = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {'user_id': user2Id, 'is_public': false},
+      ) ?? [];
       
-      print('User1 favorites: ${user1Favorites.length}, User2 favorites: ${user2Favorites.length}');
+      print('User1 private favorites: ${user1Favorites.length}, User2 private favorites: ${user2Favorites.length}');
       
       // Combine and deduplicate by anime_id
       final Map<String, Map<String, dynamic>> uniqueFavorites = {};
       
-      // Add user1's favorites
+      // Add user1's private favorites
       for (final fav in user1Favorites) {
         final animeId = fav['anime_id']?.toString();
         if (animeId != null && animeId.isNotEmpty) {
@@ -594,7 +600,7 @@ class RequestsHandler {
         }
       }
       
-      // Add user2's favorites (will overwrite if same anime_id)
+      // Add user2's private favorites (will overwrite if same anime_id)
       for (final fav in user2Favorites) {
         final animeId = fav['anime_id']?.toString();
         if (animeId != null && animeId.isNotEmpty) {
@@ -602,7 +608,7 @@ class RequestsHandler {
         }
       }
       
-      print('Unique favorites after merge: ${uniqueFavorites.length}');
+      print('Unique private favorites after merge: ${uniqueFavorites.length}');
       
       // Insert unique favorites into shared_favorites table
       for (final fav in uniqueFavorites.values) {
