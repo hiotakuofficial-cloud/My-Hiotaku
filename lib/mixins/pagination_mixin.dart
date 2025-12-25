@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 
-mixin PaginationMixin<T extends StatefulWidget> on State<T>, TickerProviderStateMixin {
+mixin PaginationMixin<T extends StatefulWidget> on State<T> {
   List<AnimeItem> animeList = [];
   bool isLoading = true;
   bool isLoadingMore = false;
