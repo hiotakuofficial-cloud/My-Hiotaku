@@ -20,6 +20,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   int _selectedTab = 0;
+  String? _processingRequestId; // Track which request is being processed
 
   @override
   void initState() {
@@ -291,7 +292,18 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
   void _acceptRequest(Map<String, dynamic> request) async {
     HapticFeedback.lightImpact();
     final requestId = request['id'].toString();
+    
+    // Set loading state for this specific request
+    setState(() {
+      _processingRequestId = requestId;
+    });
+    
     final result = await RequestsHandler.acceptRequest(requestId);
+    
+    // Clear loading state
+    setState(() {
+      _processingRequestId = null;
+    });
     
     if (result['success']) {
       setState(() {
@@ -490,8 +502,21 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
                         color: Colors.grey[500],
                         size: 16,
                       ),
+                    ],
+                    const SizedBox(width: 8),
+                    // Show loading indicator if this request is being processed
+                    if (_processingRequestId == request['id'].toString()) ...[
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: Lottie.asset(
+                          'assets/animations/loading.json',
+                          width: 18,
+                          height: 18,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ] else ...[
-                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () {
                           HapticFeedback.lightImpact();

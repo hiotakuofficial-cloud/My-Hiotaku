@@ -8,6 +8,7 @@ import '../../errors/no_internet.dart';
 import '../../../components/details_sheet.dart';
 import '../../auth/handler/supabase.dart';
 import '../../../services/notification_service.dart';
+import '../requests/handler/requests_handler.dart';
 
 class UserProfilePage extends StatefulWidget {
   final String username;
@@ -30,6 +31,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   bool hasNetworkError = false;
   bool isCurrentUser = false;
   String syncStatus = 'none'; // none, requested, connected
+  bool isSyncButtonLoading = false; // Track sync button loading state
 
   @override
   void initState() {
@@ -474,7 +476,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null || userProfile == null) return;
 
-    setState(() => isLoading = true);
+    setState(() => isSyncButtonLoading = true);
 
     try {
       // Get current user's Supabase ID
@@ -492,7 +494,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       if (success) {
         setState(() {
           syncStatus = 'requested';
-          isLoading = false;
+          isSyncButtonLoading = false;
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -503,7 +505,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           ),
         );
       } else {
-        setState(() => isLoading = false);
+        setState(() => isSyncButtonLoading = false);
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -514,7 +516,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         );
       }
     } catch (e) {
-      setState(() => isLoading = false);
+      setState(() => isSyncButtonLoading = false);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -527,25 +529,27 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   }
 
   void _showDisconnectDialog() {
-    showCupertinoDialog(
+    showDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text('Disconnect Sync'),
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Disconnect', style: TextStyle(color: Colors.white)),
         content: Text(
-          'By confirming you\'re breaking your connection with ${userProfile!['username'] ?? 'this user'}',
+          'Are you sure you want to disconnect? This will remove the connection and shared favorites between you and ${userProfile!['username'] ?? 'this user'}.',
+          style: TextStyle(color: Colors.grey),
         ),
         actions: [
-          CupertinoDialogAction(
-            child: Text('Cancel'),
+          TextButton(
             onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            child: Text('Confirm'),
+          TextButton(
             onPressed: () async {
               Navigator.pop(context);
               await _disconnectSync();
             },
+            child: const Text('Disconnect', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -556,27 +560,74 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null || userProfile == null) return;
 
-    setState(() => isLoading = true);
+    setState(() => isSyncButtonLoading = true);
 
-    final success = await SupabaseHandler.disconnectSync(
-      userId1: currentUser.uid,
-      userId2: userProfile!['firebase_uid'] ?? userProfile!['id'],
-    );
+    try {
+      // Get current user's Supabase data
+      final currentUserData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
+      if (currentUserData == null) {
+        throw Exception('Current user not found in database');
+      }
 
-    if (success) {
-      setState(() {
-        syncStatus = 'none';
-        isLoading = false;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Successfully disconnected'),
-          backgroundColor: Color(0xFF4CAF50),
-          behavior: SnackBarBehavior.floating,
-        ),
+      // Find the merge request between these users
+      final requests = await SupabaseHandler.getData(
+        table: 'merge_requests',
+        filters: {},
       );
-    } else {
+
+      String? requestId;
+      if (requests != null) {
+        for (final request in requests) {
+          final senderId = request['sender_id'].toString();
+          final receiverId = request['receiver_id'].toString();
+          final currentUserId = currentUserData['id'].toString();
+          final targetUserId = userProfile!['id'].toString();
+          
+          if ((senderId == currentUserId && receiverId == targetUserId) ||
+              (senderId == targetUserId && receiverId == currentUserId)) {
+            requestId = request['id'].toString();
+            break;
+          }
+        }
+      }
+
+      bool success = false;
+      if (requestId != null) {
+        // Use the same disconnect function as requests page (with notifications)
+        success = await RequestsHandler.disconnectUsers(requestId);
+      } else {
+        // Fallback to basic disconnect if no request found
+        success = await SupabaseHandler.disconnectSync(
+          userId1: currentUser.uid,
+          userId2: userProfile!['firebase_uid'] ?? userProfile!['id'],
+        );
+      }
+
+      if (success) {
+        setState(() {
+          syncStatus = 'none';
+          isSyncButtonLoading = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully disconnected'),
+            backgroundColor: Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        setState(() => isSyncButtonLoading = false);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to disconnect'),
+            backgroundColor: Color(0xFFFF5252),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
       setState(() => isLoading = false);
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -632,12 +683,13 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         SizedBox(width: 15),
         Expanded(
           child: GestureDetector(
-            onTap: isCurrentUser ? null : () => _handleSyncAction(),
+            onTap: (isCurrentUser || isSyncButtonLoading) ? null : () => _handleSyncAction(),
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
                 color: _getSyncButtonColor(),
                 borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -652,16 +704,38 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                       ),
                     ),
                   ] else ...[
-                    Icon(_getSyncButtonIcon(), color: Colors.white, size: 20),
-                    SizedBox(width: 10),
-                    Text(
-                      _getSyncButtonText(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    if (isSyncButtonLoading) ...[
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: Lottie.asset(
+                          'assets/animations/loading.json',
+                          width: 20,
+                          height: 20,
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 10),
+                      Text(
+                        _getSyncButtonText(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ] else ...[
+                      Icon(_getSyncButtonIcon(), color: Colors.white, size: 20),
+                      SizedBox(width: 10),
+                      Text(
+                        _getSyncButtonText(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
                 ],
               ),
