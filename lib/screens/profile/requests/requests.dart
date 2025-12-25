@@ -298,6 +298,16 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
       _processingRequestId = requestId;
     });
     
+    // Show merge start toast
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('🔄 Starting favorites merge...'),
+        backgroundColor: Colors.blue[600],
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+    
     final result = await RequestsHandler.acceptRequest(requestId);
     
     // Clear loading state
@@ -315,7 +325,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Request accepted!'),
+          content: const Text('✅ Request accepted & favorites merged!'),
           backgroundColor: Colors.green[600],
           behavior: SnackBarBehavior.floating,
         ),
@@ -349,7 +359,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(errorMessage),
+          content: Text('❌ Failed to merge favorites: $errorMessage'),
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
         ),

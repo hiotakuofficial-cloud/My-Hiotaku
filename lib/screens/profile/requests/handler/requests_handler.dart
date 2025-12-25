@@ -242,8 +242,14 @@ class RequestsHandler {
           },
         );
         
+        // Show merge start toast
+        print('🔄 TOAST: Starting favorites merge...');
+        
         // Merge favorites into shared_favorites table
         await _mergeFavoritesToShared(senderId, receiverId);
+        
+        // Show merge completion toast
+        print('✅ TOAST: Favorites merge completed successfully!');
         
         // Send notification to sender about acceptance
         try {
@@ -575,7 +581,7 @@ class RequestsHandler {
   // Merge both users' favorites into shared_favorites table (no duplicates)
   static Future<void> _mergeFavoritesToShared(String user1Id, String user2Id) async {
     try {
-      print('Starting favorites merge for users: $user1Id and $user2Id');
+      print('🔄 Starting favorites merge for users: $user1Id and $user2Id');
       
       // Get both users' PRIVATE favorites only (is_public=false)
       final user1Favorites = await SupabaseHandler.getData(
@@ -587,7 +593,9 @@ class RequestsHandler {
         filters: {'user_id': user2Id, 'is_public': false},
       ) ?? [];
       
-      print('User1 private favorites: ${user1Favorites.length}, User2 private favorites: ${user2Favorites.length}');
+      print('📊 User1 private favorites: ${user1Favorites.length}, User2 private favorites: ${user2Favorites.length}');
+      print('🔍 User1 favorites: ${user1Favorites.map((f) => f['anime_title']).toList()}');
+      print('🔍 User2 favorites: ${user2Favorites.map((f) => f['anime_title']).toList()}');
       
       // Combine and deduplicate by anime_id
       final Map<String, Map<String, dynamic>> uniqueFavorites = {};
@@ -597,6 +605,7 @@ class RequestsHandler {
         final animeId = fav['anime_id']?.toString();
         if (animeId != null && animeId.isNotEmpty) {
           uniqueFavorites[animeId] = fav;
+          print('✅ Added user1 favorite: ${fav['anime_title']}');
         }
       }
       
@@ -605,14 +614,16 @@ class RequestsHandler {
         final animeId = fav['anime_id']?.toString();
         if (animeId != null && animeId.isNotEmpty) {
           uniqueFavorites[animeId] = fav;
+          print('✅ Added user2 favorite: ${fav['anime_title']}');
         }
       }
       
-      print('Unique private favorites after merge: ${uniqueFavorites.length}');
+      print('🎯 Unique private favorites after merge: ${uniqueFavorites.length}');
       
       // Insert unique favorites into shared_favorites table
       for (final fav in uniqueFavorites.values) {
         try {
+          print('💾 Inserting shared favorite: ${fav['anime_title']}');
           await SupabaseHandler.insertData(
             table: 'shared_favorites',
             data: {
@@ -626,14 +637,17 @@ class RequestsHandler {
               'added_by_name': 'Auto Sync',
             },
           );
+          print('✅ Successfully inserted: ${fav['anime_title']}');
         } catch (e) {
-          print('Error inserting shared favorite ${fav['anime_id']}: $e');
+          print('❌ Error inserting shared favorite ${fav['anime_id']}: $e');
         }
       }
       
-      print('Favorites merge completed successfully');
+      print('🎉 Favorites merge completed successfully - ${uniqueFavorites.length} favorites merged');
+      print('🍞 TOAST: Successfully merged ${uniqueFavorites.length} private favorites!');
     } catch (e) {
-      print('Error merging favorites: $e');
+      print('❌ Error merging favorites: $e');
+      print('🍞 TOAST: Failed to merge favorites - $e');
     }
   }
 }
