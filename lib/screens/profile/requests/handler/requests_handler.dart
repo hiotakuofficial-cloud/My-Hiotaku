@@ -269,13 +269,15 @@ class RequestsHandler {
         } catch (e) {
           print('Error sending acceptance notification: $e');
         }
+        
+        return {
+          'success': success, 
+          'merge_count': mergeResult['success'] ? mergeResult['count'] : 0,
+          'merge_error': mergeResult['success'] ? null : mergeResult['error']
+        };
+      } else {
+        return {'success': false, 'error': 'Failed to accept request', 'merge_count': 0};
       }
-      
-      return {
-        'success': success, 
-        'merge_count': mergeResult['success'] ? mergeResult['count'] : 0,
-        'merge_error': mergeResult['success'] ? null : mergeResult['error']
-      };
     } catch (e) {
       return {'success': false, 'error': 'Unknown error occurred', 'merge_count': 0};
     }

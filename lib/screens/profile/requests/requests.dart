@@ -333,8 +333,6 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
           duration: Duration(seconds: 4),
         ),
       );
-        ),
-      );
     } else {
       // Handle different error types
       String errorMessage = 'Unable to accept request';
