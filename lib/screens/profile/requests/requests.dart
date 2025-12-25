@@ -323,11 +323,16 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
         }
       });
       
+      // Show detailed success message
+      final mergeCount = result['merge_count'] ?? 0;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('✅ Request accepted & favorites merged!'),
+          content: Text('✅ Request accepted! Merged $mergeCount private favorites'),
           backgroundColor: Colors.green[600],
           behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 4),
+        ),
+      );
         ),
       );
     } else {

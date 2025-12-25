@@ -246,10 +246,14 @@ class RequestsHandler {
         print('🔄 TOAST: Starting favorites merge...');
         
         // Merge favorites into shared_favorites table
-        await _mergeFavoritesToShared(senderId, receiverId);
+        final mergeResult = await _mergeFavoritesToSharedWithToast(senderId, receiverId);
         
-        // Show merge completion toast
-        print('✅ TOAST: Favorites merge completed successfully!');
+        // Show merge completion toast based on result
+        if (mergeResult['success']) {
+          print('✅ TOAST: Favorites merge completed successfully!');
+        } else {
+          print('❌ TOAST: Favorites merge failed: ${mergeResult['error']}');
+        }
         
         // Send notification to sender about acceptance
         try {
@@ -267,9 +271,13 @@ class RequestsHandler {
         }
       }
       
-      return {'success': success};
+      return {
+        'success': success, 
+        'merge_count': mergeResult['success'] ? mergeResult['count'] : 0,
+        'merge_error': mergeResult['success'] ? null : mergeResult['error']
+      };
     } catch (e) {
-      return {'success': false, 'error': 'Unknown error occurred'};
+      return {'success': false, 'error': 'Unknown error occurred', 'merge_count': 0};
     }
   }
 
@@ -578,7 +586,76 @@ class RequestsHandler {
     }
   }
 
-  // Merge both users' favorites into shared_favorites table (no duplicates)
+  // Merge both users' favorites into shared_favorites table (no duplicates) - with mobile debugging
+  static Future<Map<String, dynamic>> _mergeFavoritesToSharedWithToast(String user1Id, String user2Id) async {
+    try {
+      print('🔄 Starting favorites merge for users: $user1Id and $user2Id');
+      
+      // Get both users' PRIVATE favorites only (is_public=false)
+      final user1Favorites = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {'user_id': user1Id, 'is_public': false},
+      ) ?? [];
+      final user2Favorites = await SupabaseHandler.getData(
+        table: 'favorites',
+        filters: {'user_id': user2Id, 'is_public': false},
+      ) ?? [];
+      
+      final totalFavorites = user1Favorites.length + user2Favorites.length;
+      print('📊 Found $totalFavorites private favorites total');
+      
+      if (totalFavorites == 0) {
+        return {'success': false, 'error': 'No private favorites to merge', 'count': 0};
+      }
+      
+      // Combine and deduplicate by anime_id
+      final Map<String, Map<String, dynamic>> uniqueFavorites = {};
+      
+      // Add both users' private favorites
+      for (final fav in [...user1Favorites, ...user2Favorites]) {
+        final animeId = fav['anime_id']?.toString();
+        if (animeId != null && animeId.isNotEmpty) {
+          uniqueFavorites[animeId] = fav;
+        }
+      }
+      
+      print('🎯 Unique favorites to merge: ${uniqueFavorites.length}');
+      
+      // Insert unique favorites into shared_favorites table
+      int successCount = 0;
+      for (final fav in uniqueFavorites.values) {
+        try {
+          await SupabaseHandler.insertData(
+            table: 'shared_favorites',
+            data: {
+              'user1_id': user1Id,
+              'user2_id': user2Id,
+              'anime_id': fav['anime_id'],
+              'anime_title': fav['anime_title'],
+              'anime_image': fav['anime_image'],
+              'added_at': SupabaseHandler.getCurrentTimestamp(),
+              'added_by_username': 'system',
+              'added_by_name': 'Auto Sync',
+            },
+          );
+          successCount++;
+        } catch (e) {
+          print('❌ Failed to insert: ${fav['anime_title']}');
+        }
+      }
+      
+      return {
+        'success': true,
+        'count': successCount,
+        'total': uniqueFavorites.length,
+        'message': 'Successfully merged $successCount favorites'
+      };
+    } catch (e) {
+      return {'success': false, 'error': e.toString(), 'count': 0};
+    }
+  }
+
+  // Original merge function for backward compatibility
   static Future<void> _mergeFavoritesToShared(String user1Id, String user2Id) async {
     try {
       print('🔄 Starting favorites merge for users: $user1Id and $user2Id');
