@@ -301,7 +301,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
     // Show merge start toast
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('🔄 Starting favorites merge...'),
+        content: const Text('Syncing favorites...'),
         backgroundColor: Colors.blue[600],
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 2),
@@ -323,19 +323,21 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
         }
       });
       
-      // Show detailed success message
+      // Show success message
       final mergeCount = result['merge_count'] ?? 0;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ Request accepted! Merged $mergeCount private favorites'),
+          content: Text(mergeCount > 0 
+            ? 'Sync completed! $mergeCount favorites merged'
+            : 'Sync completed successfully'),
           backgroundColor: Colors.green[600],
           behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 4),
+          duration: Duration(seconds: 3),
         ),
       );
     } else {
       // Handle different error types
-      String errorMessage = 'Unable to accept request';
+      String errorMessage = 'Sync request failed';
       
       if (result['error'] == 'limit_exceeded') {
         // Show limit exceeded dialog
