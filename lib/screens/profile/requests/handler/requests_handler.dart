@@ -242,19 +242,18 @@ class RequestsHandler {
           },
         );
         
-        // Show merge start toast
-        print('🔄 TOAST: Starting favorites merge...');
+        // Show merge start notification
         
         // Merge favorites into connected_fav table
         final mergeResult = await _mergeFavoritesToSharedWithToast(senderId, receiverId);
         
         // Show merge completion toast based on result
         if (mergeResult['success'] && mergeResult['count'] > 0) {
-          print('✅ TOAST: Request accepted! Merged ${mergeResult['count']} private favorites');
+          // Success with merged favorites
         } else if (mergeResult['success'] && mergeResult['count'] == 0) {
-          print('ℹ️ TOAST: Request accepted! No private favorites to merge');
+          // Success but no favorites to merge
         } else {
-          print('⚠️ TOAST: Request accepted but merge had issues');
+          // Merge had issues
         }
         
         // Send notification to sender about acceptance
@@ -393,7 +392,6 @@ class RequestsHandler {
       );
     } catch (e) {
       // Silent cleanup - don't expose database errors in production
-      print('Cleanup operation failed');
     }
   }
 
