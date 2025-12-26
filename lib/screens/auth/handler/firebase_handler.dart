@@ -82,12 +82,7 @@ class FirebaseHandler {
   // Google Sign In with clean error handling and account selection
   Future<User?> signInWithGoogle({BuildContext? context}) async {
     try {
-      // Force account selection by signing out first (if needed)
-      if (await _googleSignIn.isSignedIn()) {
-        await _googleSignIn.signOut();
-      }
-
-      // Step 1: Google Login Popup with account selection
+      // Step 1: Google Login Popup (don't force logout)
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -199,7 +194,7 @@ class FirebaseHandler {
   // Check Firebase connection
   Future<bool> checkFirebaseConnection({BuildContext? context}) async {
     try {
-      // Try to get current user to test connection
+      // Check Firebase connection
       User? user = FirebaseAuth.instance.currentUser;
       return true;
     } catch (e) {
@@ -211,7 +206,7 @@ class FirebaseHandler {
   // Check Google Play Services
   Future<bool> checkGooglePlayServices({BuildContext? context}) async {
     try {
-      bool isAvailable = await _googleSignIn.isSignedIn();
+      await _googleSignIn.isSignedIn();
       return true;
     } catch (e) {
       _showError(context, 'Google Play Services error: ${e.toString()}');
@@ -313,25 +308,15 @@ class FirebaseHandler {
       final existingUser = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
       
       if (existingUser != null) {
-        // User exists, update only name/email - DON'T touch avatar if custom set
-        String? currentAvatar = existingUser['avatar_url'];
-        
-        // Only update avatar if it's still a Google URL or null
-        String? avatarToUpdate;
-        if (currentAvatar == null || currentAvatar.startsWith('http')) {
-          // User has Google photo or no avatar, can update
-          avatarToUpdate = firebaseUser.photoURL ?? 'default.png';
-        } else {
-          // User has custom avatar (male1.png, female2.png etc), keep it
-          avatarToUpdate = currentAvatar;
-        }
+        // User exists, update basic info but keep custom avatar
+        String avatarToUpdate = existingUser['avatar_url'] ?? 'default.png';
         
         await SupabaseHandler.upsertUser(
           firebaseUID: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName,
           avatarUrl: avatarToUpdate,
-          username: _generateUsername(firebaseUser),
+          username: existingUser['username'], // Keep existing username
         );
         print('User updated in Supabase: ${firebaseUser.email}');
       } else {
@@ -350,16 +335,23 @@ class FirebaseHandler {
     }
   }
 
-  // TODO: Generate username from display name or email
+  // Generate unique username from display name or email
   static String? _generateUsername(User firebaseUser) {
+    String baseUsername;
+    
     if (firebaseUser.displayName != null) {
-      return firebaseUser.displayName!
+      baseUsername = firebaseUser.displayName!
           .toLowerCase()
           .replaceAll(' ', '_')
           .replaceAll(RegExp(r'[^a-z0-9_]'), '');
     } else if (firebaseUser.email != null) {
-      return firebaseUser.email!.split('@')[0].toLowerCase();
+      baseUsername = firebaseUser.email!.split('@')[0].toLowerCase();
+    } else {
+      baseUsername = 'user';
     }
-    return null;
+    
+    // Add timestamp to ensure uniqueness
+    String timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(8);
+    return '${baseUsername}_$timestamp';
   }
 }

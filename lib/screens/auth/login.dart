@@ -78,8 +78,17 @@ class _LoginScreenState extends State<LoginScreen>
     _emailFocus.dispose();
     _passwordFocus.dispose();
     _nameFocus.dispose();
+    
+    // Properly dispose animation controllers
+    if (_fadeController.isAnimating) {
+      _fadeController.stop();
+    }
+    if (_elasticController.isAnimating) {
+      _elasticController.stop();
+    }
     _fadeController.dispose();
     _elasticController.dispose();
+    
     super.dispose();
   }
 
@@ -433,7 +442,6 @@ class _LoginScreenState extends State<LoginScreen>
         animation: focusNode,
         builder: (context, child) {
           bool isFocused = focusNode.hasFocus;
-          bool hasText = controller.text.isNotEmpty;
           
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -504,13 +512,23 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleEmailLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty ||
-        (!_isLoginMode && _nameController.text.isEmpty)) {
-      _showErrorToast('Please fill all fields', Icons.warning_rounded);
+    // Validate fields based on current mode
+    if (_emailController.text.trim().isEmpty) {
+      _showErrorToast('Please enter your email address', Icons.email_outlined);
+      return;
+    }
+    
+    if (_passwordController.text.isEmpty) {
+      _showErrorToast('Please enter your password', Icons.lock_outline);
+      return;
+    }
+    
+    if (!_isLoginMode && _nameController.text.trim().isEmpty) {
+      _showErrorToast('Please enter your full name', Icons.person_outline);
       return;
     }
 
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text)) {
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim())) {
       _showErrorToast('Please enter a valid email address', Icons.email_outlined);
       return;
     }
