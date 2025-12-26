@@ -21,7 +21,6 @@ import 'screens/auth/handler/firebase_handler.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print('Background message received: ${message.messageId}');
   
   // Initialize local notifications for background handling
   await LocalNotificationHandler.initialize();
@@ -37,7 +36,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 // Handle notification that opened the app
 void _handleInitialNotification(RemoteMessage message) {
-  print('Handling initial notification: ${message.data}');
   // App opened by notification - just opening the app is enough
   // No specific navigation needed as per requirement
 }
@@ -47,14 +45,11 @@ void main() async {
   
   // Initialize Firebase with platform-specific options
   try {
-    print('🔥 Initializing Firebase...');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('✅ Firebase initialized successfully');
     
     // Pre-initialize Google Sign In for faster login response
-    print('🔍 Pre-initializing Google Sign In...');
     await FirebaseHandler.preInitializeGoogleSignIn();
     
     // Initialize Firebase Messaging background handler
@@ -63,27 +58,21 @@ void main() async {
     // Check if app was opened by notification tap
     final RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
-      print('App opened by notification: ${initialMessage.messageId}');
       // App was opened by notification tap - handle it
       _handleInitialNotification(initialMessage);
     }
     
     // FCM will be initialized in home screen after checking login status
-    print('✅ Firebase initialized, FCM will initialize on home screen');
     
   } on FirebaseException catch (e) {
-    print('❌ Firebase initialization failed: ${e.code} - ${e.message}');
     // App can still run without Firebase, but features will be limited
   } catch (e) {
-    print('❌ Unexpected Firebase error: ${e.toString()}');
   }
   
   // Set orientation
   try {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    print('✅ Orientation set to portrait');
   } catch (e) {
-    print('⚠️ Failed to set orientation: ${e.toString()}');
   }
   
   runApp(MyApp());

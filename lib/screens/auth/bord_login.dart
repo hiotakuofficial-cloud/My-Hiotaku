@@ -99,6 +99,31 @@ class _BordLoginScreenState extends State<BordLoginScreen>
         Navigator.pushReplacementNamed(context, '/main');
       }
       
+    } on PlatformException catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      
+      String errorMessage = 'Google Sign-in failed: ';
+      switch (e.code) {
+        case 'network_error':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        case 'sign_in_canceled':
+          return; // User cancelled, don't show error
+        case 'sign_in_failed':
+          errorMessage = 'Google Sign-in failed. Please try again.';
+          break;
+        default:
+          errorMessage = 'Google Sign-in error. Please try again later.';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);

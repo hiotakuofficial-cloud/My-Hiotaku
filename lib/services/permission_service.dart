@@ -8,7 +8,6 @@ class PermissionService {
       final status = await Permission.notification.request();
       return status == PermissionStatus.granted;
     } catch (e) {
-      print('Notification permission error: $e');
       return false;
     }
   }
@@ -24,7 +23,6 @@ class PermissionService {
       return statuses[Permission.storage] == PermissionStatus.granted ||
              statuses[Permission.manageExternalStorage] == PermissionStatus.granted;
     } catch (e) {
-      print('Storage permission error: $e');
       return false;
     }
   }
@@ -57,7 +55,6 @@ class PermissionService {
         ),
       );
     } catch (e) {
-      print('Permission request error: $e');
     }
   }
 
@@ -88,7 +85,6 @@ class PermissionService {
     try {
       await openAppSettings();
     } catch (e) {
-      print('Error opening app settings: $e');
     }
   }
 }

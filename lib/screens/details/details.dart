@@ -78,7 +78,7 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          error = e.toString();
+          error = 'Unable to load anime details. Please check your connection and try again.';
           isLoading = false;
         });
       }
@@ -89,7 +89,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
     if (fallbackPoster != null) return; // Already fetched
     
     try {
-      print('🔄 Fetching fallback poster for ID: ${widget.animeId}');
       
       // Search for anime by ID in home API to get thumbnail
       final homeResponse = await ApiService.searchAnime(widget.animeId, 1);
@@ -105,12 +104,10 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
             setState(() {
               fallbackPoster = matchedAnime.poster;
             });
-            print('✅ Fallback poster found: ${matchedAnime.poster}');
           }
         }
       }
     } catch (e) {
-      print('❌ Failed to fetch fallback poster: $e');
     }
   }
 
@@ -150,7 +147,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         });
       }
     } catch (e) {
-      print('❌ Error checking favorite status: $e');
       if (mounted) {
         setState(() {
           isCheckingFavorite = false;
@@ -203,7 +199,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         _showSnackBar('Failed to add to favorites');
       }
     } catch (e) {
-      print('❌ Error adding to favorites: $e');
       _showSnackBar('Failed to add to favorites');
     }
   }
@@ -231,7 +226,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
         _showSnackBar('Failed to remove from favorites');
       }
     } catch (e) {
-      print('❌ Error removing from favorites: $e');
       _showSnackBar('Failed to remove from favorites');
     }
   }
@@ -406,7 +400,6 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
 
   Future<void> _loadRecommendations() async {
     try {
-      print('🔄 Loading recommendations for: ${widget.animeId}');
       
       final response = await ApiService.getRecommendations(widget.animeId);
       
@@ -415,10 +408,8 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           recommendations = response.data.take(6).toList(); // Limit to 6 items
           isLoadingRecommendations = false;
         });
-        print('✅ Loaded ${recommendations.length} recommendations');
       }
     } catch (e) {
-      print('❌ Failed to load recommendations: $e');
       if (mounted) {
         setState(() {
           isLoadingRecommendations = false;

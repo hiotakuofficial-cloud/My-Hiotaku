@@ -41,9 +41,9 @@ class PlayerHandler {
     } on TimeoutException {
       throw TimeoutException('Request timed out', Duration(seconds: 30));
     } on HttpException catch (e) {
-      throw HttpException('Server error: ${e.message}');
+      throw HttpException('Server temporarily unavailable');
     } catch (e) {
-      throw Exception('Failed to load episodes: $e');
+      throw Exception('Failed to load episodes. Please try again.');
     }
   }
   
@@ -85,7 +85,7 @@ class PlayerHandler {
           }
         }
       } else if (response.statusCode >= 500) {
-        throw HttpException('English API server error: ${response.statusCode}');
+        throw HttpException('Server temporarily unavailable');
       }
       
     } on SocketException {
@@ -149,9 +149,9 @@ class PlayerHandler {
     } on TimeoutException {
       throw TimeoutException('Stream URL request timed out', Duration(seconds: 30));
     } on HttpException catch (e) {
-      throw HttpException('Server error: ${e.message}');
+      throw HttpException('Server temporarily unavailable');
     } catch (e) {
-      throw Exception('Failed to get stream URL: $e');
+      throw Exception('Unable to get stream URL');
     }
   }
   
@@ -211,7 +211,7 @@ class PlayerHandler {
           }
         }
       } else if (response.statusCode >= 500) {
-        throw HttpException('English stream server error: ${response.statusCode}');
+        throw HttpException('Stream temporarily unavailable');
       }
       
       throw Exception('No stream URL found for this episode');
@@ -223,7 +223,7 @@ class PlayerHandler {
     } on HttpException {
       rethrow;
     } catch (e) {
-      throw Exception('Failed to get English stream: $e');
+      throw Exception('Unable to get English stream');
     }
   }
   

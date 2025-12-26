@@ -124,7 +124,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                 });
               }
             } catch (e) {
-              print('Error getting sync status: $e');
             }
           }
         }
@@ -651,7 +650,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to disconnect'),
+            content: Text('Unable to disconnect. Please try again.'),
             backgroundColor: Color(0xFFFF5252),
             behavior: SnackBarBehavior.floating,
           ),

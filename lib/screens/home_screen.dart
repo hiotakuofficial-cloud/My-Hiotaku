@@ -35,6 +35,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<AnimeItem> hindiAnime = [];
   bool isLoading = true;
   
+  // Cache timestamp to avoid frequent API calls
+  DateTime? _lastLoadTime;
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+  
   // User authentication state
   Map<String, dynamic>? userData;
   String avatarUrl = 'assets/profile/default/default.png';
@@ -44,8 +48,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadHomeData();
-    _loadUserData();
+    
+    // Load home data and user data in parallel
+    Future.wait([
+      _loadHomeData(),
+      _loadUserData(),
+    ]);
+    
     _startAutoSlide();
     _initializeFCMIfLoggedIn();
   }
@@ -56,14 +65,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       
       if (firebaseUser != null) {
-        print('✅ User logged in, initializing FCM...');
         await FirebaseMessagingHandler.initialize();
-        print('✅ FCM initialized successfully on home screen');
       } else {
-        print('❌ User not logged in, skipping FCM initialization');
       }
     } catch (e) {
-      print('❌ FCM initialization error on home screen: $e');
     }
   }
 
@@ -152,33 +157,42 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadHomeData() async {
+    // Check cache first
+    if (_lastLoadTime != null && 
+        DateTime.now().difference(_lastLoadTime!) < _cacheExpiry &&
+        featuredAnime.isNotEmpty) {
+      return; // Use cached data
+    }
+    
     try {
       setState(() => isLoading = true);
       
-      // Load different sections with real API calls
-      final homeData = await ApiService.getHome();
-      final popularData = await ApiService.getPopular(1);
-      final moviesData = await ApiService.getMovies(1);
-      final topUpcomingData = await ApiService.getTopUpcoming(1);
-      final subbedData = await ApiService.getSubbed(1);
-      final hindiData = await ApiService.getHindiAnime(1);
+      // Load all sections in parallel for faster loading
+      final results = await Future.wait([
+        ApiService.getHome(),
+        ApiService.getPopular(1),
+        ApiService.getMovies(1),
+        ApiService.getTopUpcoming(1),
+        ApiService.getSubbed(1),
+        ApiService.getHindiAnime(1),
+      ]);
       
       setState(() {
-        // Use real API data for each section - 6 featured items
-        featuredAnime = homeData.data.isNotEmpty ? homeData.data.take(6).toList() : [];
-        trendingAnime = popularData.data.isNotEmpty ? popularData.data.take(10).toList() : [];
-        popularAnime = topUpcomingData.data.isNotEmpty ? topUpcomingData.data.take(10).toList() : [];
-        topMovies = moviesData.data.isNotEmpty ? moviesData.data.take(10).toList() : [];
-        recentlyUpdated = subbedData.data.isNotEmpty ? subbedData.data.take(10).toList() : [];
-        hindiAnime = hindiData.data.isNotEmpty ? hindiData.data.take(10).toList() : [];
+        // Use parallel API results - 6 featured items
+        featuredAnime = results[0].data.isNotEmpty ? results[0].data.take(6).toList() : [];
+        trendingAnime = results[1].data.isNotEmpty ? results[1].data.take(10).toList() : [];
+        topMovies = results[2].data.isNotEmpty ? results[2].data.take(10).toList() : [];
+        popularAnime = results[3].data.isNotEmpty ? results[3].data.take(10).toList() : [];
+        recentlyUpdated = results[4].data.isNotEmpty ? results[4].data.take(10).toList() : [];
+        hindiAnime = results[5].data.isNotEmpty ? results[5].data.take(10).toList() : [];
         isLoading = false;
         _retryCount = 0; // Reset retry count on success
+        _lastLoadTime = DateTime.now(); // Update cache timestamp
       });
     } catch (e) {
       // Silent retry mechanism
       if (_retryCount < _maxRetries) {
         _retryCount++;
-        print('Retry attempt $_retryCount/$_maxRetries');
         await Future.delayed(Duration(seconds: 2));
         _loadHomeData();
         return;

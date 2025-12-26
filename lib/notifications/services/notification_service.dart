@@ -24,9 +24,7 @@ class NotificationService {
       // Listen to auth state changes
       FirebaseAuth.instance.authStateChanges().listen(_onAuthStateChanged);
       
-      print('Notification service initialized');
     } catch (e) {
-      print('Notification service initialization error: $e');
     }
   }
   
@@ -60,7 +58,6 @@ class NotificationService {
       final unreadCount = await NotificationHandler.getUnreadCount();
       _unreadCountController?.add(unreadCount);
     } catch (e) {
-      print('Refresh notifications error: $e');
     }
   }
   
@@ -70,7 +67,6 @@ class NotificationService {
       await NotificationHandler.markAsRead(notificationId);
       await refreshNotifications();
     } catch (e) {
-      print('Mark as read and refresh error: $e');
     }
   }
   
@@ -80,7 +76,6 @@ class NotificationService {
       await NotificationHandler.clearAllNotifications();
       await refreshNotifications();
     } catch (e) {
-      print('Clear all and refresh error: $e');
     }
   }
   
@@ -165,24 +160,20 @@ class NotificationService {
           break;
       }
     } catch (e) {
-      print('Handle notification tap error: $e');
     }
   }
   
   // Navigation helpers
   static void _navigateToMergeRequests(Map<String, dynamic> data) {
     // TODO: Navigate to merge requests page
-    print('Navigate to merge requests: ${data['request_id']}');
   }
   
   static void _navigateToFavorites(Map<String, dynamic> data) {
     // TODO: Navigate to favorites page
-    print('Navigate to favorites page');
   }
   
   static void _navigateToNotifications() {
     // TODO: Navigate to notifications page
-    print('Navigate to notifications page');
   }
   
   // Get current unread count (synchronous)

@@ -80,7 +80,6 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
         isLoading = false;
         hasNetworkError = true;
       });
-      print('Load favorites error: $e');
     }
   }
   
@@ -96,7 +95,6 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       });
     } catch (e) {
       // If sorting fails, keep original order
-      print('Sort error: $e');
     }
   }
   
@@ -109,7 +107,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error sorting favorites'),
+          content: Text('Unable to sort favorites. Please try again.'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -495,7 +493,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       if (animeId == null || animeId.toString().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Cannot open details - Invalid anime ID'),
+            content: Text('Unable to open details. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -521,7 +519,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error opening details page'),
+          content: Text('Unable to open details. Please try again.'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -544,7 +542,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to remove from favorites'),
+            content: Text('Unable to remove from favorites. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -553,7 +551,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error removing favorite'),
+          content: Text('Unable to remove favorite. Please try again.'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -572,7 +570,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error opening public favorites'),
+          content: Text('Unable to open public favorites. Please try again.'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -591,7 +589,7 @@ class _FavouritePageState extends State<FavouritePage> with TickerProviderStateM
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error opening sync users'),
+          content: Text('Unable to open sync users. Please try again.'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

@@ -46,7 +46,6 @@ class SearchHandler {
         return item.title.toLowerCase().contains(query.toLowerCase());
       }).toList();
     } catch (e) {
-      print('Search error: $e');
       return [];
     }
   }

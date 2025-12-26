@@ -76,7 +76,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      print('Load user data error: $e');
       if (mounted) {
         setState(() {
           userData = null;
@@ -278,7 +277,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       const platform = MethodChannel('com.hiotaku.app/settings');
       await platform.invokeMethod('openAppSettings');
     } catch (e) {
-      print('Error opening app settings: $e');
       // Fallback - show dialog with instructions
       _showClearCacheDialog();
     }
@@ -665,7 +663,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } catch (e) {
-      print('Select avatar error: $e');
       
       // Clear loading toast
       ScaffoldMessenger.of(context).clearSnackBars();

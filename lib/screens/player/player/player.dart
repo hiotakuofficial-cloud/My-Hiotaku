@@ -171,7 +171,6 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            print('Page started: $url');
             setState(() {
               isVideoLoading = true;
             });
@@ -181,7 +180,6 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             _videoLoadingTimer = Timer(Duration(seconds: 60), () {
               if (isVideoLoading) {
                 // Silent handling - no snackbar
-                print('Video loading taking longer than usual - handled silently');
                 setState(() {
                   isVideoLoading = false;
                 });
@@ -189,7 +187,6 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             });
           },
           onPageFinished: (String url) {
-            print('Page finished: $url');
             setState(() {
               isVideoLoading = false;
             });
@@ -225,7 +222,6 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             });
           },
           onNavigationRequest: (NavigationRequest request) {
-            print('Navigation request: ${request.url}');
             
             // Allow localhost URLs
             if (request.url.startsWith('http://localhost:')) {
@@ -243,15 +239,12 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             }
             
             // Block ALL other redirects (like Android with no shouldOverrideUrlLoading)
-            print('Blocked redirect to: ${request.url}');
             return NavigationDecision.prevent;
           },
           onWebResourceError: (WebResourceError error) {
-            print('WebView error: ${error.description}');
             // Handle errors silently - no snackbar/toast
             if (error.errorCode == -2 || error.errorCode == -6) { // Network or connection errors
               // Silent handling - just log the error
-              print('Connection error handled silently');
             }
             setState(() {
               isVideoLoading = false;
@@ -259,10 +252,8 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
             _videoLoadingTimer?.cancel();
           },
           onHttpError: (HttpResponseError error) {
-            print('HTTP error: ${error.response?.statusCode}');
             // Silent handling - no snackbar
             final statusCode = error.response?.statusCode ?? 0;
-            print('HTTP error $statusCode - handled silently');
             setState(() {
               isVideoLoading = false;
             });
@@ -408,14 +399,12 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
   Future<void> _loadEpisode(int episodeNumber) async {
     // Prevent double loading
     if (isLoadingEpisode) {
-      print('Episode already loading, skipping...');
       return;
     }
     
     // Check cooldown period (like Android)
     final now = DateTime.now();
     if (now.difference(lastEpisodeSwitchTime).inSeconds < 3) {
-      print('Episode switch cooldown active, skipping...');
       return;
     }
     
@@ -435,7 +424,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       );
 
       if (episode.isEmpty) {
-        throw Exception('Episode $episodeNumber not found');
+        throw Exception('Episode not found');
       }
 
       final streamUrl = await PlayerHandler.getStreamUrl(
@@ -458,16 +447,12 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
       
     } on SocketException {
       // Silent handling - no snackbar
-      print('No internet connection - handled silently');
     } on TimeoutException {
       // Silent handling - no snackbar  
-      print('Loading timed out - handled silently');
     } on HttpException catch (e) {
       // Silent handling - no snackbar
-      print('HTTP error - handled silently: ${e.message}');
     } catch (e) {
       // Silent handling - no snackbar
-      print('Error handled silently: $e');
     } finally {
       setState(() {
         isLoadingEpisode = false;

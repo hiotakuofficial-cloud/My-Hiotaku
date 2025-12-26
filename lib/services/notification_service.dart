@@ -46,7 +46,6 @@ class NotificationService {
       }
       return false;
     } catch (e) {
-      print('Notification error: $e');
       return false;
     }
   }
@@ -89,7 +88,6 @@ class NotificationService {
       }
       return false;
     } catch (e) {
-      print('Broadcast notification error: $e');
       return false;
     }
   }

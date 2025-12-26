@@ -9,7 +9,6 @@ class PublicHandler {
       final publicFavorites = await SupabaseHandler.getPublicFavorites();
       return publicFavorites ?? [];
     } catch (e) {
-      print('Get public favorites error: $e');
       return [];
     }
   }
@@ -22,7 +21,6 @@ class PublicHandler {
       
       return allPublicFavorites.where((fav) => fav['user_id']?.toString() == userId).toList();
     } catch (e) {
-      print('Get user public favorites error: $e');
       return [];
     }
   }
@@ -55,7 +53,6 @@ class PublicHandler {
       
       return sortedList.take(limit).toList();
     } catch (e) {
-      print('Get trending public favorites error: $e');
       return [];
     }
   }
@@ -74,7 +71,6 @@ class PublicHandler {
         return username.contains(lowerQuery);
       }).toList();
     } catch (e) {
-      print('Search public favorites error: $e');
       return [];
     }
   }
@@ -87,7 +83,6 @@ class PublicHandler {
       
       return allPublicFavorites.where((fav) => fav['anime_id']?.toString() == animeId).length;
     } catch (e) {
-      print('Get public favorites count error: $e');
       return 0;
     }
   }
@@ -100,7 +95,6 @@ class PublicHandler {
       
       return allPublicFavorites.where((fav) => fav['anime_id']?.toString() == animeId).toList();
     } catch (e) {
-      print('Get users who favorited error: $e');
       return [];
     }
   }
@@ -123,7 +117,6 @@ class PublicHandler {
         },
       );
     } catch (e) {
-      print('Make public error: $e');
       return false;
     }
   }
@@ -146,7 +139,6 @@ class PublicHandler {
         },
       );
     } catch (e) {
-      print('Make private error: $e');
       return false;
     }
   }
@@ -180,7 +172,6 @@ class PublicHandler {
         },
       );
     } catch (e) {
-      print('Toggle visibility error: $e');
       return false;
     }
   }
@@ -190,7 +181,6 @@ class PublicHandler {
     try {
       return await getPublicFavorites();
     } catch (e) {
-      print('Get public favorites with user info error: $e');
       return [];
     }
   }
@@ -211,7 +201,6 @@ class PublicHandler {
       
       return sortedFavorites.take(limit).toList();
     } catch (e) {
-      print('Get recent public favorites error: $e');
       return [];
     }
   }
@@ -233,7 +222,6 @@ class PublicHandler {
       
       return favorite != null && favorite.isNotEmpty && (favorite['is_public'] ?? false);
     } catch (e) {
-      print('Check public favorite error: $e');
       return false;
     }
   }
@@ -278,7 +266,6 @@ class PublicHandler {
         'most_favorited_anime': mostFavoritedAnime,
       };
     } catch (e) {
-      print('Get public favorites stats error: $e');
       return {
         'total_public_favorites': 0,
         'total_users_with_public': 0,

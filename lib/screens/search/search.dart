@@ -39,6 +39,10 @@ class _SearchPageState extends State<SearchPage> {
   String? _error;
   String? _trendingError;
   String _lastValidQuery = '';
+  
+  // Search cache for better performance
+  final Map<String, CombinedSearchResponse> _searchCache = {};
+  static const Duration _cacheExpiry = Duration(minutes: 10);
 
   @override
   void initState() {
@@ -52,6 +56,7 @@ class _SearchPageState extends State<SearchPage> {
     _searchFocusNode.dispose();
     _debounceTimer?.cancel();
     _currentSearchToken?.cancel();
+    _searchCache.clear(); // Clear cache on dispose
     super.dispose();
   }
 
@@ -175,6 +180,20 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _performSearch(String query) async {
     if (!mounted) return;
     
+    // Check cache first
+    final cacheKey = query.toLowerCase().trim();
+    if (_searchCache.containsKey(cacheKey)) {
+      final cachedResponse = _searchCache[cacheKey]!;
+      setState(() {
+        _englishResults = cachedResponse.englishResults;
+        _hindiResults = cachedResponse.hindiResults;
+        _isLoading = false;
+        _hasSearched = true;
+        _error = cachedResponse.error;
+      });
+      return;
+    }
+    
     // Cancel previous search
     _currentSearchToken?.cancel();
     _currentSearchToken = CancelToken();
@@ -210,6 +229,9 @@ class _SearchPageState extends State<SearchPage> {
       
       if (mounted) {
         if (response.success) {
+          // Cache successful results
+          _searchCache[query.toLowerCase().trim()] = response;
+          
           setState(() {
             _englishResults = response.englishResults;
             _hindiResults = response.hindiResults;
@@ -249,7 +271,7 @@ class _SearchPageState extends State<SearchPage> {
         setState(() {
           _isLoading = false;
           _hasSearched = true;
-          _error = 'Search failed: ${e.toString().contains('FormatException') ? 'Invalid server response' : 'Please try again'}';
+          _error = 'Search failed. Please try again.';
         });
       }
     }

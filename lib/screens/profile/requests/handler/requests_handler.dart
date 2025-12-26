@@ -160,9 +160,7 @@ class RequestsHandler {
             type: 'sync_removed',
             screen: '/favourite',
           );
-          print('Request removal notification sent to receiver: $receiverId');
         } catch (e) {
-          print('Error sending removal notification: $e');
         }
       }
       
@@ -192,7 +190,6 @@ class RequestsHandler {
       
       return connectionCount >= 2;
     } catch (e) {
-      print('Error checking connection limit: $e');
       return false;
     }
   }
@@ -266,9 +263,7 @@ class RequestsHandler {
             screen: '/favourite',
             extraData: {'request_id': requestId},
           );
-          print('Acceptance notification sent to sender: $senderId');
         } catch (e) {
-          print('Error sending acceptance notification: $e');
         }
         
         return {
@@ -358,14 +353,11 @@ class RequestsHandler {
           screen: '/favourite',
         );
         
-        print('Disconnect notifications sent to both users');
       } catch (e) {
-        print('Error sending disconnect notifications: $e');
       }
       
       return true;
     } catch (e) {
-      print('Error disconnecting users: $e');
       return false;
     }
   }
@@ -506,7 +498,6 @@ class RequestsHandler {
         );
       }
     } catch (e) {
-      print('Error showing expired toast: $e');
     }
   }
 
@@ -562,17 +553,14 @@ class RequestsHandler {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        print('No Firebase user logged in');
         return false;
       }
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
       if (userData == null) {
-        print('No Supabase user found');
         return false;
       }
       
-      print('Creating test request for user: ${userData['id']}');
       
       // Use the sendSyncRequest method from SupabaseHandler
       final success = await SupabaseHandler.sendSyncRequest(
@@ -581,10 +569,8 @@ class RequestsHandler {
         senderUsername: userData['username'] ?? 'Test User',
       );
       
-      print('Test request result: $success');
       return success;
     } catch (e) {
-      print('Error creating test request: $e');
       return false;
     }
   }
@@ -655,8 +641,6 @@ class RequestsHandler {
 
   // Test merge function directly for debugging
   static Future<Map<String, dynamic>> testMergeFavoritesDirectly(String user1Id, String user2Id) async {
-    print('🧪 DIRECT MERGE TEST STARTING...');
-    print('👥 Users: $user1Id + $user2Id');
     
     try {
       // Get both users' PRIVATE favorites only (is_public=false)
@@ -669,18 +653,13 @@ class RequestsHandler {
         filters: {'user_id': user2Id, 'is_public': false},
       ) ?? [];
       
-      print('📊 User1 private favorites found: ${user1Favorites.length}');
       for (var fav in user1Favorites) {
-        print('   - ${fav['anime_title']} (is_public: ${fav['is_public']})');
       }
       
-      print('📊 User2 private favorites found: ${user2Favorites.length}');
       for (var fav in user2Favorites) {
-        print('   - ${fav['anime_title']} (is_public: ${fav['is_public']})');
       }
       
       final totalFavorites = user1Favorites.length + user2Favorites.length;
-      print('🎯 Total private favorites to merge: $totalFavorites');
       
       if (totalFavorites == 0) {
         return {'success': false, 'error': 'No private favorites found', 'count': 0};
@@ -694,11 +673,9 @@ class RequestsHandler {
         final animeId = fav['anime_id']?.toString();
         if (animeId != null && animeId.isNotEmpty) {
           uniqueFavorites[animeId] = fav;
-          print('✅ Added to merge: ${fav['anime_title']}');
         }
       }
       
-      print('🎯 Unique favorites ready for merge: ${uniqueFavorites.length}');
       
       return {
         'success': true,
@@ -708,7 +685,6 @@ class RequestsHandler {
         'favorites': uniqueFavorites.values.map((f) => f['anime_title']).toList()
       };
     } catch (e) {
-      print('❌ Error in direct merge test: $e');
       return {'success': false, 'error': e.toString(), 'count': 0};
     }
   }
@@ -716,7 +692,6 @@ class RequestsHandler {
   // Original merge function for backward compatibility
   static Future<void> _mergeFavoritesToShared(String user1Id, String user2Id) async {
     try {
-      print('🔄 Starting favorites merge for users: $user1Id and $user2Id');
       
       // Get both users' PRIVATE favorites only (is_public=false)
       final user1Favorites = await SupabaseHandler.getData(
@@ -728,9 +703,6 @@ class RequestsHandler {
         filters: {'user_id': user2Id, 'is_public': false},
       ) ?? [];
       
-      print('📊 User1 private favorites: ${user1Favorites.length}, User2 private favorites: ${user2Favorites.length}');
-      print('🔍 User1 favorites: ${user1Favorites.map((f) => f['anime_title']).toList()}');
-      print('🔍 User2 favorites: ${user2Favorites.map((f) => f['anime_title']).toList()}');
       
       // Combine and deduplicate by anime_id
       final Map<String, Map<String, dynamic>> uniqueFavorites = {};
@@ -740,7 +712,6 @@ class RequestsHandler {
         final animeId = fav['anime_id']?.toString();
         if (animeId != null && animeId.isNotEmpty) {
           uniqueFavorites[animeId] = fav;
-          print('✅ Added user1 favorite: ${fav['anime_title']}');
         }
       }
       
@@ -749,11 +720,9 @@ class RequestsHandler {
         final animeId = fav['anime_id']?.toString();
         if (animeId != null && animeId.isNotEmpty) {
           uniqueFavorites[animeId] = fav;
-          print('✅ Added user2 favorite: ${fav['anime_title']}');
         }
       }
       
-      print('🎯 Unique private favorites after merge: ${uniqueFavorites.length}');
       
       // Insert unique favorites into connected_fav table
       for (final fav in uniqueFavorites.values) {
@@ -776,11 +745,7 @@ class RequestsHandler {
         }
       }
       
-      print('🎉 Favorites merge completed successfully - ${uniqueFavorites.length} favorites merged');
-      print('🍞 TOAST: Successfully merged ${uniqueFavorites.length} private favorites!');
     } catch (e) {
-      print('❌ Error merging favorites: $e');
-      print('🍞 TOAST: Failed to merge favorites - $e');
     }
   }
 }

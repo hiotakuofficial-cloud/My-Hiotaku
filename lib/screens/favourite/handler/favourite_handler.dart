@@ -15,7 +15,6 @@ class FavouriteHandler {
       final favorites = await SupabaseHandler.getUserFavorites(userData['id'].toString());
       return favorites ?? [];
     } catch (e) {
-      print('Get user favorites error: $e');
       return [];
     }
   }
@@ -44,7 +43,6 @@ class FavouriteHandler {
       
       return result != null;
     } catch (e) {
-      print('Add to favorites error: $e');
       return false;
     }
   }
@@ -63,7 +61,6 @@ class FavouriteHandler {
         animeId: animeId,
       );
     } catch (e) {
-      print('Remove from favorites error: $e');
       return false;
     }
   }
@@ -74,7 +71,6 @@ class FavouriteHandler {
       final favorites = await getUserFavorites();
       return favorites.any((fav) => fav['anime_id'] == animeId);
     } catch (e) {
-      print('Check favorites error: $e');
       return false;
     }
   }
@@ -85,7 +81,6 @@ class FavouriteHandler {
       final publicFavorites = await SupabaseHandler.getPublicFavorites();
       return publicFavorites ?? [];
     } catch (e) {
-      print('Get public favorites error: $e');
       return [];
     }
   }
@@ -110,7 +105,6 @@ class FavouriteHandler {
       
       return result != null;
     } catch (e) {
-      print('Send merge request error: $e');
       return false;
     }
   }
@@ -127,7 +121,6 @@ class FavouriteHandler {
       final requests = await SupabaseHandler.getPendingMergeRequests(userData['id'].toString());
       return requests ?? [];
     } catch (e) {
-      print('Get pending requests error: $e');
       return [];
     }
   }
@@ -140,7 +133,6 @@ class FavouriteHandler {
         accept: true,
       );
     } catch (e) {
-      print('Accept merge request error: $e');
       return false;
     }
   }
@@ -153,7 +145,6 @@ class FavouriteHandler {
         accept: false,
       );
     } catch (e) {
-      print('Reject merge request error: $e');
       return false;
     }
   }
@@ -181,7 +172,6 @@ class FavouriteHandler {
       final favorites = await getUserFavorites();
       return favorites.length;
     } catch (e) {
-      print('Get favorites count error: $e');
       return 0;
     }
   }
@@ -205,7 +195,6 @@ class FavouriteHandler {
         );
       }
     } catch (e) {
-      print('Toggle favorite error: $e');
       return false;
     }
   }

@@ -309,9 +309,7 @@ class SyncUserHandler {
   static Future<void> _sendWelcomeNotification(String userId, String username) async {
     try {
       await NotificationService.sendWelcome(userId);
-      print('Welcome notification sent to $username');
     } catch (e) {
-      print('Failed to send welcome notification: $e');
     }
   }
   
@@ -324,9 +322,7 @@ class SyncUserHandler {
         type: 'general',
         screen: '/favourite',
       );
-      print('Login notification sent to $username');
     } catch (e) {
-      print('Failed to send login notification: $e');
     }
   }
   
@@ -339,9 +335,7 @@ class SyncUserHandler {
         type: 'favourite',
         screen: '/favourite',
       );
-      print('Favorites sync notification sent for $count items');
     } catch (e) {
-      print('Failed to send favorites sync notification: $e');
     }
   }
 }

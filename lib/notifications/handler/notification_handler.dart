@@ -15,9 +15,7 @@ class NotificationHandler {
       // Initialize Local Notifications
       await LocalNotificationHandler.initialize();
       
-      print('Notification system initialized');
     } catch (e) {
-      print('Notification initialization error: $e');
     }
   }
   
@@ -47,7 +45,6 @@ class NotificationHandler {
       // For now, just return true
       return true;
     } catch (e) {
-      print('Send merge request notification error: $e');
       return false;
     }
   }
@@ -70,7 +67,6 @@ class NotificationHandler {
       await _storeNotification(senderUserId, notification);
       return true;
     } catch (e) {
-      print('Send merge accepted notification error: $e');
       return false;
     }
   }
@@ -93,7 +89,6 @@ class NotificationHandler {
       await _storeNotification(senderUserId, notification);
       return true;
     } catch (e) {
-      print('Send merge rejected notification error: $e');
       return false;
     }
   }
@@ -122,7 +117,6 @@ class NotificationHandler {
           .toList()
         ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
     } catch (e) {
-      print('Get user notifications error: $e');
       return [];
     }
   }
@@ -136,7 +130,6 @@ class NotificationHandler {
         filters: {'id': notificationId},
       );
     } catch (e) {
-      print('Mark notification as read error: $e');
       return false;
     }
   }
@@ -160,7 +153,6 @@ class NotificationHandler {
       
       return notifications?.length ?? 0;
     } catch (e) {
-      print('Get unread count error: $e');
       return 0;
     }
   }
@@ -180,7 +172,6 @@ class NotificationHandler {
         filters: {'user_id': userData['id']},
       );
     } catch (e) {
-      print('Clear all notifications error: $e');
       return false;
     }
   }
@@ -204,7 +195,6 @@ class NotificationHandler {
           .cast<String>()
           .toList();
     } catch (e) {
-      print('Get user FCM tokens error: $e');
       return [];
     }
   }
@@ -225,7 +215,6 @@ class NotificationHandler {
         },
       );
     } catch (e) {
-      print('Store notification error: $e');
     }
   }
 }

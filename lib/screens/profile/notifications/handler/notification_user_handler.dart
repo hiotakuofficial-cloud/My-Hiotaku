@@ -31,7 +31,6 @@ class NotificationUserHandler {
       
       return userNotifications;
     } catch (e) {
-      print('Error loading notifications: $e');
       return [];
     }
   }
@@ -45,7 +44,6 @@ class NotificationUserHandler {
         data: {'is_read': true},
       );
     } catch (e) {
-      print('Error marking notification as read: $e');
       return false;
     }
   }
@@ -56,7 +54,6 @@ class NotificationUserHandler {
       final notifications = await getUserNotifications();
       return notifications.where((n) => n['is_read'] != true).length;
     } catch (e) {
-      print('Error getting unread count: $e');
       return 0;
     }
   }
@@ -69,7 +66,6 @@ class NotificationUserHandler {
         filters: {'id': notificationId},
       );
     } catch (e) {
-      print('Error deleting notification: $e');
       return false;
     }
   }

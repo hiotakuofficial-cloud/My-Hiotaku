@@ -141,7 +141,6 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
         topUsers = sortedUsers.take(4).toList();
       });
     } catch (e) {
-      print('Load top users error: $e');
     }
   }
   
@@ -702,7 +701,7 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
       if (animeId == null || animeId.toString().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Cannot open details - Invalid anime ID'),
+            content: Text('Unable to open details. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -728,7 +727,7 @@ class _PublicFavoritesPageState extends State<PublicFavoritesPage> with TickerPr
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error opening details page'),
+          content: Text('Unable to open details. Please try again.'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

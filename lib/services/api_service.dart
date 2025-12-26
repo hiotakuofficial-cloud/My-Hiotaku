@@ -26,13 +26,13 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } on SocketException {
       throw Exception('Network error: Check internet connection');
     } on FormatException {
       throw Exception('Invalid response format');
     } catch (e) {
-      throw Exception('Request failed: $e');
+      throw Exception('Request failed');
     }
   }
 
@@ -57,9 +57,9 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
-      throw Exception('Search failed: $e');
+      throw Exception('Search failed');
     }
   }
 
@@ -80,7 +80,7 @@ class ApiService {
         ApiCache.set(cacheKey, jsonData);
         return jsonData;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Details failed: $e');
     }
@@ -129,7 +129,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get popular anime: $e');
     }
@@ -153,7 +153,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get top upcoming anime: $e');
     }
@@ -177,7 +177,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get movies: $e');
     }
@@ -201,7 +201,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get subbed anime: $e');
     }
@@ -225,7 +225,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get dubbed anime: $e');
     }
@@ -250,7 +250,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get Hindi anime: $e');
     }
@@ -274,7 +274,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get Hindi dubbed anime: $e');
     }
@@ -298,7 +298,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to search Hindi anime: $e');
     }
@@ -321,7 +321,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get Hindi anime details: $e');
     }
@@ -345,7 +345,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get Hindi episodes: $e');
     }
@@ -366,7 +366,7 @@ class ApiService {
         final result = _parseHomeResponse(jsonData);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } on SocketException {
       throw Exception('Network error: Check internet connection');
     } on FormatException {
@@ -392,7 +392,7 @@ class ApiService {
         }
         throw Exception('No episodes found');
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } on SocketException {
       throw Exception('Network error: Check internet connection');
     } on FormatException {
@@ -418,7 +418,7 @@ class ApiService {
         }
         throw Exception('Stream not available');
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } on SocketException {
       throw Exception('Network error: Check internet connection');
     } on FormatException {
@@ -445,7 +445,7 @@ class ApiService {
         ApiCache.set(cacheKey, result);
         return result;
       }
-      throw Exception('HTTP ${response.statusCode}');
+      throw Exception('Service temporarily unavailable');
     } catch (e) {
       throw Exception('Failed to get Hindi stream URL: $e');
     }

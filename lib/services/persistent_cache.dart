@@ -11,7 +11,6 @@ class PersistentCache {
       final directory = await getApplicationDocumentsDirectory();
       _cacheFile = File('${directory.path}/$_cacheFileName');
     } catch (e) {
-      print('Cache init error: $e');
     }
   }
 
@@ -20,7 +19,6 @@ class PersistentCache {
       if (_cacheFile == null) await init();
       await _cacheFile!.writeAsString(jsonEncode(cacheData));
     } catch (e) {
-      print('Save cache error: $e');
     }
   }
 
@@ -32,7 +30,6 @@ class PersistentCache {
       final content = await _cacheFile!.readAsString();
       return jsonDecode(content) as Map<String, dynamic>;
     } catch (e) {
-      print('Load cache error: $e');
       return null;
     }
   }
@@ -44,7 +41,6 @@ class PersistentCache {
         await _cacheFile!.delete();
       }
     } catch (e) {
-      print('Clear cache error: $e');
     }
   }
 }

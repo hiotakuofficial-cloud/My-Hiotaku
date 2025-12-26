@@ -82,7 +82,7 @@ class _DetailsSheetState extends State<DetailsSheet> with TickerProviderStateMix
       setState(() {
         isLoading = false;
         hasError = true;
-        errorMessage = e.toString().replaceAll('Exception: ', '');
+        errorMessage = 'Failed to load details. Please try again.';
       });
     }
   }

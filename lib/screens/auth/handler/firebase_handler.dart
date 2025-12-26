@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'supabase.dart';
 
 class FirebaseHandler {
@@ -14,9 +15,7 @@ class FirebaseHandler {
     try {
       // Trigger initialization by checking sign-in status
       await _googleSignIn.isSignedIn();
-      print('✅ Google Sign In pre-initialized');
     } catch (e) {
-      print('⚠️ Google Sign In pre-initialization failed: $e');
     }
   }
 
@@ -82,7 +81,10 @@ class FirebaseHandler {
   // Google Sign In with clean error handling and account selection
   Future<User?> signInWithGoogle({BuildContext? context}) async {
     try {
-      // Step 1: Google Login Popup (don't force logout)
+      // Step 1: Force account selection by signing out first
+      await _googleSignIn.signOut();
+      
+      // Step 2: Google Login Popup with account selection
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -141,15 +143,31 @@ class FirebaseHandler {
           errorMessage += 'Network error - check internet connection';
           break;
         default:
-          errorMessage += e.message ?? 'Unknown error';
+          errorMessage += 'Authentication failed. Please try again.';
+      }
+      _showError(context, errorMessage);
+      return null;
+    } on PlatformException catch (e) {
+      String errorMessage = 'Google Sign-in failed: ';
+      switch (e.code) {
+        case 'network_error':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        case 'sign_in_canceled':
+          return null; // User cancelled, don't show error
+        case 'sign_in_failed':
+          errorMessage = 'Google Sign-in failed. Please try again.';
+          break;
+        default:
+          errorMessage = 'Google Sign-in error. Please try again later.';
       }
       _showError(context, errorMessage);
       return null;
     } on Exception catch (e) {
-      _showError(context, 'Google Sign-in Error: ${e.toString()}');
+      _showError(context, 'Unexpected error occurred. Please try again.');
       return null;
     } catch (e) {
-      _showError(context, 'Unexpected error: ${e.toString()}');
+      _showError(context, 'Unexpected error occurred. Please try again.');
       return null;
     }
   }
@@ -157,11 +175,12 @@ class FirebaseHandler {
   // Logout with error handling and proper disconnect
   Future<bool> signOut({BuildContext? context}) async {
     try {
-      await _googleSignIn.disconnect(); // Complete disconnect instead of signOut
+      // Sign out from Google (not disconnect to allow account selection next time)
+      await _googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       return true;
     } catch (e) {
-      _showError(context, 'Sign-out Error: ${e.toString()}');
+      _showError(context, 'Sign-out failed. Please try again.');
       return false;
     }
   }
@@ -171,7 +190,7 @@ class FirebaseHandler {
     try {
       return FirebaseAuth.instance.currentUser;
     } catch (e) {
-      _showError(context, 'Error getting current user: ${e.toString()}');
+      _showError(context, 'Unable to get user information.');
       return null;
     }
   }
@@ -181,7 +200,7 @@ class FirebaseHandler {
     try {
       return FirebaseAuth.instance.currentUser != null;
     } catch (e) {
-      _showError(context, 'Error checking login status: ${e.toString()}');
+      _showError(context, 'Unable to check login status.');
       return false;
     }
   }
@@ -198,7 +217,7 @@ class FirebaseHandler {
       User? user = FirebaseAuth.instance.currentUser;
       return true;
     } catch (e) {
-      _showError(context, 'Firebase connection failed: ${e.toString()}');
+      _showError(context, 'Connection failed. Please check your internet.');
       return false;
     }
   }
@@ -209,7 +228,7 @@ class FirebaseHandler {
       await _googleSignIn.isSignedIn();
       return true;
     } catch (e) {
-      _showError(context, 'Google Play Services error: ${e.toString()}');
+      _showError(context, 'Google Play Services unavailable.');
       return false;
     }
   }
@@ -248,12 +267,12 @@ class FirebaseHandler {
           errorMessage += 'Invalid email address';
           break;
         default:
-          errorMessage += e.message ?? 'Unknown error';
+          errorMessage += 'Authentication failed. Please try again.';
       }
       _showError(context, errorMessage);
       return null;
     } catch (e) {
-      _showError(context, 'Sign up error: ${e.toString()}');
+      _showError(context, 'Sign up failed. Please try again.');
       return null;
     }
   }
@@ -291,12 +310,12 @@ class FirebaseHandler {
           errorMessage += 'Account has been disabled';
           break;
         default:
-          errorMessage += e.message ?? 'Unknown error';
+          errorMessage += 'Authentication failed. Please try again.';
       }
       _showError(context, errorMessage);
       return null;
     } catch (e) {
-      _showError(context, 'Login error: ${e.toString()}');
+      _showError(context, 'Login failed. Please try again.');
       return null;
     }
   }
@@ -318,7 +337,6 @@ class FirebaseHandler {
           avatarUrl: avatarToUpdate,
           username: existingUser['username'], // Keep existing username
         );
-        print('User updated in Supabase: ${firebaseUser.email}');
       } else {
         // New user, create with default avatar ID
         await SupabaseHandler.upsertUser(
@@ -328,10 +346,8 @@ class FirebaseHandler {
           avatarUrl: 'default.png', // Always default for new users
           username: _generateUsername(firebaseUser),
         );
-        print('New user created in Supabase: ${firebaseUser.email}');
       }
     } catch (e) {
-      print('Supabase sync error: $e');
     }
   }
 

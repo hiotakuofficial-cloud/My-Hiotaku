@@ -42,9 +42,7 @@ class LocalNotificationHandler {
       await _createNotificationChannels();
       
       _isInitialized = true;
-      print('Local notifications initialized');
     } catch (e) {
-      print('Local notification initialization error: $e');
     }
   }
   
@@ -105,7 +103,6 @@ class LocalNotificationHandler {
         payload: data != null ? jsonEncode(data) : null,
       );
     } catch (e) {
-      print('Show notification error: $e');
     }
   }
   
@@ -170,7 +167,6 @@ class LocalNotificationHandler {
         payload: jsonEncode(data),
       );
     } catch (e) {
-      print('Show merge request notification error: $e');
     }
   }
   
@@ -260,7 +256,6 @@ class LocalNotificationHandler {
         }
       }
     } catch (e) {
-      print('Notification tap error: $e');
     }
   }
   
@@ -278,13 +273,11 @@ class LocalNotificationHandler {
   // Handle accept action
   static void _handleAcceptAction(String requestId, Map<String, dynamic> data) {
     // TODO: Call merge request accept API
-    print('Accept merge request: $requestId');
   }
   
   // Handle reject action
   static void _handleRejectAction(String requestId, Map<String, dynamic> data) {
     // TODO: Call merge request reject API
-    print('Reject merge request: $requestId');
   }
   
   // Handle notification tap
@@ -294,16 +287,13 @@ class LocalNotificationHandler {
     switch (notificationType) {
       case 'merge_request':
         // TODO: Navigate to merge requests page
-        print('Navigate to merge requests');
         break;
       case 'merge_accepted':
       case 'merge_rejected':
         // TODO: Navigate to favorites page
-        print('Navigate to favorites');
         break;
       default:
         // TODO: Navigate to notifications page
-        print('Navigate to notifications');
         break;
     }
   }
@@ -313,7 +303,6 @@ class LocalNotificationHandler {
     try {
       await _localNotifications.cancel(id);
     } catch (e) {
-      print('Cancel notification error: $e');
     }
   }
   
@@ -322,7 +311,6 @@ class LocalNotificationHandler {
     try {
       await _localNotifications.cancelAll();
     } catch (e) {
-      print('Cancel all notifications error: $e');
     }
   }
   
@@ -331,7 +319,6 @@ class LocalNotificationHandler {
     try {
       return await _localNotifications.pendingNotificationRequests();
     } catch (e) {
-      print('Get pending notifications error: $e');
       return [];
     }
   }

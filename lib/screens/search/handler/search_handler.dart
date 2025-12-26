@@ -134,7 +134,7 @@ class SearchHandler {
       } else {
         return {
           'success': false,
-          'error': 'English API error: ${response.statusCode}',
+          'error': 'Search failed. Please try again.',
         };
       }
     } on TimeoutException {
@@ -143,10 +143,9 @@ class SearchHandler {
         'error': 'English API timeout',
       };
     } catch (e) {
-      print('English search error: $e');
       return {
         'success': false,
-        'error': 'English API error: $e',
+        'error': 'Search failed. Please try again.',
       };
     }
   }
@@ -171,7 +170,7 @@ class SearchHandler {
         } else if (data is Map && data['success'] == false) {
           return {
             'success': false,
-            'error': data['message'] ?? 'Hindi API error',
+            'error': 'Search failed. Please try again.',
           };
         } else {
           return {
@@ -182,7 +181,7 @@ class SearchHandler {
       } else {
         return {
           'success': false,
-          'error': 'Hindi API error: ${response.statusCode}',
+          'error': 'Search failed. Please try again.',
         };
       }
     } on TimeoutException {
@@ -191,10 +190,9 @@ class SearchHandler {
         'error': 'Hindi API timeout',
       };
     } catch (e) {
-      print('Hindi search error: $e');
       return {
         'success': false,
-        'error': 'Hindi API error: $e',
+        'error': 'Search failed. Please try again.',
       };
     }
   }

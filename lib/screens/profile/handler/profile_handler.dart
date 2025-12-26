@@ -8,22 +8,17 @@ class ProfileHandler {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) {
-        print('No Firebase user logged in');
         return null;
       }
       
-      print('Firebase user found: ${firebaseUser.email}');
       
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) {
-        print('No Supabase user data found for UID: ${firebaseUser.uid}');
       } else {
-        print('Supabase user data found: ${userData['email']}');
       }
       
       return userData;
     } catch (e) {
-      print('Get user data error: $e');
       return null;
     }
   }
@@ -55,7 +50,6 @@ class ProfileHandler {
       
       return success;
     } catch (e) {
-      print('Update profile error: $e');
       return false;
     }
   }
@@ -78,7 +72,6 @@ class ProfileHandler {
       
       return success;
     } catch (e) {
-      print('Update avatar error: $e');
       return false;
     }
   }
@@ -92,7 +85,6 @@ class ProfileHandler {
       final favorites = await SupabaseHandler.getUserFavorites(userData['id']);
       return favorites?.length ?? 0;
     } catch (e) {
-      print('Get favorites count error: $e');
       return 0;
     }
   }
@@ -103,7 +95,6 @@ class ProfileHandler {
       await FirebaseAuth.instance.signOut();
       return true;
     } catch (e) {
-      print('Logout error: $e');
       return false;
     }
   }

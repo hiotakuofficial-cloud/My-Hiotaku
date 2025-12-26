@@ -49,11 +49,10 @@ class SupabaseHandler {
         final List<dynamic> data = json.decode(response.body);
         return data.cast<Map<String, dynamic>>();
       } else {
-        print('GET Error: ${response.statusCode} - ${response.body}');
+        // Log error without sensitive data
         return null;
       }
     } catch (e) {
-      print('GET Exception: $e');
       return null;
     }
   }
@@ -74,11 +73,9 @@ class SupabaseHandler {
         final List<dynamic> result = json.decode(response.body);
         return result.isNotEmpty ? result[0] : null;
       } else {
-        print('POST Error: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('POST Exception: $e');
       return null;
     }
   }
@@ -107,11 +104,9 @@ class SupabaseHandler {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       } else {
-        print('PATCH Error: ${response.statusCode} - ${response.body}');
         return false;
       }
     } catch (e) {
-      print('PATCH Exception: $e');
       return false;
     }
   }
@@ -138,11 +133,9 @@ class SupabaseHandler {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       } else {
-        print('DELETE Error: ${response.statusCode} - ${response.body}');
         return false;
       }
     } catch (e) {
-      print('DELETE Exception: $e');
       return false;
     }
   }
@@ -270,7 +263,6 @@ class SupabaseHandler {
       }
       return null;
     } catch (e) {
-      print('Get public favorites error: $e');
       return null;
     }
   }
@@ -370,7 +362,6 @@ class SupabaseHandler {
       }
       return false;
     } catch (e) {
-      print('Error sending sync request: $e');
       return false;
     }
   }
@@ -412,7 +403,6 @@ class SupabaseHandler {
 
       return 'none';
     } catch (e) {
-      print('Error checking sync status: $e');
       return 'none';
     }
   }
@@ -442,7 +432,6 @@ class SupabaseHandler {
 
       return true;
     } catch (e) {
-      print('Error disconnecting sync: $e');
       return false;
     }
   }
@@ -461,12 +450,9 @@ class SupabaseHandler {
       );
       
       if (success) {
-        print('Sync notification sent to $receiverId from $senderUsername');
       } else {
-        print('Failed to send sync notification');
       }
     } catch (e) {
-      print('Error sending sync notification: $e');
     }
   }
 
@@ -486,7 +472,6 @@ class SupabaseHandler {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('Connection test failed: $e');
       return false;
     }
   }

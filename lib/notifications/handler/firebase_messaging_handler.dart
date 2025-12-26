@@ -25,9 +25,7 @@ class FirebaseMessagingHandler {
       // Initialize local notifications
       await LocalNotificationHandler.initialize();
       
-      print('FCM initialized successfully');
     } catch (e) {
-      print('FCM initialization error: $e');
     }
   }
   
@@ -50,9 +48,7 @@ class FirebaseMessagingHandler {
         await Permission.notification.request();
       }
       
-      print('Notification permission status: ${settings.authorizationStatus}');
     } catch (e) {
-      print('Permission request error: $e');
     }
   }
   
@@ -62,13 +58,11 @@ class FirebaseMessagingHandler {
       _currentToken = await _firebaseMessaging.getToken();
       
       if (_currentToken != null) {
-        print('FCM Token: $_currentToken');
         await _storeFCMToken(_currentToken!);
       }
       
       return _currentToken;
     } catch (e) {
-      print('Get FCM token error: $e');
       return null;
     }
   }
@@ -112,9 +106,7 @@ class FirebaseMessagingHandler {
         );
       }
       
-      print('FCM token stored successfully');
     } catch (e) {
-      print('Store FCM token error: $e');
     }
   }
   
@@ -147,7 +139,6 @@ class FirebaseMessagingHandler {
   // Handle foreground messages (app is active)
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
     try {
-      print('Foreground message received: ${message.messageId}');
       
       // Show local notification
       await LocalNotificationHandler.showNotification(
@@ -159,52 +150,43 @@ class FirebaseMessagingHandler {
       // Store notification in database
       await _storeNotification(message);
     } catch (e) {
-      print('Handle foreground message error: $e');
     }
   }
   
   // Handle background messages (app is closed/background)
   static Future<void> _handleBackgroundMessage(RemoteMessage message) async {
     try {
-      print('Background message received: ${message.messageId}');
       
       // Store notification in database
       await _storeNotification(message);
     } catch (e) {
-      print('Handle background message error: $e');
     }
   }
   
   // Handle notification tap
   static Future<void> _handleNotificationTap(RemoteMessage message) async {
     try {
-      print('Notification tapped: ${message.messageId}');
       // Just open the app - no specific navigation needed
     } catch (e) {
-      print('Handle notification tap error: $e');
     }
   }
   
   // Handle merge request notification tap
   static void _handleMergeRequestTap(Map<String, dynamic> data) {
     // App opens automatically - no navigation needed
-    print('Notification opened app');
   }
   
   // Handle merge response notification tap
   static void _handleMergeResponseTap(Map<String, dynamic> data) {
     // App opens automatically - no navigation needed
-    print('Notification opened app');
   }
   
   // Handle token refresh
   static Future<void> _onTokenRefresh(String newToken) async {
     try {
-      print('FCM token refreshed: $newToken');
       _currentToken = newToken;
       await _storeFCMToken(newToken);
     } catch (e) {
-      print('Token refresh error: $e');
     }
   }
   
@@ -230,7 +212,6 @@ class FirebaseMessagingHandler {
         },
       );
     } catch (e) {
-      print('Store notification error: $e');
     }
   }
   
@@ -245,7 +226,6 @@ class FirebaseMessagingHandler {
       await _firebaseMessaging.deleteToken();
       return await _getFCMToken();
     } catch (e) {
-      print('Refresh token error: $e');
       return null;
     }
   }
@@ -264,7 +244,6 @@ class FirebaseMessagingHandler {
       await _firebaseMessaging.deleteToken();
       _currentToken = null;
     } catch (e) {
-      print('Deactivate token error: $e');
     }
   }
 }

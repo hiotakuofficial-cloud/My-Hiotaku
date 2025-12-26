@@ -95,7 +95,6 @@ class _SplashScreenState extends State<SplashScreen> {
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (e) {
       // Timeout or network error - assume no internet
-      print('⚠️ Internet check failed: $e');
       return false;
     }
   }
@@ -135,7 +134,6 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await PermissionService.requestNotificationPermission();
     } catch (e) {
-      print('Permission request error: $e');
     }
   }
 

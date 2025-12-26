@@ -245,6 +245,5 @@ class _AnimeCardState extends State<AnimeCard>
 
   void _onTap() {
     // Navigate to anime details
-    print('Tapped on: ${widget.anime.title}');
   }
 }

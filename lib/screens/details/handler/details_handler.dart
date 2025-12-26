@@ -12,24 +12,20 @@ class DetailsHandler {
     try {
       Map<String, dynamic> rawData;
       
-      print('🔍 Getting details for: $animeId (Type: $animeType)');
       
       // Determine API based on anime type
       if (animeType.toLowerCase().contains('hindi') || 
           animeType.toLowerCase().contains('dubbed')) {
         // Use Hindi API
-        print('📱 Using Hindi API');
         rawData = await ApiService.getHindiAnimeDetails(animeId);
         return _parseHindiDetails(rawData, animeId, title, poster);
       } else {
         // Use English API
-        print('📱 Using English API');
         rawData = await ApiService.getAnimeDetails(animeId);
         return _parseEnglishDetails(rawData, animeId, title, poster);
       }
     } catch (e) {
-      print('❌ Details Handler Error: $e');
-      throw Exception('Failed to get anime details: $e');
+      throw Exception('Unable to load anime details');
     }
   }
 
@@ -41,7 +37,6 @@ class DetailsHandler {
     String? fallbackPoster,
   ) {
     try {
-      print('🔧 Parsing English API response: $response');
       
       // English API structure: { "success": true, "data": {...} }
       if (response['success'] == true && response['data'] != null) {
@@ -63,10 +58,9 @@ class DetailsHandler {
           source: 'english_api',
         );
       } else {
-        throw Exception('Invalid English API response structure');
+        throw Exception('Unable to load anime details');
       }
     } catch (e) {
-      print('❌ English parsing error: $e');
       // Fallback with provided data
       return AnimeDetailsResponse(
         id: animeId,
@@ -94,7 +88,6 @@ class DetailsHandler {
     String? fallbackPoster,
   ) {
     try {
-      print('🔧 Parsing Hindi API response: $data');
       
       // Hindi API structure: direct object with anime details
       return AnimeDetailsResponse(
@@ -113,7 +106,6 @@ class DetailsHandler {
         source: 'hindi_api',
       );
     } catch (e) {
-      print('❌ Hindi parsing error: $e');
       // Fallback with provided data
       return AnimeDetailsResponse(
         id: animeId,
@@ -197,7 +189,7 @@ class DetailsHandler {
         return [];
       }
     } catch (e) {
-      throw Exception('Failed to get episodes: $e');
+      throw Exception('Unable to load episodes');
     }
   }
 
