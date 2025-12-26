@@ -104,7 +104,7 @@ class _BordLoginScreenState extends State<BordLoginScreen>
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Login failed: ${e.toString()}'),
+          content: Text('Login failed. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );

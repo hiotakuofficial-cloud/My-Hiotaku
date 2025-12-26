@@ -364,7 +364,7 @@ class _RequestsPageState extends State<RequestsPage> with TickerProviderStateMix
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ Failed to merge favorites: $errorMessage'),
+          content: Text('Failed to merge favorites. Please try again.'),
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
         ),

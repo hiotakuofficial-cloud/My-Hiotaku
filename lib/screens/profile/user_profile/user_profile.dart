@@ -132,7 +132,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Profile load failed: ${profileResult['message']}'),
+            content: Text('Failed to load profile. Please try again.'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 3),
           ),
@@ -145,7 +145,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Text('Something went wrong. Please try again.'),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 3),
         ),
@@ -529,7 +529,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content: Text('Request failed. Please try again.'),
           backgroundColor: Color(0xFFFF5252),
           behavior: SnackBarBehavior.floating,
         ),
