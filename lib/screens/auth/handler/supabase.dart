@@ -316,10 +316,10 @@ class SupabaseHandler {
     );
   }
   
-  /// Get shared favorites for user
-  static Future<List<Map<String, dynamic>>?> getSharedFavorites(String userId) async {
+  /// Get connected favorites for user
+  static Future<List<Map<String, dynamic>>?> getConnectedFavorites(String userId) async {
     return await getData(
-      table: 'shared_favorites',
+      table: 'connected_fav',
       filters: {'user1_id': userId},
     );
   }

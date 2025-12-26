@@ -158,8 +158,8 @@ class FavouriteHandler {
     }
   }
   
-  // Get shared favorites (merged with other users)
-  static Future<List<Map<String, dynamic>>> getSharedFavorites() async {
+  // Get connected favorites (merged with other users)
+  static Future<List<Map<String, dynamic>>> getConnectedFavorites() async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) return [];
@@ -167,10 +167,10 @@ class FavouriteHandler {
       final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
       if (userData == null) return [];
       
-      final sharedFavorites = await SupabaseHandler.getSharedFavorites(userData['id'].toString());
-      return sharedFavorites ?? [];
+      final connectedFavorites = await SupabaseHandler.getConnectedFavorites(userData['id'].toString());
+      return connectedFavorites ?? [];
     } catch (e) {
-      print('Get shared favorites error: $e');
+      print('Get connected favorites error: $e');
       return [];
     }
   }
