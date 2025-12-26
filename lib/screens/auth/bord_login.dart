@@ -101,7 +101,9 @@ class _BordLoginScreenState extends State<BordLoginScreen>
       }
       
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Login failed. Please try again.'),

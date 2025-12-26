@@ -549,7 +549,9 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.pushReplacementNamed(context, '/main');
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
       String message = e.toString().replaceAll('Exception: ', '');
       IconData icon = Icons.error_outline;
       
@@ -568,12 +570,12 @@ class _LoginScreenState extends State<LoginScreen>
       } else if (message.contains('invalid-email')) {
         message = 'Invalid email address';
         icon = Icons.email_outlined;
+      } else {
+        message = 'Unexpected error occurred';
+        icon = Icons.error_outline;
       }
       
       _showErrorToast(message, icon);
-    } catch (e) {
-      setState(() => _isLoading = false);
-      _showErrorToast('Unexpected error occurred', Icons.error_outline);
     }
   }
 
@@ -608,7 +610,9 @@ class _LoginScreenState extends State<LoginScreen>
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
       _showErrorToast('Google login failed', Icons.g_mobiledata_outlined);
     }
   }
