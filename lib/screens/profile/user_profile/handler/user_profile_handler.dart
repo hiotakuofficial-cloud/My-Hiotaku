@@ -3,7 +3,7 @@ import '../../../auth/handler/supabase.dart';
 
 class UserProfileHandler {
   
-  /// Get user profile data by username
+  /// Get user profile data by username - optimized
   static Future<Map<String, dynamic>> getUserProfile(String username) async {
     try {
       // Get user basic data
@@ -14,36 +14,35 @@ class UserProfileHandler {
       );
       
       if (userData == null || userData.isEmpty) {
-        return {
-          'success': false,
-          'message': 'User not found',
-        };
+        return {'success': false, 'message': 'User not found'};
       }
       
       final user = userData.first;
       final userId = user['id'];
       
-      // Get public favorites count
-      final favoritesData = await SupabaseHandler.getData(
-        table: 'favorites',
-        select: 'id',
-        filters: {'user_id': userId, 'is_public': true},
-      );
+      // Run count queries in parallel
+      final countResults = await Future.wait([
+        SupabaseHandler.getData(
+          table: 'favorites',
+          select: 'id',
+          filters: {'user_id': userId, 'is_public': true},
+        ),
+        SupabaseHandler.getData(
+          table: 'merged_accounts',
+          select: 'id',
+          filters: {'user1_id': userId},
+        ),
+      ]);
       
-      // Get synced accounts count (users who merged with this user)
-      final syncedAccountsData = await SupabaseHandler.getData(
-        table: 'merged_accounts',
-        select: 'id',
-        filters: {'user1_id': userId}, // Check if user is primary in merge
-      );
+      final favoritesData = countResults[0];
+      final syncedAccountsData = countResults[1];
       
-      // Calculate online status (last updated within 30 minutes)
+      // Calculate online status
       bool isOnline = false;
       if (user['updated_at'] != null) {
         try {
           DateTime lastUpdate = DateTime.parse(user['updated_at']);
-          Duration difference = DateTime.now().difference(lastUpdate);
-          isOnline = difference.inMinutes <= 30;
+          isOnline = DateTime.now().difference(lastUpdate).inMinutes <= 30;
         } catch (e) {
           isOnline = false;
         }
@@ -74,22 +73,14 @@ class UserProfileHandler {
     }
   }
   
-  /// Get user's public favorites
+  /// Get user's public favorites - optimized
   static Future<Map<String, dynamic>> getUserFavorites(String username) async {
     try {
-      print('🔍 Getting favorites for username: $username');
-      
-      // Get public favorites directly by username from public_favorites table
       final publicFavoritesData = await SupabaseHandler.getData(
         table: 'public_favorites',
         select: 'anime_id,anime_title,anime_image,added_at,username,display_name',
         filters: {'username': username},
       );
-      
-      print('📊 Public favorites query result: ${publicFavoritesData?.length ?? 0} items');
-      if (publicFavoritesData != null && publicFavoritesData.isNotEmpty) {
-        print('📝 First favorite: ${publicFavoritesData.first}');
-      }
       
       return {
         'success': true,
@@ -97,7 +88,6 @@ class UserProfileHandler {
         'count': publicFavoritesData?.length ?? 0,
       };
     } catch (e) {
-      print('❌ Error getting favorites: $e');
       return {
         'success': false,
         'message': 'Failed to load favorites',
@@ -192,10 +182,10 @@ class UserProfileHandler {
     }
   }
   
-  /// Get user's synced accounts
+  /// Get user's synced accounts - optimized
   static Future<Map<String, dynamic>> getUserSyncedAccounts(String username) async {
     try {
-      // Get user ID
+      // Get user ID first
       final userData = await SupabaseHandler.getData(
         table: 'users',
         select: 'id',
@@ -203,15 +193,12 @@ class UserProfileHandler {
       );
       
       if (userData == null || userData.isEmpty) {
-        return {
-          'success': false,
-          'message': 'User not found',
-        };
+        return {'success': false, 'message': 'User not found'};
       }
       
       final userId = userData.first['id'];
       
-      // Get merged accounts with user details
+      // Get merged accounts with user details in one query
       final mergeData = await SupabaseHandler.getData(
         table: 'merged_accounts',
         select: 'user2_id,merged_at',
@@ -219,15 +206,32 @@ class UserProfileHandler {
       );
       
       if (mergeData == null || mergeData.isEmpty) {
-        return {
-          'success': true,
-          'synced_accounts': [],
-          'count': 0,
-        };
+        return {'success': true, 'synced_accounts': [], 'count': 0};
       }
       
-      // Get details of merged users
+      // Get all merged user details in parallel
+      final userDetailsFutures = mergeData.map((merge) => 
+        SupabaseHandler.getData(
+          table: 'users',
+          select: 'username,display_name,avatar_url',
+          filters: {'id': merge['user2_id']},
+        )
+      ).toList();
+      
+      final userDetailsResults = await Future.wait(userDetailsFutures);
+      
       List<Map<String, dynamic>> syncedAccounts = [];
+      for (int i = 0; i < mergeData.length; i++) {
+        final userDetails = userDetailsResults[i];
+        if (userDetails != null && userDetails.isNotEmpty) {
+          syncedAccounts.add({
+            'username': userDetails.first['username'],
+            'display_name': userDetails.first['display_name'],
+            'avatar_url': userDetails.first['avatar_url'],
+            'merged_at': mergeData[i]['merged_at'],
+          });
+        }
+      }
       for (var merge in mergeData) {
         final syncedUserData = await SupabaseHandler.getData(
           table: 'users',
