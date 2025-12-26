@@ -245,14 +245,16 @@ class RequestsHandler {
         // Show merge start toast
         print('🔄 TOAST: Starting favorites merge...');
         
-        // Merge favorites into shared_favorites table
+        // Merge favorites into connected_fav table
         final mergeResult = await _mergeFavoritesToSharedWithToast(senderId, receiverId);
         
         // Show merge completion toast based on result
-        if (mergeResult['success']) {
-          print('✅ TOAST: Favorites merge completed successfully!');
+        if (mergeResult['success'] && mergeResult['count'] > 0) {
+          print('✅ TOAST: Request accepted! Merged ${mergeResult['count']} private favorites');
+        } else if (mergeResult['success'] && mergeResult['count'] == 0) {
+          print('ℹ️ TOAST: Request accepted! No private favorites to merge');
         } else {
-          print('❌ TOAST: Favorites merge failed: ${mergeResult['error']}');
+          print('⚠️ TOAST: Request accepted but merge had issues');
         }
         
         // Send notification to sender about acceptance
@@ -390,7 +392,8 @@ class RequestsHandler {
         },
       );
     } catch (e) {
-      print('Error cleaning connected favorites: $e');
+      // Silent cleanup - don't expose database errors in production
+      print('Cleanup operation failed');
     }
   }
 
@@ -588,11 +591,9 @@ class RequestsHandler {
     }
   }
 
-  // Merge both users' favorites into shared_favorites table (no duplicates) - with mobile debugging
+  // Merge both users' favorites into connected_fav table (no duplicates) - production ready
   static Future<Map<String, dynamic>> _mergeFavoritesToSharedWithToast(String user1Id, String user2Id) async {
     try {
-      print('🔄 Starting favorites merge for users: $user1Id and $user2Id');
-      
       // Get both users' PRIVATE favorites only (is_public=false)
       final user1Favorites = await SupabaseHandler.getData(
         table: 'favorites',
@@ -604,10 +605,9 @@ class RequestsHandler {
       ) ?? [];
       
       final totalFavorites = user1Favorites.length + user2Favorites.length;
-      print('📊 Found $totalFavorites private favorites total');
       
       if (totalFavorites == 0) {
-        return {'success': false, 'error': 'No private favorites to merge', 'count': 0};
+        return {'success': true, 'count': 0, 'message': 'No private favorites to merge'};
       }
       
       // Combine and deduplicate by anime_id
@@ -620,8 +620,6 @@ class RequestsHandler {
           uniqueFavorites[animeId] = fav;
         }
       }
-      
-      print('🎯 Unique favorites to merge: ${uniqueFavorites.length}');
       
       // Insert unique favorites into connected_fav table
       int successCount = 0;
@@ -636,12 +634,13 @@ class RequestsHandler {
               'anime_title': fav['anime_title'],
               'anime_image': fav['anime_image'],
               'added_at': SupabaseHandler.getCurrentTimestamp(),
-              'added_by_user_id': fav['user_id'], // Track who originally added it
+              'added_by_user_id': fav['user_id'],
             },
           );
           successCount++;
         } catch (e) {
-          print('❌ Failed to insert: ${fav['anime_title']}');
+          // Continue processing other favorites even if one fails
+          continue;
         }
       }
       
@@ -652,7 +651,7 @@ class RequestsHandler {
         'message': 'Successfully merged $successCount favorites'
       };
     } catch (e) {
-      return {'success': false, 'error': e.toString(), 'count': 0};
+      return {'success': false, 'error': 'Connection failed', 'count': 0};
     }
   }
 
@@ -761,7 +760,6 @@ class RequestsHandler {
       // Insert unique favorites into connected_fav table
       for (final fav in uniqueFavorites.values) {
         try {
-          print('💾 Inserting connected favorite: ${fav['anime_title']}');
           await SupabaseHandler.insertData(
             table: 'connected_fav',
             data: {
@@ -774,9 +772,9 @@ class RequestsHandler {
               'added_by_user_id': fav['user_id'], // Track who originally added it
             },
           );
-          print('✅ Successfully inserted: ${fav['anime_title']}');
         } catch (e) {
-          print('❌ Error inserting connected favorite ${fav['anime_id']}: $e');
+          // Continue processing other favorites even if one fails
+          continue;
         }
       }
       

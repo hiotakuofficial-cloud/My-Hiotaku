@@ -318,10 +318,15 @@ class SupabaseHandler {
   
   /// Get connected favorites for user
   static Future<List<Map<String, dynamic>>?> getConnectedFavorites(String userId) async {
-    return await getData(
-      table: 'connected_fav',
-      filters: {'user1_id': userId},
-    );
+    try {
+      return await getData(
+        table: 'connected_fav',
+        filters: {'user1_id': userId},
+      );
+    } catch (e) {
+      // Return null on database error - let caller handle gracefully
+      return null;
+    }
   }
 
   // Sync Request System

@@ -170,7 +170,7 @@ class FavouriteHandler {
       final connectedFavorites = await SupabaseHandler.getConnectedFavorites(userData['id'].toString());
       return connectedFavorites ?? [];
     } catch (e) {
-      print('Get connected favorites error: $e');
+      // Return empty list on any error - don't expose database issues
       return [];
     }
   }
