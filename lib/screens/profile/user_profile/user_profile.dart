@@ -471,6 +471,11 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     if (syncStatus == 'connected') {
       _showDisconnectDialog();
     } else if (syncStatus == 'none') {
+      // Check if user has reached sync limit
+      if (userProfile != null && userProfile!['synced_accounts_count'] >= 2) {
+        _showSyncLimitDialog();
+        return;
+      }
       await _sendSyncRequest();
     }
     // Do nothing if status is 'requested'
@@ -530,6 +535,27 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         ),
       );
     }
+  }
+
+  void _showSyncLimitDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Sync Limit Reached', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'This user has already reached the maximum sync limit of 2 accounts.',
+          style: TextStyle(color: Colors.grey[300]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close', style: TextStyle(color: Color(0xFFFF8C00))),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showDisconnectDialog() {

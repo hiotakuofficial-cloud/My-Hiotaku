@@ -27,15 +27,25 @@ class UserProfileHandler {
           select: 'id',
           filters: {'user_id': userId, 'is_public': true},
         ),
+        // Check both directions for merged accounts
         SupabaseHandler.getData(
           table: 'merged_accounts',
           select: 'id',
           filters: {'user1_id': userId},
         ),
+        SupabaseHandler.getData(
+          table: 'merged_accounts',
+          select: 'id',
+          filters: {'user2_id': userId},
+        ),
       ]);
       
       final favoritesData = countResults[0];
-      final syncedAccountsData = countResults[1];
+      final syncedAsUser1 = countResults[1];
+      final syncedAsUser2 = countResults[2];
+      
+      // Total synced accounts (user can be user1 or user2 in merged_accounts)
+      final totalSyncedAccounts = (syncedAsUser1?.length ?? 0) + (syncedAsUser2?.length ?? 0);
       
       // Calculate online status
       bool isOnline = false;
@@ -60,8 +70,8 @@ class UserProfileHandler {
           'is_active': user['is_active'],
           'is_online': isOnline,
           'public_favorites_count': favoritesData?.length ?? 0,
-          'synced_accounts_count': syncedAccountsData?.length ?? 0,
-          'can_sync': (syncedAccountsData?.length ?? 0) < 2, // Max 2 sync accounts
+          'synced_accounts_count': totalSyncedAccounts,
+          'can_sync': totalSyncedAccounts < 2, // Max 2 sync accounts
         },
       };
     } catch (e) {
