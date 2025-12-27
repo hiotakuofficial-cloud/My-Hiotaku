@@ -93,8 +93,8 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         // Verify online status with last_seen (similar to syncuser_handler)
         if (profileData['is_online'] == true && profileData['last_seen'] != null) {
           try {
-            DateTime lastSeen = DateTime.parse(profileData['last_seen']);
-            Duration difference = DateTime.now().difference(lastSeen);
+            DateTime lastSeen = DateTime.parse(profileData['last_seen']).toUtc();
+            Duration difference = DateTime.now().toUtc().difference(lastSeen);
             // If last_seen is more than 10 minutes ago, consider offline
             if (difference.inMinutes > 10) {
               profileData['is_online'] = false;

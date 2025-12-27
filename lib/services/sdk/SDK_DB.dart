@@ -50,12 +50,12 @@ class SupabaseSDK {
       if (response.isNotEmpty) {
         final user = response.first;
         if (user['is_online'] == true) {
-          // Check if last seen is within 2 minutes
-          final lastSeen = DateTime.parse(user['last_seen']);
-          final now = DateTime.now();
+          // Check if last seen is within 10 minutes (UTC comparison)
+          final lastSeen = DateTime.parse(user['last_seen']).toUtc();
+          final now = DateTime.now().toUtc();
           final difference = now.difference(lastSeen).inMinutes;
           
-          return difference <= 2;
+          return difference <= 10;
         }
       }
       

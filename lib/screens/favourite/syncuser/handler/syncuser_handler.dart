@@ -187,8 +187,8 @@ class SyncUserHandler {
           // Double-check with last_seen for accuracy (within 10 minutes)
           if (isOnline && user['last_seen'] != null) {
             try {
-              DateTime lastSeen = DateTime.parse(user['last_seen']);
-              Duration difference = DateTime.now().difference(lastSeen);
+              DateTime lastSeen = DateTime.parse(user['last_seen']).toUtc();
+              Duration difference = DateTime.now().toUtc().difference(lastSeen);
               // If last_seen is more than 10 minutes ago, consider offline
               if (difference.inMinutes > 10) {
                 isOnline = false;
