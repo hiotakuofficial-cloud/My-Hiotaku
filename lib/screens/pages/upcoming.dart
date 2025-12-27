@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../models/api_models.dart';
 import 'handler/search_handler.dart';
+import '../details/details.dart';
 
 class UpcomingPage extends StatefulWidget {
   @override
@@ -64,13 +65,24 @@ class _UpcomingPageState extends State<UpcomingPage> with TickerProviderStateMix
       child: Scaffold(
         backgroundColor: Colors.black,
         extendBodyBehindAppBar: true,
-        body: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: isLoading ? _buildLoading() : _buildContent(),
-            ),
-          ],
+        body: RefreshIndicator(
+          onRefresh: _loadData,
+          color: Color(0xFFFF8C00),
+          backgroundColor: Color(0xFF1E1E1E),
+          child: CustomScrollView(
+            physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _buildHeader(),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(height: 20),
+              ),
+              isLoading ? 
+                SliverToBoxAdapter(child: _buildLoading()) :
+                SliverToBoxAdapter(child: _buildContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -231,7 +243,21 @@ class _UpcomingPageState extends State<UpcomingPage> with TickerProviderStateMix
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        // TODO: Navigate to anime details
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnimeDetailsPage(
+              title: anime.title,
+              poster: anime.poster ?? '',
+              description: anime.description ?? 'No description available.',
+              genres: (anime.type?.isNotEmpty ?? false) ? [anime.type!] : ['Upcoming'],
+              rating: 0.0,
+              year: 'Unknown',
+              animeId: anime.id,
+              animeType: anime.type ?? 'Upcoming',
+            ),
+          ),
+        );
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300 + (index * 50)),
