@@ -325,7 +325,7 @@ class _NotificationOfUserState extends State<NotificationOfUser> with TickerProv
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: _getNotificationColor(type),
+                          color: Color(0xFFFF8C00),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -386,64 +386,105 @@ class _NotificationOfUserState extends State<NotificationOfUser> with TickerProv
       child: Scaffold(
         backgroundColor: Colors.black,
         body: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Notifications',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 48), // Balance the back button
-                  ],
-                ),
-              ),
-              
-              // Content
-              Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : _error != null
-                        ? LoadingErrorScreen(
-                            errorMessage: _error,
-                            onRetry: _loadNotifications,
-                          )
-                        : _notifications.isEmpty
-                            ? _buildEmptyState()
-                            : RefreshIndicator(
-                                onRefresh: _loadNotifications,
-                                color: Colors.white,
-                                backgroundColor: const Color(0xFF1E1E1E),
-                                child: ListView.builder(
-                                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: _notifications.length,
-                                  itemBuilder: (context, index) {
-                                    return _buildNotificationItem(_notifications[index]);
-                                  },
+          child: _isLoading
+              ? Center(
+                  child: Lottie.asset(
+                    'assets/animations/loading.json',
+                    width: 150,
+                    height: 150,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : _error != null
+                  ? LoadingErrorScreen(
+                      errorMessage: _error,
+                      onRetry: _loadNotifications,
+                    )
+                  : _notifications.isEmpty
+                      ? SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          child: Column(
+                            children: [
+                              // Header
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        'Notifications',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 48), // Balance the back button
+                                  ],
                                 ),
                               ),
-              ),
-            ],
-          ),
+                              // Empty state
+                              Container(
+                                height: MediaQuery.of(context).size.height - 200,
+                                child: _buildEmptyState(),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadNotifications,
+                          color: Color(0xFFFF8C00),
+                          backgroundColor: const Color(0xFF1E1E1E),
+                          child: CustomScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            slivers: [
+                              // Header
+                              SliverToBoxAdapter(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                                        onPressed: () => Navigator.pop(context),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          'Notifications',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 48), // Balance the back button
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Notifications list
+                              SliverPadding(
+                                padding: const EdgeInsets.all(16),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                      return _buildNotificationItem(_notifications[index]);
+                                    },
+                                    childCount: _notifications.length,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
         ),
       ),
     );
