@@ -3,139 +3,98 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseSDK {
   static SupabaseClient get client => Supabase.instance.client;
   
-  // Simple data operations without complex chaining
-  static Future<List<Map<String, dynamic>>?> getData({
-    required String table,
-    String? select,
-    Map<String, dynamic>? filters,
-    int? limit,
-    int? offset,
-    String? orderBy,
+  // Only for users table - online status management
+  static Future<bool> updateUserStatus({
+    required String userId,
+    required bool isOnline,
   }) async {
     try {
-      // Start with basic query
-      dynamic query = client.from(table).select(select ?? '*');
+      await client
+          .from('users')
+          .update({
+            'is_online': isOnline,
+            'last_seen': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Get user by Firebase UID (for WebSocket initialization)
+  static Future<Map<String, dynamic>?> getUserByFirebaseUID(String firebaseUID) async {
+    try {
+      final response = await client
+          .from('users')
+          .select('id, username')
+          .eq('firebase_uid', firebaseUID)
+          .limit(1);
       
-      // Apply filters
-      if (filters != null) {
-        for (final entry in filters.entries) {
-          query = query.eq(entry.key, entry.value);
+      return response.isNotEmpty ? response.first : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  // Check user online status
+  static Future<bool> isUserOnline(String firebaseUID) async {
+    try {
+      final response = await client
+          .from('users')
+          .select('is_online, last_seen')
+          .eq('firebase_uid', firebaseUID)
+          .limit(1);
+      
+      if (response.isNotEmpty) {
+        final user = response.first;
+        if (user['is_online'] == true) {
+          // Check if last seen is within 2 minutes
+          final lastSeen = DateTime.parse(user['last_seen']);
+          final now = DateTime.now();
+          final difference = now.difference(lastSeen).inMinutes;
+          
+          return difference <= 2;
         }
       }
       
-      // Apply ordering
-      if (orderBy != null) {
-        final parts = orderBy.split('.');
-        final column = parts[0];
-        final ascending = parts.length > 1 ? parts[1] != 'desc' : true;
-        query = query.order(column, ascending: ascending);
-      }
-      
-      // Apply pagination
-      if (limit != null) {
-        query = query.limit(limit);
-      }
-      
-      if (offset != null) {
-        query = query.range(offset, offset + (limit ?? 20) - 1);
-      }
-      
-      final response = await query;
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      return null;
-    }
-  }
-  
-  // Insert data
-  static Future<Map<String, dynamic>?> insertData({
-    required String table,
-    required Map<String, dynamic> data,
-  }) async {
-    try {
-      final response = await client
-          .from(table)
-          .insert(data)
-          .select()
-          .single();
-      return response;
-    } catch (e) {
-      return null;
-    }
-  }
-  
-  // Update data
-  static Future<bool> updateData({
-    required String table,
-    required Map<String, dynamic> data,
-    required String column,
-    required dynamic value,
-  }) async {
-    try {
-      await client
-          .from(table)
-          .update(data)
-          .eq(column, value);
-      return true;
+      return false;
     } catch (e) {
       return false;
     }
   }
   
-  // Delete data
-  static Future<bool> deleteData({
-    required String table,
-    required String column,
-    required dynamic value,
-  }) async {
-    try {
-      await client
-          .from(table)
-          .delete()
-          .eq(column, value);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  
-  // Subscribe to real-time changes
-  static RealtimeChannel subscribeToTable({
-    required String table,
-    Function(PostgresChangePayload)? onInsert,
-    Function(PostgresChangePayload)? onUpdate,
-    Function(PostgresChangePayload)? onDelete,
+  // Subscribe to user status changes (real-time)
+  static RealtimeChannel? subscribeToUserStatus({
+    required String firebaseUID,
+    required Function(bool isOnline) onStatusChange,
   }) {
-    final channel = client.channel('public:$table');
-    
-    if (onInsert != null) {
-      channel.onPostgresChanges(
-        event: PostgresChangeEvent.insert,
-        schema: 'public',
-        table: table,
-        callback: onInsert,
-      );
+    try {
+      final channel = client
+          .channel('user_status_$firebaseUID')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'users',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'firebase_uid',
+              value: firebaseUID,
+            ),
+            callback: (payload) {
+              final newRecord = payload.newRecord;
+              if (newRecord != null) {
+                final isOnline = newRecord['is_online'] ?? false;
+                onStatusChange(isOnline);
+              }
+            },
+          )
+          .subscribe();
+      
+      return channel;
+    } catch (e) {
+      return null;
     }
-    
-    if (onUpdate != null) {
-      channel.onPostgresChanges(
-        event: PostgresChangeEvent.update,
-        schema: 'public',
-        table: table,
-        callback: onUpdate,
-      );
-    }
-    
-    if (onDelete != null) {
-      channel.onPostgresChanges(
-        event: PostgresChangeEvent.delete,
-        schema: 'public',
-        table: table,
-        callback: onDelete,
-      );
-    }
-    
-    channel.subscribe();
-    return channel;
   }
 }

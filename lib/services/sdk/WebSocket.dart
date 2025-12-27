@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../screens/auth/handler/firebase_handler.dart';
+import 'SDK_DB.dart';
 
 class WebSocketService {
   static Timer? _heartbeatTimer;
   static bool _isOnline = false;
-  static String? _currentUserId;
+  static String? _currentFirebaseUID;
   static String? _currentSupabaseId;
   static bool _isInitialized = false;
   static RealtimeChannel? _userStatusChannel;
@@ -16,13 +17,12 @@ class WebSocketService {
     if (_isInitialized) return;
     
     try {
-      // Get current user Firebase UID
-      final firebaseHandler = FirebaseHandler();
-      final currentUser = firebaseHandler.getCurrentUser();
-      _currentUserId = currentUser?.uid;
+      // Get current Firebase user
+      final currentUser = FirebaseAuth.instance.currentUser;
+      _currentFirebaseUID = currentUser?.uid;
       
-      if (_currentUserId != null) {
-        // Get Supabase UUID from Firebase UID
+      if (_currentFirebaseUID != null) {
+        // Get Supabase UUID from Firebase UID using SDK
         await _getSupabaseUserId();
         
         if (_currentSupabaseId != null) {
@@ -30,7 +30,7 @@ class WebSocketService {
           _startHeartbeat();
           _listenToAppLifecycle();
           _isInitialized = true;
-          debugPrint('WebSocket service initialized for user: $_currentSupabaseId');
+          debugPrint('WebSocket initialized for user: $_currentSupabaseId');
         }
       }
     } catch (e) {
@@ -40,20 +40,13 @@ class WebSocketService {
 
   // Get Supabase UUID from Firebase UID
   static Future<void> _getSupabaseUserId() async {
-    if (_currentUserId == null) return;
+    if (_currentFirebaseUID == null) return;
     
     try {
-      final response = await Supabase.instance.client
-          .from('users')
-          .select('id')
-          .eq('firebase_uid', _currentUserId!)
-          .limit(1);
-      
-      if (response.isNotEmpty) {
-        _currentSupabaseId = response.first['id'];
-        debugPrint('Found Supabase ID: $_currentSupabaseId for Firebase UID: $_currentUserId');
-      } else {
-        debugPrint('No Supabase user found for Firebase UID: $_currentUserId');
+      final userData = await SupabaseSDK.getUserByFirebaseUID(_currentFirebaseUID!);
+      if (userData != null) {
+        _currentSupabaseId = userData['id'];
+        debugPrint('Found Supabase ID: $_currentSupabaseId');
       }
     } catch (e) {
       debugPrint('Failed to get Supabase user ID: $e');
@@ -65,17 +58,15 @@ class WebSocketService {
     if (_currentSupabaseId == null) return;
     
     try {
-      await Supabase.instance.client
-          .from('users')
-          .update({
-            'is_online': true,
-            'last_seen': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', _currentSupabaseId!);
+      final success = await SupabaseSDK.updateUserStatus(
+        userId: _currentSupabaseId!,
+        isOnline: true,
+      );
       
-      _isOnline = true;
-      debugPrint('User set to online: $_currentSupabaseId');
+      if (success) {
+        _isOnline = true;
+        debugPrint('User set to online: $_currentSupabaseId');
+      }
     } catch (e) {
       debugPrint('Failed to set user online: $e');
     }
@@ -86,45 +77,42 @@ class WebSocketService {
     if (_currentSupabaseId == null) return;
     
     try {
-      await Supabase.instance.client
-          .from('users')
-          .update({
-            'is_online': false,
-            'last_seen': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', _currentSupabaseId!);
+      final success = await SupabaseSDK.updateUserStatus(
+        userId: _currentSupabaseId!,
+        isOnline: false,
+      );
       
-      _isOnline = false;
-      debugPrint('User set to offline: $_currentSupabaseId');
+      if (success) {
+        _isOnline = false;
+        debugPrint('User set to offline: $_currentSupabaseId');
+      }
     } catch (e) {
       debugPrint('Failed to set user offline: $e');
     }
   }
 
-  // Update last seen timestamp (heartbeat)
-  static Future<void> _updateLastSeen() async {
-    if (_currentSupabaseId == null) return;
+  // Update last seen (heartbeat) - lightweight operation
+  static Future<void> _updateHeartbeat() async {
+    if (_currentSupabaseId == null || !_isOnline) return;
     
     try {
-      await Supabase.instance.client
-          .from('users')
-          .update({
-            'last_seen': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', _currentSupabaseId!);
+      // Only update if user is still online to avoid unnecessary writes
+      await SupabaseSDK.updateUserStatus(
+        userId: _currentSupabaseId!,
+        isOnline: true,
+      );
     } catch (e) {
-      debugPrint('Failed to update last seen: $e');
+      // Silent fail for heartbeat - don't spam logs
     }
   }
 
-  // Start heartbeat timer
+  // Start optimized heartbeat timer
   static void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(Duration(minutes: 1), (timer) {
-      if (_isOnline) {
-        _updateLastSeen();
+    // 90 second intervals to balance real-time vs performance
+    _heartbeatTimer = Timer.periodic(Duration(seconds: 90), (timer) {
+      if (_isOnline && _currentSupabaseId != null) {
+        _updateHeartbeat();
       }
     });
   }
@@ -134,62 +122,25 @@ class WebSocketService {
     WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
   }
 
-  // Get user online status by firebase_uid
-  static Future<bool> isUserOnline(String firebaseUid) async {
+  // Check if user is online by Firebase UID
+  static Future<bool> isUserOnline(String firebaseUID) async {
     try {
-      final response = await Supabase.instance.client
-          .from('users')
-          .select('is_online, last_seen')
-          .eq('firebase_uid', firebaseUid)
-          .limit(1);
-      
-      if (response.isNotEmpty) {
-        final user = response.first;
-        if (user['is_online'] == true) {
-          // Check if last seen is within 2 minutes
-          final lastSeen = DateTime.parse(user['last_seen']);
-          final now = DateTime.now();
-          final difference = now.difference(lastSeen).inMinutes;
-          
-          return difference <= 2;
-        }
-      }
-      
-      return false;
+      return await SupabaseSDK.isUserOnline(firebaseUID);
     } catch (e) {
-      debugPrint('Failed to check user online status: $e');
       return false;
     }
   }
 
-  // Subscribe to user status changes (real-time)
+  // Subscribe to user status changes
   static RealtimeChannel? subscribeToUserStatus({
-    required String firebaseUid,
+    required String firebaseUID,
     required Function(bool isOnline) onStatusChange,
   }) {
     try {
-      final channel = Supabase.instance.client
-          .channel('user_status_$firebaseUid')
-          .onPostgresChanges(
-            event: PostgresChangeEvent.update,
-            schema: 'public',
-            table: 'users',
-            filter: PostgresChangeFilter(
-              type: PostgresChangeFilterType.eq,
-              column: 'firebase_uid',
-              value: firebaseUid,
-            ),
-            callback: (payload) {
-              final newRecord = payload.newRecord;
-              if (newRecord != null) {
-                final isOnline = newRecord['is_online'] ?? false;
-                onStatusChange(isOnline);
-              }
-            },
-          )
-          .subscribe();
-      
-      return channel;
+      return SupabaseSDK.subscribeToUserStatus(
+        firebaseUID: firebaseUID,
+        onStatusChange: onStatusChange,
+      );
     } catch (e) {
       debugPrint('Failed to subscribe to user status: $e');
       return null;
@@ -208,16 +159,17 @@ class WebSocketService {
   // Getters
   static bool get isOnline => _isOnline;
   static bool get isInitialized => _isInitialized;
-  static String? get currentUserId => _currentUserId;
+  static String? get currentFirebaseUID => _currentFirebaseUID;
   static String? get currentSupabaseId => _currentSupabaseId;
 }
 
-// App lifecycle observer
+// Optimized app lifecycle observer
 class _AppLifecycleObserver extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
+        // User came back - set online and restart heartbeat
         if (WebSocketService._currentSupabaseId != null) {
           WebSocketService._setUserOnline();
           WebSocketService._startHeartbeat();
@@ -226,6 +178,7 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
+        // User left - set offline and stop heartbeat
         WebSocketService._setUserOffline();
         WebSocketService._heartbeatTimer?.cancel();
         break;
