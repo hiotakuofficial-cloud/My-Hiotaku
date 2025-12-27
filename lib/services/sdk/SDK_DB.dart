@@ -55,7 +55,7 @@ class SupabaseSDK {
           final now = DateTime.now().toUtc();
           final difference = now.difference(lastSeen).inMinutes;
           
-          return difference <= 10;
+          return difference <= 30;
         }
       }
       

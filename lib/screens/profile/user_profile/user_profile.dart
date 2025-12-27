@@ -95,8 +95,8 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           try {
             DateTime lastSeen = DateTime.parse(profileData['last_seen']).toUtc();
             Duration difference = DateTime.now().toUtc().difference(lastSeen);
-            // If last_seen is more than 10 minutes ago, consider offline
-            if (difference.inMinutes > 10) {
+            // If last_seen is more than 30 minutes ago, consider offline
+            if (difference.inMinutes > 30) {
               profileData['is_online'] = false;
             }
           } catch (e) {
