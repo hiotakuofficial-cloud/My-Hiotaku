@@ -388,12 +388,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Email is required';
     }
     
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-    if (!emailRegex.hasMatch(value)) {
+    final email = value.trim().toLowerCase();
+    
+    // Basic email format validation
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(email)) {
+      return 'Please enter a valid email address';
+    }
+    
+    // Check for common typos
+    if (email.contains('..') || email.startsWith('.') || email.endsWith('.')) {
       return 'Please enter a valid email address';
     }
     
@@ -412,8 +420,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
     
     try {
+      // Add timeout for slow networks
       await FirebaseAuth.instance.sendPasswordResetEmail(
-        email: _emailController.text.trim(),
+        email: _emailController.text.trim().toLowerCase(),
+      ).timeout(
+        Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timed out. Please check your connection.');
+        },
       );
       
       setState(() {
@@ -434,27 +448,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Network error. Please check your connection.';
+        _errorMessage = 'Please check your internet connection and try again';
       });
       
-      // Show network error page
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => NoInternetScreen()),
-      );
+      // Show network error page only for network issues
+      if (e.toString().contains('network') || 
+          e.toString().contains('connection') || 
+          e.toString().contains('timeout')) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => NoInternetScreen()),
+        );
+      }
     }
   }
 
   String _getErrorMessage(String errorCode) {
     switch (errorCode) {
       case 'user-not-found':
-        return 'No account found with this email address';
+        return 'We couldn\'t find an account with this email';
       case 'invalid-email':
         return 'Please enter a valid email address';
       case 'too-many-requests':
-        return 'Too many attempts. Please try again later';
+        return 'Too many attempts. Please wait a moment and try again';
       case 'network-request-failed':
-        return 'Network error. Please check your connection';
+        return 'Please check your internet connection';
+      case 'auth/user-disabled':
+        return 'This account has been temporarily disabled';
+      case 'auth/operation-not-allowed':
+        return 'Password reset is currently unavailable';
       default:
         return 'Something went wrong. Please try again';
     }
@@ -464,32 +486,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     HapticFeedback.lightImpact();
     
     try {
-      // Try to open Gmail app
+      // Try to open Gmail app first
       final gmailUrl = Uri.parse('googlegmail://');
       if (await canLaunchUrl(gmailUrl)) {
         await launchUrl(gmailUrl);
+        return;
+      }
+      
+      // Try alternative Gmail app URL
+      final gmailAltUrl = Uri.parse('gmail://');
+      if (await canLaunchUrl(gmailAltUrl)) {
+        await launchUrl(gmailAltUrl);
+        return;
+      }
+      
+      // Fallback to web Gmail
+      final webGmailUrl = Uri.parse('https://mail.google.com');
+      if (await canLaunchUrl(webGmailUrl)) {
+        await launchUrl(webGmailUrl, mode: LaunchMode.externalApplication);
       } else {
-        // Fallback to web Gmail
-        final webGmailUrl = Uri.parse('https://mail.google.com');
-        if (await canLaunchUrl(webGmailUrl)) {
-          await launchUrl(webGmailUrl, mode: LaunchMode.externalApplication);
-        } else {
-          // Show error if can't open
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Unable to open Gmail'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        _showGmailError();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to open Gmail'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showGmailError();
     }
+  }
+  
+  void _showGmailError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please open your email app manually to check for the reset link'),
+        backgroundColor: Color(0xFFFF8C00),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 4),
+      ),
+    );
   }
 }
