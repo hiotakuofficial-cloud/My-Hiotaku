@@ -45,12 +45,14 @@ class _AnimeMoviesPageState extends State<AnimeMoviesPage> with TickerProviderSt
     try {
       setState(() => isLoading = true);
       final data = await ApiService.getMovies(1);
+      print('Movies loaded: ${data.data.length} items'); // Debug
       setState(() {
         animeList = data.data;
         isLoading = false;
       });
       _animationController.forward();
     } catch (e) {
+      print('Error loading movies: $e'); // Debug
       setState(() => isLoading = false);
     }
   }
@@ -78,9 +80,15 @@ class _AnimeMoviesPageState extends State<AnimeMoviesPage> with TickerProviderSt
               SliverToBoxAdapter(
                 child: SizedBox(height: 20),
               ),
-              isLoading ? 
-                SliverToBoxAdapter(child: _buildLoading()) :
-                SliverToBoxAdapter(child: _buildContent()),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                sliver: isLoading ? 
+                  SliverToBoxAdapter(child: _buildLoading()) :
+                  _buildContent(),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(height: 20),
+              ),
             ],
           ),
         ),
@@ -212,29 +220,31 @@ class _AnimeMoviesPageState extends State<AnimeMoviesPage> with TickerProviderSt
 
   Widget _buildContent() {
     if (isSearching) {
-      return SearchHandler.buildSearchResults(
-        results: searchResults,
-        query: _searchController.text,
-        section: 'movies',
-        itemBuilder: _buildAnimeCard,
+      return SliverToBoxAdapter(
+        child: SearchHandler.buildSearchResults(
+          results: searchResults,
+          query: _searchController.text,
+          section: 'movies',
+          itemBuilder: _buildAnimeCard,
+        ),
       );
     }
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: GridView.builder(
-        physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.all(20),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: animeList.length,
-        itemBuilder: (context, index) {
-          return _buildAnimeCard(animeList[index], index);
+    return SliverGrid(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.7,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: _buildAnimeCard(animeList[index], index),
+          );
         },
+        childCount: animeList.length,
       ),
     );
   }

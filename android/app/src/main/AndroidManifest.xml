@@ -15,6 +15,18 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     
+    <!-- Permission to query other apps (for Gmail opening) -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    
+    <!-- Queries for specific apps -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+        <package android:name="com.google.android.gm" />
+    </queries>
+    
    <application
         android:label="Hiotaku"
         android:name="${applicationName}"

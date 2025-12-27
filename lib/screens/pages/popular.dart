@@ -102,6 +102,7 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
           color: Color(0xFFFF8C00),
           backgroundColor: Color(0xFF1E1E1E),
           child: CustomScrollView(
+            controller: _scrollController,
             physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             slivers: [
               SliverToBoxAdapter(
@@ -110,9 +111,15 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
               SliverToBoxAdapter(
                 child: SizedBox(height: 20),
               ),
-              isLoading ? 
-                SliverToBoxAdapter(child: _buildLoading()) :
-                SliverToBoxAdapter(child: _buildContent()),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                sliver: isLoading ? 
+                  SliverToBoxAdapter(child: _buildLoading()) :
+                  _buildContent(),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(height: 20),
+              ),
             ],
           ),
         ),
@@ -248,61 +255,34 @@ class _PopularPageState extends State<PopularPage> with TickerProviderStateMixin
 
   Widget _buildContent() {
     if (isSearching) {
-      return SearchHandler.buildSearchResults(
-        results: searchResults,
-        query: _searchController.text,
-        section: 'popular',
-        itemBuilder: _buildAnimeCard,
+      return SliverToBoxAdapter(
+        child: SearchHandler.buildSearchResults(
+          results: searchResults,
+          query: _searchController.text,
+          section: 'popular',
+          itemBuilder: _buildAnimeCard,
+        ),
       );
     }
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Column(
-        children: [
-          Expanded(
-            child: GridView.builder(
-              controller: _scrollController,
-              physics: BouncingScrollPhysics(),
-              padding: EdgeInsets.all(20),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: animeList.length + (isLoadingMore ? 2 : 0),
-              itemBuilder: (context, index) {
-                if (index >= animeList.length) {
-                  return _buildLoadingCard();
-                }
-                return _buildAnimeCard(animeList[index], index);
-              },
-            ),
-          ),
-          if (isLoadingMore)
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Loading more...',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-        ],
+    return SliverGrid(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.7,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index >= animeList.length) {
+            return _buildLoadingCard();
+          }
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: _buildAnimeCard(animeList[index], index),
+          );
+        },
+        childCount: animeList.length + (isLoadingMore ? 2 : 0),
       ),
     );
   }

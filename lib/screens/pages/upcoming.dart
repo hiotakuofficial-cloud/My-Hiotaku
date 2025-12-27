@@ -78,9 +78,15 @@ class _UpcomingPageState extends State<UpcomingPage> with TickerProviderStateMix
               SliverToBoxAdapter(
                 child: SizedBox(height: 20),
               ),
-              isLoading ? 
-                SliverToBoxAdapter(child: _buildLoading()) :
-                SliverToBoxAdapter(child: _buildContent()),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                sliver: isLoading ? 
+                  SliverToBoxAdapter(child: _buildLoading()) :
+                  _buildContent(),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(height: 20),
+              ),
             ],
           ),
         ),
@@ -212,29 +218,31 @@ class _UpcomingPageState extends State<UpcomingPage> with TickerProviderStateMix
 
   Widget _buildContent() {
     if (isSearching) {
-      return SearchHandler.buildSearchResults(
-        results: searchResults,
-        query: _searchController.text,
-        section: 'upcoming',
-        itemBuilder: _buildAnimeCard,
+      return SliverToBoxAdapter(
+        child: SearchHandler.buildSearchResults(
+          results: searchResults,
+          query: _searchController.text,
+          section: 'upcoming',
+          itemBuilder: _buildAnimeCard,
+        ),
       );
     }
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: GridView.builder(
-        physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.all(20),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: animeList.length,
-        itemBuilder: (context, index) {
-          return _buildAnimeCard(animeList[index], index);
+    return SliverGrid(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.7,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: _buildAnimeCard(animeList[index], index),
+          );
         },
+        childCount: animeList.length,
       ),
     );
   }

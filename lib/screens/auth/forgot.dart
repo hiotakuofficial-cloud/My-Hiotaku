@@ -33,6 +33,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
+        resizeToAvoidBottomInset: true,
         body: SafeArea(
           child: _emailSent ? _buildSuccessScreen() : _buildResetScreen(),
         ),
@@ -41,346 +42,362 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildResetScreen() {
-    return Padding(
-      padding: EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  'Forgot Password',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(width: 40), // Balance the back button
-            ],
-          ),
-          
-          Expanded(
+    return CustomScrollView(
+      physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: EdgeInsets.all(24),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Lottie Animation
-                Container(
-                  height: 300,
-                  width: 300,
-                  child: Lottie.asset(
-                    'assets/animations/forgot.json',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                
-                SizedBox(height: 40),
-                
-                // Title
-                Text(
-                  'Reset Password',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                SizedBox(height: 16),
-                
-                // Description
-                Text(
-                  'Don\'t worry! It happens. Please enter the\nemail associated with your account.',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                SizedBox(height: 40),
-                
-                // Form
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Email Address',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      
-                      // Email Field
-                      Container(
+                // Header
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: _errorMessage != null 
-                            ? Border.all(color: Colors.red, width: 1)
-                            : null,
+                          shape: BoxShape.circle,
                         ),
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: TextStyle(color: Colors.white),
-                          enabled: !_isLoading,
-                          validator: _validateEmail,
-                          decoration: InputDecoration(
-                            hintText: 'name@example.com',
-                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: Icon(
-                              Icons.email_outlined,
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                          ),
-                          onChanged: (value) {
-                            if (_errorMessage != null) {
-                              setState(() => _errorMessage = null);
-                            }
-                          },
+                        child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Forgot Password',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    SizedBox(width: 40), // Balance the back button
+                  ],
+                ),
+                
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Lottie Animation
+                      Container(
+                        height: 250,
+                        width: 250,
+                        child: Lottie.asset(
+                          'assets/animations/forgot.json',
+                          fit: BoxFit.contain,
                         ),
                       ),
                       
-                      // Error Message
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: EdgeInsets.only(top: 8),
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                            ),
-                          ),
+                      SizedBox(height: 30),
+                      
+                      // Title
+                      Text(
+                        'Reset Password',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      
+                      SizedBox(height: 16),
+                      
+                      // Description
+                      Text(
+                        'Don\'t worry! It happens. Please enter the\nemail associated with your account.',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 16,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: 40),
+                      
+                      // Form
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Email Address',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            
+                            // Email Field
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: _errorMessage != null 
+                                  ? Border.all(color: Colors.red, width: 1)
+                                  : null,
+                              ),
+                              child: TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                style: TextStyle(color: Colors.white),
+                                enabled: !_isLoading,
+                                validator: _validateEmail,
+                                decoration: InputDecoration(
+                                  hintText: 'name@example.com',
+                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  prefixIcon: Icon(
+                                    Icons.email_outlined,
+                                    color: Colors.white.withOpacity(0.7),
+                                  ),
+                                ),
+                                onChanged: (value) {
+                                  if (_errorMessage != null) {
+                                    setState(() => _errorMessage = null);
+                                  }
+                                },
+                              ),
+                            ),
+                            
+                            // Error Message
+                            if (_errorMessage != null)
+                              Padding(
+                                padding: EdgeInsets.only(top: 8),
+                                child: Text(
+                                  _errorMessage!,
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      
+                      SizedBox(height: 40),
+                      
+                      // Send Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _handleSendReset,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFFF8C00),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Send',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                                  ],
+                                ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                
-                SizedBox(height: 40),
-                
-                // Send Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleSendReset,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF8C00),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessScreen() {
+    return CustomScrollView(
+      physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              children: [
+                // Header
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() => _emailSent = false);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
                       ),
-                      elevation: 0,
                     ),
-                    child: _isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                    Expanded(
+                      child: Text(
+                        'Check Your Email',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    SizedBox(width: 40),
+                  ],
+                ),
+                
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Success Animation
+                      Container(
+                        height: 300,
+                        width: 300,
+                        child: Lottie.asset(
+                          'assets/animations/sended.json',
+                          fit: BoxFit.contain,
+                          repeat: false,
+                        ),
+                      ),
+                      
+                      SizedBox(height: 40),
+                      
+                      // Title
+                      Text(
+                        'Email Sent!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      
+                      SizedBox(height: 16),
+                      
+                      // Description
+                      Text(
+                        'We\'ve sent a password reset link to\n${_emailController.text}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 16,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: 40),
+                      
+                      // Open Gmail Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _openGmail,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFFF8C00),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                          )
-                        : Row(
+                            elevation: 0,
+                          ),
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              Icon(Icons.email, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
                               Text(
-                                'Send',
+                                'Open Gmail',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                             ],
                           ),
+                        ),
+                      ),
+                      
+                      SizedBox(height: 16),
+                      
+                      // Back to Login Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.login, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Back to Login',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSuccessScreen() {
-    return Padding(
-      padding: EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  setState(() => _emailSent = false);
-                },
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  'Check Your Email',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(width: 40),
-            ],
-          ),
-          
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Success Animation
-                Container(
-                  height: 300,
-                  width: 300,
-                  child: Lottie.asset(
-                    'assets/animations/sended.json',
-                    fit: BoxFit.contain,
-                    repeat: false,
-                  ),
-                ),
-                
-                SizedBox(height: 40),
-                
-                // Title
-                Text(
-                  'Email Sent!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                SizedBox(height: 16),
-                
-                // Description
-                Text(
-                  'We\'ve sent a password reset link to\n${_emailController.text}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                SizedBox(height: 40),
-                
-                // Open Gmail Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _openGmail,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF8C00),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.email, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Open Gmail',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                SizedBox(height: 16),
-                
-                // Back to Login Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.pop(context);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.login, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Back to Login',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -424,9 +441,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
     
     try {
-      // Add timeout for slow networks
+      final email = _emailController.text.trim().toLowerCase();
+      
+      // Check if email exists first
+      final signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      
+      if (signInMethods.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'No account found with this email address';
+        });
+        HapticFeedback.heavyImpact();
+        return;
+      }
+      
+      // Email exists, send reset link
       await FirebaseAuth.instance.sendPasswordResetEmail(
-        email: _emailController.text.trim().toLowerCase(),
+        email: email,
       ).timeout(
         Duration(seconds: 30),
         onTimeout: () {
@@ -490,40 +521,44 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     HapticFeedback.lightImpact();
     
     try {
-      // Try to open Gmail app first
-      final gmailUrl = Uri.parse('googlegmail://');
-      if (await canLaunchUrl(gmailUrl)) {
-        await launchUrl(gmailUrl);
-        return;
+      // Try multiple Gmail URL schemes
+      final gmailSchemes = [
+        'googlegmail://',
+        'gmail://',
+        'mailto:',
+      ];
+      
+      bool opened = false;
+      
+      for (String scheme in gmailSchemes) {
+        try {
+          final url = Uri.parse(scheme);
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+            opened = true;
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
       }
       
-      // Try alternative Gmail app URL
-      final gmailAltUrl = Uri.parse('gmail://');
-      if (await canLaunchUrl(gmailAltUrl)) {
-        await launchUrl(gmailAltUrl);
-        return;
-      }
-      
-      // Fallback to web Gmail
-      final webGmailUrl = Uri.parse('https://mail.google.com');
-      if (await canLaunchUrl(webGmailUrl)) {
+      if (!opened) {
+        // Fallback to web Gmail
+        final webGmailUrl = Uri.parse('https://mail.google.com');
         await launchUrl(webGmailUrl, mode: LaunchMode.externalApplication);
-      } else {
-        _showGmailError();
       }
+      
     } catch (e) {
-      _showGmailError();
+      // Show helpful message instead of error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Check your email app for the password reset link'),
+          backgroundColor: Color(0xFFFF8C00),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
-  }
-  
-  void _showGmailError() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Please open your email app manually to check for the reset link'),
-        backgroundColor: Color(0xFFFF8C00),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 4),
-      ),
-    );
   }
 }
