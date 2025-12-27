@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'handler/profile_handler.dart';
 import 'requests/requests.dart';
+import 'notifications/notification_of_user.dart';
+import 'notifications/handler/notification_of_user_handler.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -16,11 +18,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String username = '@hiotakuuser';
   String avatarUrl = 'assets/profile/default/default.png';
   String _selectedGender = 'male';
+  int _unreadCount = 0;
   
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadUnreadCount();
   }
   
   @override
@@ -28,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.didChangeDependencies();
     // Force reload when coming back to profile
     _loadUserData();
+    _loadUnreadCount();
   }
   
   Future<void> _loadUserData() async {
@@ -85,6 +90,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await NotificationOfUserHandler.getUnreadCount();
+      if (mounted) {
+        setState(() {
+          _unreadCount = count;
+        });
+      }
+    } catch (e) {
+      // Silent fail
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -113,23 +131,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(24),
-                          onTap: () {
-                            // TODO: Navigate to notifications page
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Notifications - Coming Soon!'),
-                                backgroundColor: Color(0xFFFF8C00),
-                                behavior: SnackBarBehavior.floating,
-                              ),
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const NotificationOfUser()),
                             );
+                            // Clear red dot when returning from notifications
+                            setState(() {
+                              _unreadCount = 0;
+                            });
+                            _loadUnreadCount(); // Refresh actual count
                           },
                           child: Container(
                             width: 48,
                             height: 48,
-                            child: Icon(
-                              Icons.notifications_outlined,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 22,
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: Icon(
+                                    Icons.notifications_outlined,
+                                    color: Colors.white.withOpacity(0.8),
+                                    size: 22,
+                                  ),
+                                ),
+                                if (_unreadCount > 0)
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),

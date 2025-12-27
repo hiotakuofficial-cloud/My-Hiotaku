@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'handler/notification_of_user_handler.dart';
+import '../../errors/loading_error.dart';
 
 class NotificationOfUser extends StatefulWidget {
   const NotificationOfUser({Key? key}) : super(key: key);
@@ -372,34 +373,9 @@ class _NotificationOfUserState extends State<NotificationOfUser> with TickerProv
               ),
             )
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _error!,
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadNotifications,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                        ),
-                        child: const Text('Try Again'),
-                      ),
-                    ],
-                  ),
+              ? LoadingErrorScreen(
+                  errorMessage: _error,
+                  onRetry: _loadNotifications,
                 )
               : _notifications.isEmpty
                   ? Center(
@@ -407,7 +383,7 @@ class _NotificationOfUserState extends State<NotificationOfUser> with TickerProv
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Lottie.asset(
-                            'assets/lottie/empty.json',
+                            'assets/animations/Empty.json',
                             width: 200,
                             height: 200,
                             fit: BoxFit.contain,
