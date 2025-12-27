@@ -1,7 +1,81 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SupabaseSDK {
   static SupabaseClient get client => Supabase.instance.client;
+  
+  // Direct online status management - no WebSocket needed
+  static Future<bool> setUserOnline() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
+      
+      final userData = await getUserByFirebaseUID(currentUser.uid);
+      if (userData == null) return false;
+      
+      await client
+          .from('users')
+          .update({
+            'is_online': true,
+            'last_seen': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', userData['id']);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Set user offline when app minimized/closed
+  static Future<bool> setUserOffline() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
+      
+      final userData = await getUserByFirebaseUID(currentUser.uid);
+      if (userData == null) return false;
+      
+      await client
+          .from('users')
+          .update({
+            'is_online': false,
+            'last_seen': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', userData['id']);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Check if user is online (direct database read)
+  static Future<bool> isUserOnlineByUsername(String username) async {
+    try {
+      final response = await client
+          .from('users')
+          .select('is_online, last_seen')
+          .eq('username', username)
+          .limit(1);
+      
+      if (response.isNotEmpty) {
+        final user = response.first;
+        if (user['is_online'] == true) {
+          // Check if last seen is within 30 minutes
+          final lastSeen = DateTime.parse(user['last_seen']).toUtc();
+          final now = DateTime.now().toUtc();
+          final difference = now.difference(lastSeen).inMinutes;
+          
+          return difference <= 30;
+        }
+      }
+      
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
   
   // Only for users table - online status management
   static Future<bool> updateUserStatus({

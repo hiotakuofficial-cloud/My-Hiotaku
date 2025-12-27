@@ -4,7 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'dart:async';
 import '../services/api_service.dart';
-import '../services/sdk/WebSocket.dart';
+import '../services/sdk/SDK_DB.dart';
 import '../models/api_models.dart';
 import 'profile/handler/profile_handler.dart';
 import 'details/details.dart';
@@ -59,6 +59,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _startAutoSlide();
     _initializeFCMIfLoggedIn();
   }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pageController.dispose();
+    _autoSlideTimer?.cancel();
+    // Set user offline when app closes
+    SupabaseSDK.setUserOffline();
+    super.dispose();
+  }
+  
+  @override
 
   // Initialize FCM only if user is logged in
   void _initializeFCMIfLoggedIn() async {
@@ -68,11 +80,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (firebaseUser != null) {
         await FirebaseMessagingHandler.initialize();
         
-        // Initialize WebSocket service for real-time features
+        // Set user online using direct SDK method
         try {
-          await WebSocketService.initialize();
+          await SupabaseSDK.setUserOnline();
+          debugPrint('User set to online via SDK');
         } catch (e) {
-          debugPrint('WebSocket initialization failed: $e');
+          debugPrint('Failed to set user online: $e');
         }
       } else {
       }
@@ -81,20 +94,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-        _stopAutoSlide();
-        break;
-      case AppLifecycleState.resumed:
-        _startAutoSlide();
-        _loadUserData(); // Reload user data when app resumes
-        break;
-      default:
-        break;
-    }
-  }
 
   void _startAutoSlide() {
     _autoSlideTimer = Timer.periodic(Duration(seconds: 4), (timer) {
@@ -903,13 +902,5 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         },
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _autoSlideTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
   }
 }
