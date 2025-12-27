@@ -443,19 +443,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       final email = _emailController.text.trim().toLowerCase();
       
-      // Check if email exists first
-      final signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-      
-      if (signInMethods.isEmpty) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'No account found with this email address';
-        });
-        HapticFeedback.heavyImpact();
-        return;
-      }
-      
-      // Email exists, send reset link
+      // Direct password reset - Firebase handles email existence internally
       await FirebaseAuth.instance.sendPasswordResetEmail(
         email: email,
       ).timeout(
