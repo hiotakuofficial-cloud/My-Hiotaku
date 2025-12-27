@@ -6,10 +6,10 @@ class UserProfileHandler {
   /// Get user profile data by username - optimized
   static Future<Map<String, dynamic>> getUserProfile(String username) async {
     try {
-      // Get user basic data
+      // Get user basic data with online status
       final userData = await SupabaseHandler.getData(
         table: 'users',
-        select: 'id,username,display_name,email,avatar_url,created_at,updated_at,is_active',
+        select: 'id,username,display_name,email,avatar_url,created_at,updated_at,is_active,is_online,last_seen',
         filters: {'username': username},
       );
       

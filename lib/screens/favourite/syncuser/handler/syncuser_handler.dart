@@ -174,22 +174,27 @@ class SyncUserHandler {
       
       final result = await SupabaseHandler.getData(
         table: 'users',
-        select: 'id,username,email,avatar_url,created_at,updated_at,is_active,firebase_uid,display_name',
+        select: 'id,username,email,avatar_url,created_at,updated_at,is_active,firebase_uid,display_name,is_online,last_seen',
         filters: filters,
       );
       
       if (result != null) {
-        // Add online status based on updated_at (mock logic)
+        // Use real-time online status from database
         List<Map<String, dynamic>> users = result.map((user) {
-          // Consider user online if updated within last 30 minutes
-          bool isOnline = false;
-          if (user['updated_at'] != null) {
+          // Use actual is_online field from database
+          bool isOnline = user['is_online'] ?? false;
+          
+          // Double-check with last_seen for accuracy (within 3 minutes)
+          if (isOnline && user['last_seen'] != null) {
             try {
-              DateTime lastUpdate = DateTime.parse(user['updated_at']);
-              Duration difference = DateTime.now().difference(lastUpdate);
-              isOnline = difference.inMinutes <= 30;
+              DateTime lastSeen = DateTime.parse(user['last_seen']);
+              Duration difference = DateTime.now().difference(lastSeen);
+              // If last_seen is more than 3 minutes ago, consider offline
+              if (difference.inMinutes > 3) {
+                isOnline = false;
+              }
             } catch (e) {
-              isOnline = false;
+              // If parsing fails, use database value
             }
           }
           

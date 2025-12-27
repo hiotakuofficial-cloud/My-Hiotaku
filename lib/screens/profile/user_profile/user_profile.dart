@@ -87,8 +87,25 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       final syncedResult = results[2];
       
       if (profileResult['success']) {
+        // Add online status accuracy check
+        Map<String, dynamic> profileData = profileResult['user'];
+        
+        // Verify online status with last_seen (similar to syncuser_handler)
+        if (profileData['is_online'] == true && profileData['last_seen'] != null) {
+          try {
+            DateTime lastSeen = DateTime.parse(profileData['last_seen']);
+            Duration difference = DateTime.now().difference(lastSeen);
+            // If last_seen is more than 3 minutes ago, consider offline
+            if (difference.inMinutes > 3) {
+              profileData['is_online'] = false;
+            }
+          } catch (e) {
+            // If parsing fails, use database value
+          }
+        }
+        
         setState(() {
-          userProfile = profileResult['user'];
+          userProfile = profileData;
           userFavorites = favoritesResult['success'] == true ? 
               List<Map<String, dynamic>>.from(favoritesResult['favorites'] ?? []) : [];
           syncedAccounts = syncedResult['success'] == true ? 
