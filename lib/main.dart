@@ -16,6 +16,7 @@ import 'firebase_options.dart';
 import 'notifications/handler/local_notification_handler.dart';
 import 'notifications/handler/firebase_messaging_handler.dart';
 import 'screens/auth/handler/firebase_handler.dart';
+import 'database/migrations.dart';
 
 // Background message handler (must be top-level function)
 @pragma('vm:entry-point')
@@ -42,6 +43,13 @@ void _handleInitialNotification(RemoteMessage message) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Run database migrations first
+  try {
+    await DatabaseMigrations.runMigrations();
+  } catch (e) {
+    // Silent fail - don't block app startup
+  }
   
   // Initialize Firebase with platform-specific options
   try {

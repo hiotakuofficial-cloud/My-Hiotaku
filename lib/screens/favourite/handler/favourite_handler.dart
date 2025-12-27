@@ -1,19 +1,36 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../auth/handler/supabase.dart';
+import '../../../database/query_optimizer.dart';
 
 class FavouriteHandler {
   
-  // Get current user's favorites
-  static Future<List<Map<String, dynamic>>> getUserFavorites() async {
+  // Get current user's favorites with pagination
+  static Future<Map<String, dynamic>> getUserFavoritesPaginated({
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
       final User? firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser == null) return [];
+      if (firebaseUser == null) return {'data': [], 'hasMore': false};
       
-      final userData = await SupabaseHandler.getUserByFirebaseUID(firebaseUser.uid);
-      if (userData == null) return [];
+      final userData = await QueryOptimizer.getUserOptimized(firebaseUser.uid);
+      if (userData == null) return {'data': [], 'hasMore': false};
       
-      final favorites = await SupabaseHandler.getUserFavorites(userData['id'].toString());
-      return favorites ?? [];
+      return await QueryOptimizer.getUserFavoritesPaginated(
+        userId: userData['id'].toString(),
+        page: page,
+        limit: limit,
+      );
+    } catch (e) {
+      return {'data': [], 'hasMore': false};
+    }
+  }
+  
+  // Get current user's favorites (legacy method)
+  static Future<List<Map<String, dynamic>>> getUserFavorites() async {
+    try {
+      final result = await getUserFavoritesPaginated(page: 1, limit: 100);
+      return List<Map<String, dynamic>>.from(result['data']);
     } catch (e) {
       return [];
     }
@@ -75,11 +92,26 @@ class FavouriteHandler {
     }
   }
   
-  // Get public favorites from all users
+  // Get public favorites from all users with pagination
+  static Future<Map<String, dynamic>> getPublicFavoritesPaginated({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      return await QueryOptimizer.getPublicFavoritesPaginated(
+        page: page,
+        limit: limit,
+      );
+    } catch (e) {
+      return {'data': [], 'hasMore': false};
+    }
+  }
+  
+  // Get public favorites from all users (legacy method)
   static Future<List<Map<String, dynamic>>> getPublicFavorites() async {
     try {
-      final publicFavorites = await SupabaseHandler.getPublicFavorites();
-      return publicFavorites ?? [];
+      final result = await getPublicFavoritesPaginated(page: 1, limit: 100);
+      return List<Map<String, dynamic>>.from(result['data']);
     } catch (e) {
       return [];
     }

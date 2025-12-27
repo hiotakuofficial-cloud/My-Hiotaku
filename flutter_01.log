@@ -1,0 +1,91 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter build apk --debug
+
+## exception
+
+ProcessPackageException: ProcessException: Found candidates, but lacked sufficient permissions to execute "/downloads/flutter/android/gradlew".
+  Command: /downloads/flutter/android/gradlew 
+
+```
+#0      LocalProcessManager.start (package:process/src/interface/local_process_manager.dart:56:7)
+#1      ErrorHandlingProcessManager.start.<anonymous closure> (package:flutter_tools/src/base/error_handling_io.dart:652:26)
+#2      _run (package:flutter_tools/src/base/error_handling_io.dart:512:20)
+#3      ErrorHandlingProcessManager.start (package:flutter_tools/src/base/error_handling_io.dart:650:12)
+#4      _DefaultProcessUtils.start (package:flutter_tools/src/base/process.dart:510:28)
+#5      _DefaultProcessUtils.stream (package:flutter_tools/src/base/process.dart:530:35)
+#6      AndroidGradleBuilder._runGradleTask (package:flutter_tools/src/android/gradle.dart:333:38)
+#7      AndroidGradleBuilder.buildGradleApp (package:flutter_tools/src/android/gradle.dart:549:32)
+<asynchronous suspension>
+#8      AndroidGradleBuilder.buildApk (package:flutter_tools/src/android/gradle.dart:232:5)
+<asynchronous suspension>
+#9      BuildApkCommand.runCommand (package:flutter_tools/src/commands/build_apk.dart:154:5)
+<asynchronous suspension>
+#10     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1558:27)
+<asynchronous suspension>
+#11     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#12     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+<asynchronous suspension>
+#13     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:496:9)
+<asynchronous suspension>
+#14     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#15     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:431:5)
+<asynchronous suspension>
+#16     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:98:11)
+<asynchronous suspension>
+#17     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#18     main (package:flutter_tools/executable.dart:99:3)
+<asynchronous suspension>
+```
+
+## flutter doctor
+
+```
+[!] Flutter (Channel [user-branch], 3.29.2, on Ubuntu 25.04 6.17.0-PRoot-Distro, locale en_US.UTF-8) [232ms]
+    ! Flutter version 3.29.2 on channel [user-branch] at /data/data/com.termux/files/usr/opt/flutter
+      Currently on an unknown channel. Run `flutter channel` to switch to an official channel.
+      If that doesn't fix the issue, reinstall Flutter by following instructions at https://flutter.dev/setup.
+    ! Warning: `flutter` on your path resolves to /data/data/com.termux/files/usr/bin/flutter, which is not inside your current Flutter SDK checkout at /data/data/com.termux/files/usr/opt/flutter. Consider adding /data/data/com.termux/files/usr/opt/flutter/bin to the front of your path.
+    ! The dart binary is not on your path. Consider adding /data/data/com.termux/files/usr/opt/flutter/bin to your path.
+    ! Upstream repository unknown source is not a standard remote.
+      Set environment variable "FLUTTER_GIT_URL" to unknown source to dismiss this error.
+    • Framework revision c236373904 (10 months ago), 2025-03-13 16:17:06 -0400
+    • Engine revision 18b71d647a
+    • Dart version 3.7.2
+    • DevTools version 2.42.0
+    • If those were intentional, you can disregard the above warnings; however it is recommended to use "git" directly to perform update checks and upgrades.
+
+[✗] Android toolchain - develop for Android devices [95ms]
+    • Android SDK at /usr/lib/android-sdk
+    ✗ cmdline-tools component is missing
+      Run `path/to/sdkmanager --install "cmdline-tools;latest"`
+      See https://developer.android.com/studio/command-line for more details.
+
+[✓] Chrome - develop for the web [60ms]
+    • Chrome at google-chrome
+
+[✓] Linux toolchain - develop for Linux desktop [959ms]
+    • Ubuntu clang version 20.1.2 (0ubuntu1)
+    • cmake version 3.31.6
+    • ninja version 1.12.1
+    • pkg-config version 1.8.1
+
+[!] Android Studio (not installed) [36ms]
+    • Android Studio not found; download from https://developer.android.com/studio/index.html
+      (or visit https://flutter.dev/to/linux-android-setup for detailed instructions).
+
+[✓] Connected device (2 available) [321ms]
+    • Linux (desktop) • linux  • linux-arm64    • Ubuntu 25.04 6.17.0-PRoot-Distro
+    • Chrome (web)    • chrome • web-javascript • unknown
+
+[✓] Network resources [726ms]
+    • All expected network resources are available.
+
+! Doctor found issues in 3 categories.
+```

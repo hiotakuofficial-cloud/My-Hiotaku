@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../services/notification_service.dart';
+import '../../../database/data_validator.dart';
 
 class SupabaseHandler {
   // Supabase Configuration - Environment Variables
@@ -151,7 +152,7 @@ class SupabaseHandler {
     return users?.isNotEmpty == true ? users![0] : null;
   }
   
-  /// Create or update user
+  /// Create or update user with validation
   static Future<Map<String, dynamic>?> upsertUser({
     required String firebaseUID,
     required String email,
@@ -159,35 +160,38 @@ class SupabaseHandler {
     String? avatarUrl,
     String? username,
   }) async {
-    // Check if user exists
-    final existingUser = await getUserByFirebaseUID(firebaseUID);
-    
-    if (existingUser != null) {
-      // Update existing user
-      final success = await updateData(
-        table: 'users',
-        data: {
-          'email': email,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'username': username,
-          'updated_at': getCurrentTimestamp(),
-        },
-        filters: {'firebase_uid': firebaseUID},
+    try {
+      // Validate input data
+      final validatedData = DataValidator.validateUserData(
+        firebaseUID: firebaseUID,
+        email: email,
+        displayName: displayName,
+        avatarUrl: avatarUrl,
+        username: username,
       );
-      return success ? existingUser : null;
-    } else {
-      // Create new user
-      return await insertData(
-        table: 'users',
-        data: {
-          'firebase_uid': firebaseUID,
-          'email': email,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'username': username,
-        },
-      );
+      
+      if (validatedData == null) return null;
+      
+      // Check if user exists
+      final existingUser = await getUserByFirebaseUID(firebaseUID);
+      
+      if (existingUser != null) {
+        // Update existing user
+        final success = await updateData(
+          table: 'users',
+          data: validatedData,
+          filters: {'firebase_uid': firebaseUID},
+        );
+        return success ? existingUser : null;
+      } else {
+        // Create new user
+        return await insertData(
+          table: 'users',
+          data: validatedData,
+        );
+      }
+    } catch (e) {
+      return null;
     }
   }
 
@@ -201,7 +205,7 @@ class SupabaseHandler {
     );
   }
   
-  /// Add to favorites
+  /// Add to favorites with validation
   static Future<Map<String, dynamic>?> addToFavorites({
     required String userId,
     required String animeId,
@@ -209,16 +213,25 @@ class SupabaseHandler {
     String? animeImage,
     bool isPublic = false,
   }) async {
-    return await insertData(
-      table: 'favorites',
-      data: {
-        'user_id': userId,
-        'anime_id': animeId,
-        'anime_title': animeTitle,
-        'anime_image': animeImage,
-        'is_public': isPublic,
-      },
-    );
+    try {
+      // Validate input data
+      final validatedData = DataValidator.validateFavoriteData(
+        userId: userId,
+        animeId: animeId,
+        animeTitle: animeTitle,
+        animeImage: animeImage,
+        isPublic: isPublic,
+      );
+      
+      if (validatedData == null) return null;
+      
+      return await insertData(
+        table: 'favorites',
+        data: validatedData,
+      );
+    } catch (e) {
+      return null;
+    }
   }
   
   /// Remove from favorites
@@ -269,20 +282,29 @@ class SupabaseHandler {
 
   // Merge request methods
   
-  /// Send merge request
+  /// Send merge request with validation
   static Future<Map<String, dynamic>?> sendMergeRequest({
     required String senderId,
     required String receiverId,
     String? message,
   }) async {
-    return await insertData(
-      table: 'merge_requests',
-      data: {
-        'sender_id': senderId,
-        'receiver_id': receiverId,
-        'message': message ?? 'Would like to merge favorites with you!',
-      },
-    );
+    try {
+      // Validate input data
+      final validatedData = DataValidator.validateMergeRequestData(
+        senderId: senderId,
+        receiverId: receiverId,
+        message: message,
+      );
+      
+      if (validatedData == null) return null;
+      
+      return await insertData(
+        table: 'merge_requests',
+        data: validatedData,
+      );
+    } catch (e) {
+      return null;
+    }
   }
   
   /// Get pending merge requests for user
