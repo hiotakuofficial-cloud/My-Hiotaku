@@ -85,10 +85,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Container(
                   height: 300,
                   width: 300,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFF8C00).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
                   child: Lottie.asset(
                     'assets/animations/forgot.json',
                     fit: BoxFit.contain,
