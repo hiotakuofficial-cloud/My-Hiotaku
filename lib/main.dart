@@ -60,8 +60,10 @@ void main() async {
     
     // Initialize Supabase SDK for real-time features
     await Supabase.initialize(
-      url: const String.fromEnvironment('SUPA_URL'),
-      anonKey: const String.fromEnvironment('ANON_KEY'),
+      url: const String.fromEnvironment('SUPA_URL', 
+        defaultValue: 'https://brwzqawoncblbxqoqyua.supabase.co'),
+      anonKey: const String.fromEnvironment('ANON_KEY',
+        defaultValue: 'sb_publishable_zws8lGHnbPyD4lUY8qc7wQ_OCP_vZI2'),
     );
     
     // Pre-initialize Google Sign In for faster login response

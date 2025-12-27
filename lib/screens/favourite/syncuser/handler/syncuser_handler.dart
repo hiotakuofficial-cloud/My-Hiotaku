@@ -184,13 +184,13 @@ class SyncUserHandler {
           // Use actual is_online field from database
           bool isOnline = user['is_online'] ?? false;
           
-          // Double-check with last_seen for accuracy (within 3 minutes)
+          // Double-check with last_seen for accuracy (within 10 minutes)
           if (isOnline && user['last_seen'] != null) {
             try {
               DateTime lastSeen = DateTime.parse(user['last_seen']);
               Duration difference = DateTime.now().difference(lastSeen);
-              // If last_seen is more than 3 minutes ago, consider offline
-              if (difference.inMinutes > 3) {
+              // If last_seen is more than 10 minutes ago, consider offline
+              if (difference.inMinutes > 10) {
                 isOnline = false;
               }
             } catch (e) {
