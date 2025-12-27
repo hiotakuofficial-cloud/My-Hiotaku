@@ -16,6 +16,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _isLoading = false;
   bool _emailSent = false;
   String? _errorMessage;
+  DateTime? _lastClickTime;
 
   @override
   void dispose() {
@@ -409,6 +410,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _handleSendReset() async {
+    // Debounce: Prevent clicks within 2 seconds
+    final now = DateTime.now();
+    if (_lastClickTime != null && now.difference(_lastClickTime!).inSeconds < 2) {
+      return;
+    }
+    _lastClickTime = now;
+    
     if (!_formKey.currentState!.validate()) return;
     
     // Prevent multiple clicks
