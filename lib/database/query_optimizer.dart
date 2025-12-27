@@ -17,12 +17,12 @@ class QueryOptimizer {
       
       final result = await SupabaseHandler.getData(
         table: 'favorites',
-        select: 'id,anime_id,anime_title,anime_image,created_at',
+        select: 'id,anime_id,anime_title,anime_image,added_at',
         filters: {
           'user_id': userId,
           'limit': limit,
           'offset': offset,
-          'order': 'created_at.desc',
+          'order': 'added_at.desc',
         },
       );
       
@@ -53,12 +53,12 @@ class QueryOptimizer {
       
       final result = await SupabaseHandler.getData(
         table: 'favorites',
-        select: 'id,anime_id,anime_title,anime_image,created_at,users!inner(username,avatar_url)',
+        select: 'id,anime_id,anime_title,anime_image,added_at,users!inner(username,avatar_url)',
         filters: {
           'is_public': true,
           'limit': limit,
           'offset': offset,
-          'order': 'created_at.desc',
+          'order': 'added_at.desc',
         },
       );
       
@@ -91,13 +91,13 @@ class QueryOptimizer {
       
       final result = await SupabaseHandler.getData(
         table: 'favorites',
-        select: 'id,anime_id,anime_title,anime_image,created_at',
+        select: 'id,anime_id,anime_title,anime_image,added_at',
         filters: {
           'user_id': userId,
           'anime_title': 'ilike.%$query%',
           'limit': limit,
           'offset': offset,
-          'order': 'created_at.desc',
+          'order': 'added_at.desc',
         },
       );
       
@@ -131,7 +131,7 @@ class QueryOptimizer {
         'anime_title': fav['anime_title'],
         'anime_image': fav['anime_image'],
         'is_public': fav['is_public'] ?? false,
-        'created_at': DateTime.now().toIso8601String(),
+        'added_at': DateTime.now().toIso8601String(),
       }).toList();
       
       // Insert in chunks to avoid timeout
@@ -157,7 +157,7 @@ class QueryOptimizer {
       final result = await SupabaseHandler.getData(
         table: 'users',
         select: 'id,username,email,avatar_url,display_name,created_at',
-        filters: {'firebase_uid': firebaseUID},
+        filters: {'firebase_uid': firebaseUID}, // Fixed: Remove eq. prefix
       );
       
       return result?.isNotEmpty == true ? result!.first : null;
