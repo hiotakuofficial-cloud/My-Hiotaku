@@ -50,25 +50,17 @@ class SupabaseSDK {
     }
   }
   
-  // Check if user is online (direct database read)
+  // Check if user is online (direct database read - no time calculation)
   static Future<bool> isUserOnlineByUsername(String username) async {
     try {
       final response = await client
           .from('users')
-          .select('is_online, last_seen')
+          .select('is_online')
           .eq('username', username)
           .limit(1);
       
       if (response.isNotEmpty) {
-        final user = response.first;
-        if (user['is_online'] == true) {
-          // Check if last seen is within 30 minutes
-          final lastSeen = DateTime.parse(user['last_seen']).toUtc();
-          final now = DateTime.now().toUtc();
-          final difference = now.difference(lastSeen).inMinutes;
-          
-          return difference <= 30;
-        }
+        return response.first['is_online'] ?? false;
       }
       
       return false;
@@ -117,20 +109,12 @@ class SupabaseSDK {
     try {
       final response = await client
           .from('users')
-          .select('is_online, last_seen')
+          .select('is_online')
           .eq('firebase_uid', firebaseUID)
           .limit(1);
       
       if (response.isNotEmpty) {
-        final user = response.first;
-        if (user['is_online'] == true) {
-          // Check if last seen is within 10 minutes (UTC comparison)
-          final lastSeen = DateTime.parse(user['last_seen']).toUtc();
-          final now = DateTime.now().toUtc();
-          final difference = now.difference(lastSeen).inMinutes;
-          
-          return difference <= 30;
-        }
+        return response.first['is_online'] ?? false;
       }
       
       return false;

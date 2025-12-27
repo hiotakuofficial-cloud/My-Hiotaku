@@ -179,28 +179,12 @@ class SyncUserHandler {
       );
       
       if (result != null) {
-        // Use real-time online status from database
+        // Use direct is_online field from database (SDK handles updates)
         List<Map<String, dynamic>> users = result.map((user) {
-          // Use actual is_online field from database
-          bool isOnline = user['is_online'] ?? false;
-          
-          // Double-check with last_seen for accuracy (within 10 minutes)
-          if (isOnline && user['last_seen'] != null) {
-            try {
-              DateTime lastSeen = DateTime.parse(user['last_seen']).toUtc();
-              Duration difference = DateTime.now().toUtc().difference(lastSeen);
-              // If last_seen is more than 30 minutes ago, consider offline
-              if (difference.inMinutes > 30) {
-                isOnline = false;
-              }
-            } catch (e) {
-              // If parsing fails, use database value
-            }
-          }
-          
+          // Direct database value - no time calculation needed
           return {
             ...user,
-            'is_online': isOnline,
+            'is_online': user['is_online'] ?? false,
           };
         }).toList();
         

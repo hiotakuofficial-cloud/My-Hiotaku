@@ -87,22 +87,9 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
       final syncedResult = results[2];
       
       if (profileResult['success']) {
-        // Add online status accuracy check
+        // Use direct is_online field from database (SDK handles updates)
         Map<String, dynamic> profileData = profileResult['user'];
-        
-        // Verify online status with last_seen (similar to syncuser_handler)
-        if (profileData['is_online'] == true && profileData['last_seen'] != null) {
-          try {
-            DateTime lastSeen = DateTime.parse(profileData['last_seen']).toUtc();
-            Duration difference = DateTime.now().toUtc().difference(lastSeen);
-            // If last_seen is more than 30 minutes ago, consider offline
-            if (difference.inMinutes > 30) {
-              profileData['is_online'] = false;
-            }
-          } catch (e) {
-            // If parsing fails, use database value
-          }
-        }
+        // No time calculation needed - SDK manages online/offline status
         
         setState(() {
           userProfile = profileData;
