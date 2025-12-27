@@ -120,7 +120,7 @@ class DataValidator {
         'anime_title': sanitizeString(animeTitle),
         'anime_image': animeImage?.trim(),
         'is_public': isPublic ?? false,
-        'created_at': DateTime.now().toIso8601String(),
+        'added_at': DateTime.now().toIso8601String(), // Fixed: created_at → added_at
       };
     } catch (e) {
       return null;

@@ -19,18 +19,31 @@ class QueryOptimizer {
         table: 'favorites',
         select: 'id,anime_id,anime_title,anime_image,added_at',
         filters: {
-          'user_id': userId,
-          'limit': limit,
-          'offset': offset,
-          'order': 'added_at.desc',
+          'user_id': userId, // Only actual filter
         },
       );
       
+      // Manual sorting and pagination since SupabaseHandler doesn't support it
+      List<Map<String, dynamic>> sortedData = result ?? [];
+      if (sortedData.isNotEmpty) {
+        // Sort by added_at desc
+        sortedData.sort((a, b) {
+          final aDate = DateTime.parse(a['added_at']);
+          final bDate = DateTime.parse(b['added_at']);
+          return bDate.compareTo(aDate);
+        });
+        
+        // Apply pagination
+        final startIndex = offset;
+        final endIndex = (startIndex + limit).clamp(0, sortedData.length);
+        sortedData = sortedData.sublist(startIndex, endIndex);
+      }
+      
       return {
-        'data': result ?? [],
+        'data': sortedData,
         'page': page,
         'limit': limit,
-        'hasMore': (result?.length ?? 0) == limit,
+        'hasMore': sortedData.length == limit,
       };
     } catch (e) {
       return {
@@ -55,18 +68,29 @@ class QueryOptimizer {
         table: 'favorites',
         select: 'id,anime_id,anime_title,anime_image,added_at,users!inner(username,avatar_url)',
         filters: {
-          'is_public': true,
-          'limit': limit,
-          'offset': offset,
-          'order': 'added_at.desc',
+          'is_public': true, // Only actual filter
         },
       );
       
+      // Manual sorting and pagination
+      List<Map<String, dynamic>> sortedData = result ?? [];
+      if (sortedData.isNotEmpty) {
+        sortedData.sort((a, b) {
+          final aDate = DateTime.parse(a['added_at']);
+          final bDate = DateTime.parse(b['added_at']);
+          return bDate.compareTo(aDate);
+        });
+        
+        final startIndex = offset;
+        final endIndex = (startIndex + limit).clamp(0, sortedData.length);
+        sortedData = sortedData.sublist(startIndex, endIndex);
+      }
+      
       return {
-        'data': result ?? [],
+        'data': sortedData,
         'page': page,
         'limit': limit,
-        'hasMore': (result?.length ?? 0) == limit,
+        'hasMore': sortedData.length == limit,
       };
     } catch (e) {
       return {
@@ -94,12 +118,28 @@ class QueryOptimizer {
         select: 'id,anime_id,anime_title,anime_image,added_at',
         filters: {
           'user_id': userId,
-          'anime_title': 'ilike.%$query%',
-          'limit': limit,
-          'offset': offset,
-          'order': 'added_at.desc',
+          // Note: ilike search not supported in basic SupabaseHandler
         },
       );
+      
+      // Manual search and sorting
+      List<Map<String, dynamic>> filteredData = result ?? [];
+      if (filteredData.isNotEmpty && query.isNotEmpty) {
+        filteredData = filteredData.where((item) {
+          final title = item['anime_title']?.toString().toLowerCase() ?? '';
+          return title.contains(query.toLowerCase());
+        }).toList();
+        
+        filteredData.sort((a, b) {
+          final aDate = DateTime.parse(a['added_at']);
+          final bDate = DateTime.parse(b['added_at']);
+          return bDate.compareTo(aDate);
+        });
+        
+        final startIndex = offset;
+        final endIndex = (startIndex + limit).clamp(0, filteredData.length);
+        filteredData = filteredData.sublist(startIndex, endIndex);
+      }
       
       return {
         'data': result ?? [],
