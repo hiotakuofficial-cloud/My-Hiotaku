@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'handler/firebase_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'forgot.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -258,11 +259,10 @@ class _LoginScreenState extends State<LoginScreen>
                           child: GestureDetector(
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Forgot password feature coming soon!'),
-                                  backgroundColor: Colors.orange,
-                                  behavior: SnackBarBehavior.floating,
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ForgotPasswordScreen(),
                                 ),
                               );
                             },
