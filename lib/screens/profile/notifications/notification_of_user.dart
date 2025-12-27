@@ -372,6 +372,9 @@ class _NotificationOfUserState extends State<NotificationOfUser> with TickerProv
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
