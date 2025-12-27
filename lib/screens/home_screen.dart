@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'dart:async';
 import '../services/api_service.dart';
+import '../services/sdk/WebSocket.dart';
 import '../models/api_models.dart';
 import 'profile/handler/profile_handler.dart';
 import 'details/details.dart';
@@ -66,6 +67,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       
       if (firebaseUser != null) {
         await FirebaseMessagingHandler.initialize();
+        
+        // Initialize WebSocket service for real-time features
+        try {
+          await WebSocketService.initialize();
+        } catch (e) {
+          debugPrint('WebSocket initialization failed: $e');
+        }
       } else {
       }
     } catch (e) {

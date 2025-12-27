@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/landing/splash.dart';
 import 'screens/landing/onboarding.dart';
 import 'screens/auth/login.dart';
@@ -55,6 +56,12 @@ void main() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    // Initialize Supabase SDK for real-time features
+    await Supabase.initialize(
+      url: const String.fromEnvironment('SUPA_URL'),
+      anonKey: const String.fromEnvironment('ANON_KEY'),
     );
     
     // Pre-initialize Google Sign In for faster login response
