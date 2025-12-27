@@ -339,88 +339,110 @@ class _NotificationOfUserState extends State<NotificationOfUser> with TickerProv
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Lottie.asset(
+            'assets/animations/Empty.json',
+            width: 200,
+            height: 200,
+            fit: BoxFit.contain,
           ),
-        ),
-        actions: [
-          if (_notifications.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              onPressed: _loadNotifications,
+          const SizedBox(height: 24),
+          Text(
+            'No Notifications',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You\'ll see notifications here when you receive them',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : _error != null
-              ? LoadingErrorScreen(
-                  errorMessage: _error,
-                  onRetry: _loadNotifications,
-                )
-              : _notifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Lottie.asset(
-                            'assets/animations/Empty.json',
-                            width: 200,
-                            height: 200,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'No Notifications',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'You\'ll see notifications here when you receive them',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadNotifications,
-                      color: Colors.white,
-                      backgroundColor: const Color(0xFF1E1E1E),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _notifications.length,
-                        itemBuilder: (context, index) {
-                          return _buildNotificationItem(_notifications[index]);
-                        },
+    );
+  }
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Notifications',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
+                    SizedBox(width: 48), // Balance the back button
+                  ],
+                ),
+              ),
+              
+              // Content
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : _error != null
+                        ? LoadingErrorScreen(
+                            errorMessage: _error,
+                            onRetry: _loadNotifications,
+                          )
+                        : _notifications.isEmpty
+                            ? _buildEmptyState()
+                            : RefreshIndicator(
+                                onRefresh: _loadNotifications,
+                                color: Colors.white,
+                                backgroundColor: const Color(0xFF1E1E1E),
+                                child: ListView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: _notifications.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildNotificationItem(_notifications[index]);
+                                  },
+                                ),
+                              ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
