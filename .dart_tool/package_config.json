@@ -105,9 +105,9 @@
     },
     {
       "name": "device_info_plus",
-      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/device_info_plus-10.1.2",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/device_info_plus-9.1.2",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "2.18"
     },
     {
       "name": "device_info_plus_platform_interface",
@@ -369,15 +369,15 @@
     },
     {
       "name": "package_info_plus",
-      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/package_info_plus-4.2.0",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "2.18"
     },
     {
       "name": "package_info_plus_platform_interface",
-      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/package_info_plus_platform_interface-2.0.1",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "2.12"
     },
     {
       "name": "path",
@@ -764,7 +764,7 @@
       "languageVersion": "2.19"
     }
   ],
-  "generated": "2025-12-30T13:23:18.484651Z",
+  "generated": "2025-12-30T14:59:00.233713Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///data/data/com.termux/files/usr/opt/flutter",
