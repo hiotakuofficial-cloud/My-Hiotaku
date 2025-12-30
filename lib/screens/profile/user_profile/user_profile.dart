@@ -314,10 +314,31 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                   width: 3,
                 ),
               ),
-              child: CircleAvatar(
-                radius: 65,
-                backgroundImage: AssetImage(_getProfileImagePath(userProfile!['avatar_url'])),
-                backgroundColor: Color(0xFF2A2A2A),
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 65,
+                    backgroundImage: AssetImage(_getProfileImagePath(userProfile!['avatar_url'])),
+                    backgroundColor: Color(0xFF2A2A2A),
+                  ),
+                  if (isUserOnline)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Color(0xFF121212),
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             if (userProfile!['is_online'] == true)
