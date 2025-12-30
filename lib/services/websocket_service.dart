@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:async';
 
 class WebSocketService {
   static late SupabaseClient _client;
@@ -44,7 +45,7 @@ class WebSocketService {
   static SupabaseClient get client => _client;
   static String? get currentFirebaseUid => FirebaseAuth.instance.currentUser?.uid;
 
-  // Set user online status
+  // Set user online status with heartbeat
   static Future<void> setOnlineStatus(bool isOnline) async {
     if (!_isInitialized) return;
     
@@ -59,6 +60,13 @@ class WebSocketService {
         'status': isOnline ? 'online' : 'offline',
       });
       
+      // Start heartbeat if going online
+      if (isOnline) {
+        _startHeartbeat();
+      } else {
+        _stopHeartbeat();
+      }
+      
       Fluttertoast.showToast(
         msg: isOnline ? "🟢 Online" : "⚫ Offline",
         toastLength: Toast.LENGTH_SHORT,
@@ -69,14 +77,40 @@ class WebSocketService {
     }
   }
 
+  static Timer? _heartbeatTimer;
+
+  // Send heartbeat every 2 minutes to keep online status
+  static void _startHeartbeat() {
+    _stopHeartbeat(); // Stop existing timer
+    
+    _heartbeatTimer = Timer.periodic(Duration(minutes: 2), (timer) async {
+      final firebaseUid = currentFirebaseUid;
+      if (firebaseUid != null && _isInitialized) {
+        try {
+          await _client.from('user_presence').update({
+            'last_seen': DateTime.now().toIso8601String(),
+          }).eq('firebase_uid', firebaseUid);
+        } catch (e) {
+          // Silent fail
+        }
+      }
+    });
+  }
+
+  static void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
+
   // Auto set offline when app goes to background
   static Future<void> setOfflineOnBackground() async {
+    _stopHeartbeat(); // Stop heartbeat
     await setOnlineStatus(false);
   }
 
   // Auto set online when app comes to foreground
   static Future<void> setOnlineOnForeground() async {
-    await setOnlineStatus(true);
+    await setOnlineStatus(true); // This will start heartbeat
   }
 
   // Subscribe to presence updates
