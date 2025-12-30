@@ -79,17 +79,24 @@ class WebSocketService {
 
   static Timer? _heartbeatTimer;
 
-  // Send heartbeat every 2 minutes to keep online status
+  // Send heartbeat every 4 minutes to test offline detection
   static void _startHeartbeat() {
     _stopHeartbeat(); // Stop existing timer
     
-    _heartbeatTimer = Timer.periodic(Duration(minutes: 2), (timer) async {
+    _heartbeatTimer = Timer.periodic(Duration(minutes: 4), (timer) async {
       final firebaseUid = currentFirebaseUid;
       if (firebaseUid != null && _isInitialized) {
         try {
           await _client.from('user_presence').update({
             'last_seen': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
           }).eq('firebase_uid', firebaseUid);
+          
+          Fluttertoast.showToast(
+            msg: "💓 Heartbeat sent",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+          );
         } catch (e) {
           // Silent fail
         }
