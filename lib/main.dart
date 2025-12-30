@@ -59,9 +59,6 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     
-    // Initialize WebSocket SDK
-    await WebSocketService.initialize();
-    
     // Pre-initialize Google Sign In for faster login response
     await FirebaseHandler.preInitializeGoogleSignIn();
     

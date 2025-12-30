@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'dart:async';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../services/api_service.dart';
 import '../models/api_models.dart';
 import 'profile/handler/profile_handler.dart';
@@ -17,6 +18,7 @@ import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../notifications/handler/firebase_messaging_handler.dart';
+import '../services/websocket_service.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -57,6 +59,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     
     _startAutoSlide();
     _initializeFCMIfLoggedIn();
+    _initializeWebSocketIfLoggedIn();
+  }
+
+  // Initialize WebSocket for logged in users
+  void _initializeWebSocketIfLoggedIn() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await WebSocketService.initialize();
+      Fluttertoast.showToast(
+        msg: "✅ WebSocket initialized successfully",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    }
   }
 
   // Initialize FCM only if user is logged in
