@@ -45,7 +45,7 @@ class WebSocketService {
   static SupabaseClient get client => _client;
   static String? get currentFirebaseUid => FirebaseAuth.instance.currentUser?.uid;
 
-  // Set user online status with heartbeat (SERVER TIME ONLY)
+  // Set user online status with heartbeat (FIXED SERVER TIME)
   static Future<void> setOnlineStatus(bool isOnline) async {
     if (!_isInitialized) return;
     
@@ -53,13 +53,25 @@ class WebSocketService {
       final firebaseUid = currentFirebaseUid;
       if (firebaseUid == null) return;
 
-      // Use server-side NOW() function instead of device time
-      await _client.from('user_presence').upsert({
-        'firebase_uid': firebaseUid,
-        'is_online': isOnline,
-        'last_seen': 'NOW()', // Server time
-        'status': isOnline ? 'online' : 'offline',
-      });
+      // FIXED: Use proper server timestamp function
+      if (isOnline) {
+        await _client.from('user_presence').upsert({
+          'firebase_uid': firebaseUid,
+          'is_online': true,
+          'status': 'online',
+        });
+        
+        // Update last_seen with server function call
+        await _client.rpc('update_user_heartbeat', params: {
+          'user_firebase_uid': firebaseUid
+        });
+      } else {
+        await _client.from('user_presence').upsert({
+          'firebase_uid': firebaseUid,
+          'is_online': false,
+          'status': 'offline',
+        });
+      }
       
       // Start heartbeat if going online
       if (isOnline) {
@@ -69,37 +81,45 @@ class WebSocketService {
       }
       
       Fluttertoast.showToast(
-        msg: isOnline ? "🟢 Online (Server Time)" : "⚫ Offline",
+        msg: isOnline ? "🟢 Online (Fixed)" : "⚫ Offline",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
     } catch (e) {
-      // Silent fail
+      Fluttertoast.showToast(
+        msg: "❌ Status update failed: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
     }
   }
 
   static Timer? _heartbeatTimer;
 
-  // Send heartbeat every 4 minutes to test offline detection (SERVER TIME)
+  // Send heartbeat every 3 minutes (FIXED TIMING)
   static void _startHeartbeat() {
     _stopHeartbeat(); // Stop existing timer
     
-    _heartbeatTimer = Timer.periodic(Duration(minutes: 4), (timer) async {
+    _heartbeatTimer = Timer.periodic(Duration(minutes: 3), (timer) async {
       final firebaseUid = currentFirebaseUid;
       if (firebaseUid != null && _isInitialized) {
         try {
-          // Use server-side NOW() function for consistent timestamps
-          await _client.from('user_presence').update({
-            'last_seen': 'NOW()', // Server time only
-          }).eq('firebase_uid', firebaseUid);
+          // FIXED: Use RPC function instead of direct update
+          await _client.rpc('update_user_heartbeat', params: {
+            'user_firebase_uid': firebaseUid
+          });
           
           Fluttertoast.showToast(
-            msg: "💓 Heartbeat (Server Time)",
+            msg: "💓 Heartbeat (Fixed)",
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
           );
         } catch (e) {
-          // Silent fail
+          Fluttertoast.showToast(
+            msg: "❌ Heartbeat failed: $e",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+          );
         }
       }
     });
