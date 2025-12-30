@@ -45,7 +45,7 @@ class WebSocketService {
   static SupabaseClient get client => _client;
   static String? get currentFirebaseUid => FirebaseAuth.instance.currentUser?.uid;
 
-  // Set user online status with heartbeat
+  // Set user online status with heartbeat (SERVER TIME ONLY)
   static Future<void> setOnlineStatus(bool isOnline) async {
     if (!_isInitialized) return;
     
@@ -53,10 +53,11 @@ class WebSocketService {
       final firebaseUid = currentFirebaseUid;
       if (firebaseUid == null) return;
 
+      // Use server-side NOW() function instead of device time
       await _client.from('user_presence').upsert({
         'firebase_uid': firebaseUid,
         'is_online': isOnline,
-        'last_seen': DateTime.now().toIso8601String(),
+        'last_seen': 'NOW()', // Server time
         'status': isOnline ? 'online' : 'offline',
       });
       
@@ -68,7 +69,7 @@ class WebSocketService {
       }
       
       Fluttertoast.showToast(
-        msg: isOnline ? "🟢 Online" : "⚫ Offline",
+        msg: isOnline ? "🟢 Online (Server Time)" : "⚫ Offline",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
@@ -79,7 +80,7 @@ class WebSocketService {
 
   static Timer? _heartbeatTimer;
 
-  // Send heartbeat every 4 minutes to test offline detection
+  // Send heartbeat every 4 minutes to test offline detection (SERVER TIME)
   static void _startHeartbeat() {
     _stopHeartbeat(); // Stop existing timer
     
@@ -87,13 +88,13 @@ class WebSocketService {
       final firebaseUid = currentFirebaseUid;
       if (firebaseUid != null && _isInitialized) {
         try {
+          // Use server-side NOW() function for consistent timestamps
           await _client.from('user_presence').update({
-            'last_seen': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
+            'last_seen': 'NOW()', // Server time only
           }).eq('firebase_uid', firebaseUid);
           
           Fluttertoast.showToast(
-            msg: "💓 Heartbeat sent",
+            msg: "💓 Heartbeat (Server Time)",
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
           );
@@ -133,48 +134,56 @@ class WebSocketService {
         .subscribe();
   }
 
-  // Check if user is online (with timeout check and auto-cleanup)
+  // Check if user is online (SERVER TIME comparison)
   static Future<bool> isUserOnline(String firebaseUid) async {
     if (!_isInitialized) return false;
     
     try {
+      // Use server-side time comparison to avoid timezone issues
       final response = await _client
-          .from('user_presence')
-          .select('is_online, last_seen')
-          .eq('firebase_uid', firebaseUid)
-          .single();
+          .rpc('check_user_online_status', params: {'user_firebase_uid': firebaseUid});
       
-      final isOnline = response['is_online'] ?? false;
-      final lastSeenStr = response['last_seen'];
-      
-      // If marked online, check if last_seen is recent (within 5 minutes)
-      if (isOnline && lastSeenStr != null) {
-        final lastSeen = DateTime.parse(lastSeenStr);
-        final now = DateTime.now();
-        final difference = now.difference(lastSeen).inMinutes;
-        
-        // If last seen more than 5 minutes ago, consider offline
-        if (difference > 5) {
-          // Auto-update to offline
-          await _client.from('user_presence').update({
-            'is_online': false,
-            'status': 'offline',
-            'updated_at': DateTime.now().toIso8601String(),
-          }).eq('firebase_uid', firebaseUid);
-          
-          Fluttertoast.showToast(
-            msg: "🔄 Auto-marked user offline (${difference}min ago)",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-          );
-          
-          return false;
-        }
-      }
-      
-      return isOnline;
+      return response ?? false;
     } catch (e) {
-      return false;
+      // Fallback to manual check if RPC fails
+      try {
+        final response = await _client
+            .from('user_presence')
+            .select('is_online, last_seen')
+            .eq('firebase_uid', firebaseUid)
+            .single();
+        
+        final isOnline = response['is_online'] ?? false;
+        final lastSeenStr = response['last_seen'];
+        
+        // If marked online, check if last_seen is recent (within 5 minutes)
+        if (isOnline && lastSeenStr != null) {
+          final lastSeen = DateTime.parse(lastSeenStr);
+          final now = DateTime.now().toUtc(); // Use UTC for comparison
+          final difference = now.difference(lastSeen).inMinutes;
+          
+          // If last seen more than 5 minutes ago, consider offline
+          if (difference > 5) {
+            // Auto-update to offline using server time
+            await _client.from('user_presence').update({
+              'is_online': false,
+              'status': 'offline',
+            }).eq('firebase_uid', firebaseUid);
+            
+            Fluttertoast.showToast(
+              msg: "🔄 Auto-marked user offline (${difference}min ago)",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+            );
+            
+            return false;
+          }
+        }
+        
+        return isOnline;
+      } catch (e2) {
+        return false;
+      }
     }
   }
 
