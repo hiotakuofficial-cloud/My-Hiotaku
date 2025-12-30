@@ -3,6 +3,9 @@
 -- Uses existing user_presence table from chat system
 -- ALL TIMESTAMPS USE SERVER TIME ZONE (UTC) - NO DEVICE TIME ISSUES
 
+-- Drop existing function first to change return type
+DROP FUNCTION IF EXISTS mark_stale_users_offline();
+
 -- Create function to check user online status (server-side time comparison)
 CREATE OR REPLACE FUNCTION check_user_online_status(user_firebase_uid TEXT)
 RETURNS BOOLEAN AS $$
@@ -41,8 +44,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create function to mark stale users as offline
-CREATE OR REPLACE FUNCTION mark_stale_users_offline()
+-- Create function to mark stale users as offline (with return count)
+CREATE FUNCTION mark_stale_users_offline()
 RETURNS INTEGER AS $$
 DECLARE
     affected_count INTEGER;
