@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'dart:async';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/api_service.dart';
 import '../models/api_models.dart';
 import 'profile/handler/profile_handler.dart';
@@ -64,12 +65,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // Initialize WebSocket for logged in users
   void _initializeWebSocketIfLoggedIn() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
       await WebSocketService.initialize();
       
       // Set user online status
       await WebSocketService.setOnlineStatus(true);
+      
+      // Test: Check Pihu user status
+      await _checkPihuUserStatus();
       
       Fluttertoast.showToast(
         msg: "✅ WebSocket initialized successfully",
@@ -79,10 +83,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  // Test function to check Pihu user status
+  Future<void> _checkPihuUserStatus() async {
+    try {
+      final client = Supabase.instance.client;
+      
+      // Find users with 'pihu' in username
+      final usersResponse = await client
+          .from('users')
+          .select('id, username, firebase_uid')
+          .ilike('username', '%pihu%');
+      
+      for (var user in usersResponse) {
+        try {
+          final isOnline = await WebSocketService.isUserOnline(user['firebase_uid']);
+          
+          Fluttertoast.showToast(
+            msg: "👤 ${user['username']}: ${isOnline ? '🟢 Online' : '⚫ Offline'}",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+          );
+          
+          print("User: ${user['username']} - ${isOnline ? 'ONLINE' : 'OFFLINE'}");
+        } catch (e) {
+          print("Error checking ${user['username']}: $e");
+        }
+      }
+    } catch (e) {
+      print("Error finding Pihu users: $e");
+    }
+  }
+
   // Initialize FCM only if user is logged in
   void _initializeFCMIfLoggedIn() async {
     try {
-      final User? firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebaseUser = FirebaseAuth.instance.currentUser;
       
       if (firebaseUser != null) {
         await FirebaseMessagingHandler.initialize();
@@ -95,8 +130,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Handle app lifecycle for online/offline status
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null && WebSocketService.isReady) {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null && WebSocketService.isReady) {
       switch (state) {
         case AppLifecycleState.resumed:
           // App came to foreground
