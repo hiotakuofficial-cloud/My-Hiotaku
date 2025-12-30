@@ -67,6 +67,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       await WebSocketService.initialize();
+      
+      // Set user online status
+      await WebSocketService.setOnlineStatus(true);
+      
       Fluttertoast.showToast(
         msg: "✅ WebSocket initialized successfully",
         toastLength: Toast.LENGTH_SHORT,

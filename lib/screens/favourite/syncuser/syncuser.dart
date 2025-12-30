@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:lottie/lottie.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'handler/syncuser_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../profile/user_profile/user_profile.dart';
+import '../../../services/websocket_service.dart';
 
 class SyncUserPage extends StatefulWidget {
   @override
@@ -52,6 +55,50 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     );
     
     _loadUsers();
+    _subscribeToPresenceUpdates();
+  }
+
+  // Subscribe to real-time presence updates
+  void _subscribeToPresenceUpdates() {
+    if (!WebSocketService.isReady) {
+      Fluttertoast.showToast(
+        msg: "⏳ WebSocket not ready, retrying...",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+      
+      Future.delayed(Duration(seconds: 2), () {
+        if (mounted) _subscribeToPresenceUpdates();
+      });
+      return;
+    }
+    
+    try {
+      _presenceChannel = WebSocketService.subscribeToPresence((presence) {
+        Fluttertoast.showToast(
+          msg: "🔄 User presence updated - refreshing list",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+        _loadUsers();
+      });
+      
+      Fluttertoast.showToast(
+        msg: "🔌 Subscribed to real-time presence updates",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "❌ Failed to subscribe: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+      
+      Future.delayed(Duration(seconds: 3), () {
+        if (mounted) _subscribeToPresenceUpdates();
+      });
+    }
   }
 
   @override

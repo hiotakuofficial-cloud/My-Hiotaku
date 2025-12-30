@@ -3,12 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lottie/lottie.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'handler/user_profile_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../../components/details_sheet.dart';
 import '../../auth/handler/supabase.dart';
 import '../../../services/notification_service.dart';
 import '../requests/handler/requests_handler.dart';
+import '../../../services/websocket_service.dart';
 
 class UserProfilePage extends StatefulWidget {
   final String username;
