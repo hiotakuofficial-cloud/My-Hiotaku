@@ -33,6 +33,8 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   bool isLoading = true;
   bool hasNetworkError = false;
   bool isCurrentUser = false;
+  bool isUserOnline = false;
+  RealtimeChannel? _presenceChannel;
   String syncStatus = 'none'; // none, requested, connected
   bool isSyncButtonLoading = false; // Track sync button loading state
 

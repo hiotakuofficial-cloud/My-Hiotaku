@@ -29,6 +29,7 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
   bool isLoading = true;
   bool isSearchMode = false;
   bool hasNetworkError = false;
+  RealtimeChannel? _presenceChannel;
 
   @override
   void initState() {
