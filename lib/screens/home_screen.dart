@@ -94,17 +94,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-        _stopAutoSlide();
-        break;
-      case AppLifecycleState.resumed:
-        _startAutoSlide();
-        _loadUserData(); // Reload user data when app resumes
-        break;
-      default:
-        break;
+    // Handle app lifecycle for online/offline status
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && WebSocketService.isReady) {
+      switch (state) {
+        case AppLifecycleState.resumed:
+          // App came to foreground
+          WebSocketService.setOnlineOnForeground();
+          _startAutoSlide();
+          _loadUserData(); // Reload user data when app resumes
+          break;
+        case AppLifecycleState.paused:
+        case AppLifecycleState.inactive:
+          // App went to background
+          WebSocketService.setOfflineOnBackground();
+          _stopAutoSlide();
+          break;
+        default:
+          break;
+      }
+    } else {
+      // Original behavior for non-logged in users
+      switch (state) {
+        case AppLifecycleState.paused:
+        case AppLifecycleState.inactive:
+          _stopAutoSlide();
+          break;
+        case AppLifecycleState.resumed:
+          _startAutoSlide();
+          _loadUserData(); // Reload user data when app resumes
+          break;
+        default:
+          break;
+      }
     }
   }
 

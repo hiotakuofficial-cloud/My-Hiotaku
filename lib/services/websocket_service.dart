@@ -69,6 +69,16 @@ class WebSocketService {
     }
   }
 
+  // Auto set offline when app goes to background
+  static Future<void> setOfflineOnBackground() async {
+    await setOnlineStatus(false);
+  }
+
+  // Auto set online when app comes to foreground
+  static Future<void> setOnlineOnForeground() async {
+    await setOnlineStatus(true);
+  }
+
   // Subscribe to presence updates
   static RealtimeChannel subscribeToPresence(Function(Map<String, dynamic>) onUpdate) {
     return _client
@@ -82,18 +92,39 @@ class WebSocketService {
         .subscribe();
   }
 
-  // Check if user is online
+  // Check if user is online (with timeout check)
   static Future<bool> isUserOnline(String firebaseUid) async {
     if (!_isInitialized) return false;
     
     try {
       final response = await _client
           .from('user_presence')
-          .select('is_online')
+          .select('is_online, last_seen')
           .eq('firebase_uid', firebaseUid)
           .single();
       
-      return response['is_online'] ?? false;
+      final isOnline = response['is_online'] ?? false;
+      final lastSeenStr = response['last_seen'];
+      
+      // If marked online, check if last_seen is recent (within 5 minutes)
+      if (isOnline && lastSeenStr != null) {
+        final lastSeen = DateTime.parse(lastSeenStr);
+        final now = DateTime.now();
+        final difference = now.difference(lastSeen).inMinutes;
+        
+        // If last seen more than 5 minutes ago, consider offline
+        if (difference > 5) {
+          // Auto-update to offline
+          await _client.from('user_presence').update({
+            'is_online': false,
+            'status': 'offline',
+          }).eq('firebase_uid', firebaseUid);
+          
+          return false;
+        }
+      }
+      
+      return isOnline;
     } catch (e) {
       return false;
     }
