@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'handler/syncuser_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../profile/user_profile/user_profile.dart';
@@ -59,15 +58,10 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     _subscribeToPresenceUpdates();
   }
 
-  // Subscribe to real-time presence updates
+  // Subscribe to real-time presence updates (optimized)
   void _subscribeToPresenceUpdates() {
     if (!WebSocketService.isReady) {
-      Fluttertoast.showToast(
-        msg: "⏳ WebSocket not ready, retrying...",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
-      
+      // Retry after 2 seconds if not ready
       Future.delayed(Duration(seconds: 2), () {
         if (mounted) _subscribeToPresenceUpdates();
       });
@@ -93,25 +87,12 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
           }
         });
         
-        Fluttertoast.showToast(
-          msg: "🔄 User presence updated",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-        );
+        // Silent update - no toast needed
       });
       
-      Fluttertoast.showToast(
-        msg: "🔌 Subscribed to real-time presence updates",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
+      // Silent subscription - no toast needed
     } catch (e) {
-      Fluttertoast.showToast(
-        msg: "❌ Failed to subscribe: $e",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
-      
+      // Silent error handling - retry after 3 seconds
       Future.delayed(Duration(seconds: 3), () {
         if (mounted) _subscribeToPresenceUpdates();
       });
