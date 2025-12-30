@@ -72,45 +72,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // Set user online status
       await WebSocketService.setOnlineStatus(true);
       
-      // Test: Check Pihu user status
-      await _checkPihuUserStatus();
-      
       Fluttertoast.showToast(
         msg: "✅ WebSocket initialized successfully",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
-    }
-  }
-
-  // Test function to check Pihu user status
-  Future<void> _checkPihuUserStatus() async {
-    try {
-      final client = Supabase.instance.client;
-      
-      // Find users with 'pihu' in username
-      final usersResponse = await client
-          .from('users')
-          .select('id, username, firebase_uid')
-          .ilike('username', '%pihu%');
-      
-      for (var user in usersResponse) {
-        try {
-          final isOnline = await WebSocketService.isUserOnline(user['firebase_uid']);
-          
-          Fluttertoast.showToast(
-            msg: "👤 ${user['username']}: ${isOnline ? '🟢 Online' : '⚫ Offline'}",
-            toastLength: Toast.LENGTH_LONG,
-            gravity: ToastGravity.BOTTOM,
-          );
-          
-          print("User: ${user['username']} - ${isOnline ? 'ONLINE' : 'OFFLINE'}");
-        } catch (e) {
-          print("Error checking ${user['username']}: $e");
-        }
-      }
-    } catch (e) {
-      print("Error finding Pihu users: $e");
     }
   }
 
