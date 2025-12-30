@@ -126,7 +126,7 @@ class WebSocketService {
         .subscribe();
   }
 
-  // Check if user is online (with timeout check)
+  // Check if user is online (with timeout check and auto-cleanup)
   static Future<bool> isUserOnline(String firebaseUid) async {
     if (!_isInitialized) return false;
     
@@ -152,7 +152,14 @@ class WebSocketService {
           await _client.from('user_presence').update({
             'is_online': false,
             'status': 'offline',
+            'updated_at': DateTime.now().toIso8601String(),
           }).eq('firebase_uid', firebaseUid);
+          
+          Fluttertoast.showToast(
+            msg: "🔄 Auto-marked user offline (${difference}min ago)",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+          );
           
           return false;
         }
@@ -161,6 +168,26 @@ class WebSocketService {
       return isOnline;
     } catch (e) {
       return false;
+    }
+  }
+
+  // Manual function to mark stale users offline (for testing)
+  static Future<void> markStaleUsersOffline() async {
+    if (!_isInitialized) return;
+    
+    try {
+      await _client.rpc('mark_stale_users_offline');
+      Fluttertoast.showToast(
+        msg: "🔄 Marked stale users offline",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "❌ Failed to mark users offline: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
     }
   }
 }

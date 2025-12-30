@@ -72,6 +72,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // Set user online status
       await WebSocketService.setOnlineStatus(true);
       
+      // Test offline detection after 10 seconds
+      Future.delayed(Duration(seconds: 10), () async {
+        Fluttertoast.showToast(
+          msg: "🔄 Testing offline detection...",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+        await WebSocketService.markStaleUsersOffline();
+      });
+      
       Fluttertoast.showToast(
         msg: "✅ WebSocket initialized successfully",
         toastLength: Toast.LENGTH_SHORT,
