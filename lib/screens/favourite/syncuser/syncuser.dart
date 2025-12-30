@@ -76,12 +76,28 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
     
     try {
       _presenceChannel = WebSocketService.subscribeToPresence((presence) {
+        // Update user online status in real-time
+        setState(() {
+          for (var user in users) {
+            if (user['firebase_uid'] == presence['firebase_uid']) {
+              user['is_online'] = presence['is_online'] ?? false;
+              break;
+            }
+          }
+          // Update filtered users too
+          for (var user in filteredUsers) {
+            if (user['firebase_uid'] == presence['firebase_uid']) {
+              user['is_online'] = presence['is_online'] ?? false;
+              break;
+            }
+          }
+        });
+        
         Fluttertoast.showToast(
-          msg: "🔄 User presence updated - refreshing list",
+          msg: "🔄 User presence updated",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
         );
-        _loadUsers();
       });
       
       Fluttertoast.showToast(
@@ -122,8 +138,26 @@ class _SyncUserPageState extends State<SyncUserPage> with TickerProviderStateMix
           .timeout(Duration(seconds: 10));
       
       if (result['success']) {
+        List<Map<String, dynamic>> loadedUsers = List<Map<String, dynamic>>.from(result['users']);
+        
+        // Load online status for each user if WebSocket is ready
+        if (WebSocketService.isReady) {
+          for (var user in loadedUsers) {
+            if (user['firebase_uid'] != null) {
+              try {
+                final isOnline = await WebSocketService.isUserOnline(user['firebase_uid']);
+                user['is_online'] = isOnline;
+              } catch (e) {
+                user['is_online'] = false;
+              }
+            } else {
+              user['is_online'] = false;
+            }
+          }
+        }
+        
         setState(() {
-          users = List<Map<String, dynamic>>.from(result['users']);
+          users = loadedUsers;
           filteredUsers = users;
           isLoading = false;
           hasNetworkError = false;
