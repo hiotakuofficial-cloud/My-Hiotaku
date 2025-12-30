@@ -11,10 +11,16 @@ class WebSocketService {
   static bool _isInitialized = false;
   static String? _connectionId;
   static Map<String, dynamic>? _deviceInfo;
+  // Connection state management
+  static RealtimeChannel? _presenceChannel;
+  static StreamSubscription? _connectionSubscription;
+  static bool _isConnected = false;
+
   static Timer? _heartbeatTimer;
 
   static bool get isReady => _isInitialized;
   static String? get connectionId => _connectionId;
+  static bool get isConnected => _isConnected;
   static SupabaseClient get client => _client;
   static String? get currentFirebaseUid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -33,6 +39,9 @@ class WebSocketService {
       
       // Get device information
       await _getDeviceInfo();
+      
+      // Start connection monitoring
+      await _startConnectionMonitoring();
       
       _isInitialized = true;
       
@@ -96,7 +105,66 @@ class WebSocketService {
     }
   }
 
-  // Set user online status with enhanced connection tracking
+  // Start connection monitoring with auto-reconnection
+  static Future<void> _startConnectionMonitoring() async {
+    try {
+      // Create a simple connection monitor channel
+      _presenceChannel = _client.channel('connection_monitor')
+        .subscribe();
+        
+      _isConnected = true;
+      Fluttertoast.showToast(
+        msg: "🔗 Connection monitoring started",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+        
+    } catch (e) {
+      _isConnected = false;
+      Fluttertoast.showToast(
+        msg: "❌ Connection monitoring failed: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    }
+  }
+
+  // Reconnection logic
+  static Future<void> _reconnect() async {
+    try {
+      Fluttertoast.showToast(
+        msg: "🔄 Reconnecting...",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+      
+      // Reinitialize connection
+      await _startConnectionMonitoring();
+      
+      // Restore online status if user was online
+      final firebaseUid = currentFirebaseUid;
+      if (firebaseUid != null) {
+        final response = await _client
+            .from('user_presence')
+            .select('is_online')
+            .eq('firebase_uid', firebaseUid)
+            .single();
+            
+        if (response['is_online'] == true) {
+          await setOnlineStatus(true);
+        }
+      }
+      
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "❌ Reconnection failed: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    }
+  }
+
+  // Set user online status with multi-device support
   static Future<void> setOnlineStatus(bool isOnline) async {
     if (!_isInitialized) return;
     
@@ -104,37 +172,26 @@ class WebSocketService {
       final firebaseUid = currentFirebaseUid;
       if (firebaseUid == null) return;
 
-      // Enhanced presence data with connection tracking
       if (isOnline) {
-        await _client.from('user_presence').upsert({
-          'firebase_uid': firebaseUid,
-          'is_online': true,
-          'status': 'online',
-          'connection_id': _connectionId,
-          'device_info': _deviceInfo,
-          'session_start': DateTime.now().toIso8601String(),
-          'heartbeat_count': 0,
-        });
-        
-        // Update last_seen with server function call
-        await _client.rpc('update_user_heartbeat', params: {
-          'user_firebase_uid': firebaseUid
+        // Register device session
+        await _client.rpc('register_device_session', params: {
+          'user_firebase_uid': firebaseUid,
+          'conn_id': _connectionId,
+          'device_data': _deviceInfo,
         });
         
         _startHeartbeat();
       } else {
-        await _client.from('user_presence').upsert({
-          'firebase_uid': firebaseUid,
-          'is_online': false,
-          'status': 'offline',
-          'connection_id': null, // Clear connection on offline
+        // Deactivate device session
+        await _client.rpc('deactivate_device_session', params: {
+          'conn_id': _connectionId,
         });
         
         _stopHeartbeat();
       }
       
       Fluttertoast.showToast(
-        msg: isOnline ? "🟢 Online (Enhanced)" : "⚫ Offline",
+        msg: isOnline ? "🟢 Online (Multi-device)" : "⚫ Offline",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
@@ -147,21 +204,20 @@ class WebSocketService {
     }
   }
 
-  // Send heartbeat every 3 minutes (FIXED TIMING)
+  // Send heartbeat every 3 minutes with multi-device support
   static void _startHeartbeat() {
     _stopHeartbeat(); // Stop existing timer
     
     _heartbeatTimer = Timer.periodic(Duration(minutes: 3), (timer) async {
-      final firebaseUid = currentFirebaseUid;
-      if (firebaseUid != null && _isInitialized) {
+      if (_connectionId != null && _isInitialized) {
         try {
-          // FIXED: Use RPC function instead of direct update
-          await _client.rpc('update_user_heartbeat', params: {
-            'user_firebase_uid': firebaseUid
+          // Update device heartbeat
+          await _client.rpc('update_device_heartbeat', params: {
+            'conn_id': _connectionId,
           });
           
           Fluttertoast.showToast(
-            msg: "💓 Heartbeat (Enhanced)",
+            msg: "💓 Device heartbeat",
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
           );
@@ -179,6 +235,39 @@ class WebSocketService {
   static void _stopHeartbeat() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+  }
+
+  // Cleanup connections and sessions
+  static Future<void> cleanup() async {
+    try {
+      _stopHeartbeat();
+      
+      // Deactivate current device session
+      if (_connectionId != null) {
+        await _client.rpc('deactivate_device_session', params: {
+          'conn_id': _connectionId,
+        });
+      }
+      
+      // Close connection monitoring
+      await _connectionSubscription?.cancel();
+      await _presenceChannel?.unsubscribe();
+      
+      _isConnected = false;
+      _isInitialized = false;
+      
+      Fluttertoast.showToast(
+        msg: "🔌 WebSocket cleaned up",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "❌ Cleanup failed: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    }
   }
 
   // Auto set offline when app goes to background
@@ -256,20 +345,20 @@ class WebSocketService {
     }
   }
 
-  // Manual function to mark stale users offline (for testing)
+  // Manual function to mark stale devices offline (for testing)
   static Future<void> markStaleUsersOffline() async {
     if (!_isInitialized) return;
     
     try {
-      await _client.rpc('mark_stale_users_offline');
+      final result = await _client.rpc('mark_stale_devices_offline');
       Fluttertoast.showToast(
-        msg: "🔄 Marked stale users offline",
+        msg: "🔄 Marked $result stale devices offline",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
     } catch (e) {
       Fluttertoast.showToast(
-        msg: "❌ Failed to mark users offline: $e",
+        msg: "❌ Failed to mark devices offline: $e",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
