@@ -1,5 +1,6 @@
 -- SQL function to automatically mark users offline after 5 minutes
 -- Run this in Supabase SQL Editor
+-- Uses existing user_presence table from chat system
 
 -- Create function to mark stale users as offline
 CREATE OR REPLACE FUNCTION mark_stale_users_offline()
@@ -8,7 +9,8 @@ BEGIN
   UPDATE user_presence 
   SET 
     is_online = false,
-    status = 'offline'
+    status = 'offline',
+    updated_at = NOW()
   WHERE 
     is_online = true 
     AND last_seen < NOW() - INTERVAL '5 minutes';
@@ -23,7 +25,7 @@ SELECT cron.schedule(
   'SELECT mark_stale_users_offline();'
 );
 
--- Enable real-time for user_presence table
+-- Enable real-time for user_presence table (if not already enabled)
 ALTER PUBLICATION supabase_realtime ADD TABLE user_presence;
 
 -- Create trigger to notify real-time subscribers when status changes
