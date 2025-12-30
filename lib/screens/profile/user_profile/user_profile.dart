@@ -37,7 +37,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   RealtimeChannel? _presenceChannel;
   String syncStatus = 'none'; // none, requested, connected
   bool isSyncButtonLoading = false; // Track sync button loading state
-  String? userFirebaseUid; // Store user's Firebase UID for presence tracking
 
   @override
   void initState() {
@@ -75,12 +74,15 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     // This will be called when profile data loads
   }
 
-  // Check user's online status
+  // Check user's online status (same as syncuser.dart)
   Future<void> _checkUserOnlineStatus() async {
-    if (userFirebaseUid == null || !WebSocketService.isReady) return;
+    if (userProfile == null) return;
+    
+    final userFirebaseUid = userProfile!['firebase_uid'];
+    if (userFirebaseUid == null) return;
     
     try {
-      final online = await WebSocketService.isUserOnline(userFirebaseUid!);
+      final online = await WebSocketService.isUserOnline(userFirebaseUid);
       if (mounted) {
         setState(() {
           isUserOnline = online;
@@ -91,13 +93,15 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     }
   }
 
-  // Subscribe to real-time presence updates
+  // Subscribe to presence updates (same as syncuser.dart)
   void _subscribeToPresenceUpdates() {
+    if (userProfile == null) return;
+    
+    final userFirebaseUid = userProfile!['firebase_uid'];
     if (userFirebaseUid == null || !WebSocketService.isReady) return;
     
     try {
       _presenceChannel = WebSocketService.subscribeToPresence((presence) {
-        // Update online status if this is the user we're viewing
         if (presence['firebase_uid'] == userFirebaseUid && mounted) {
           setState(() {
             isUserOnline = presence['is_online'] ?? false;
@@ -137,9 +141,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           isLoading = false;
           hasNetworkError = false;
           
-          // Store Firebase UID for presence tracking
-          userFirebaseUid = userProfile!['firebase_uid'];
-          
           // Check if current user after profile loads
           final currentUser = FirebaseAuth.instance.currentUser;
           if (currentUser != null && userProfile != null) {
@@ -151,7 +152,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
-        // Check online status and subscribe to presence updates
+        // Check online status for the user
         await _checkUserOnlineStatus();
         _subscribeToPresenceUpdates();
 
@@ -416,30 +417,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             color: Colors.white.withOpacity(0.7),
             fontSize: 16,
           ),
-        ),
-        SizedBox(height: 8),
-        // Online status indicator
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: isUserOnline ? Colors.green : Colors.grey,
-                shape: BoxShape.circle,
-              ),
-            ),
-            SizedBox(width: 6),
-            Text(
-              isUserOnline ? 'Online' : 'Offline',
-              style: TextStyle(
-                color: isUserOnline ? Colors.green : Colors.grey,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
         ),
         SizedBox(height: 12),
         Container(
