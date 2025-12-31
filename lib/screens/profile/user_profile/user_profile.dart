@@ -112,15 +112,27 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         });
 
         // Verify online status using WebSocket (same as syncuser.dart)
+        print('DEBUG: Starting online status verification...');
+        print('DEBUG: firebase_uid = ${userProfile!['firebase_uid']}');
+        print('DEBUG: WebSocketService.isReady = ${WebSocketService.isReady}');
+        
         if (userProfile!['firebase_uid'] != null) {
           try {
+            print('DEBUG: Calling WebSocketService.isUserOnline...');
             final actualOnlineStatus = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
+            print('DEBUG: WebSocket returned: $actualOnlineStatus');
+            print('DEBUG: Original database is_online: ${userProfile!['is_online']}');
+            
             setState(() {
               userProfile!['is_online'] = actualOnlineStatus;
             });
+            print('DEBUG: Updated userProfile[is_online] to: ${userProfile!['is_online']}');
           } catch (e) {
+            print('DEBUG: WebSocket error: $e');
             // Silent fail - keep original database value
           }
+        } else {
+          print('DEBUG: firebase_uid is null, skipping verification');
         }
 
         // Set loading false AFTER all data is loaded
