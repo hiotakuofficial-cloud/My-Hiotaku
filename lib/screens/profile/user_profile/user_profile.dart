@@ -113,15 +113,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
-        // Profile already has is_online field - no need for separate API call!
-        Fluttertoast.showToast(
-          msg: "Profile is_online: ${userProfile!['is_online']}",
-          toastLength: Toast.LENGTH_LONG,
-        );
-        
-        // Just use the existing is_online field from profile
-        // No additional API call needed since firebase_uid is missing anyway
-
         // Set loading false AFTER all data is loaded
         setState(() {
           isLoading = false;
@@ -325,7 +316,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: userProfile!['is_online'] == true ? Colors.green : Colors.transparent,
+                  color: Colors.transparent,
                   width: 3,
                 ),
               ),
@@ -356,20 +347,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                 ],
               ),
             ),
-            if (userProfile!['is_online'] == true)
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Color(0xFF121212), width: 3),
-                  ),
-                ),
-              ),
           ],
         ),
         SizedBox(height: 20),
@@ -390,38 +367,8 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           ),
         ),
         SizedBox(height: 12),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: userProfile!['is_online'] == true 
-                ? Colors.green.withOpacity(0.2) 
-                : Colors.grey.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.circle,
-                size: 8,
-                color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
-              ),
-              SizedBox(width: 6),
-              Text(
-                userProfile!['is_online'] == true ? 'Online' : 'Offline',
-                style: TextStyle(
-                  color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Remove online status badge completely
+        SizedBox.shrink(),
       ],
     );
   }
