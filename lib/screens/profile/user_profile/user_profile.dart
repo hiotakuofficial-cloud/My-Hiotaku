@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lottie/lottie.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'handler/user_profile_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../../components/details_sheet.dart';
@@ -111,56 +113,56 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
-        // Verify online status using direct database read (correct table structure)
+        // Direct REST API call to user_presence table
         if (userProfile!['firebase_uid'] != null) {
           try {
-            // Direct Supabase query to user_presence table with correct fields
-            final response = await Supabase.instance.client
-                .from('user_presence')
-                .select('is_online, last_activity')  // Use last_activity instead of last_seen
-                .eq('firebase_uid', userProfile!['firebase_uid'])
-                .single();
+            final url = 'https://brwzqawoncblbxqoqyua.supabase.co/rest/v1/user_presence?firebase_uid=eq.${userProfile!['firebase_uid']}&select=is_online,last_seen';
             
-            final isOnline = response['is_online'] ?? false;
-            final lastActivityStr = response['last_activity'];  // Correct field name
+            final response = await http.get(
+              Uri.parse(url),
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA',
+              },
+            );
             
-            // Check 5-minute timeout rule using last_activity
-            bool actualOnlineStatus = false;
-            if (isOnline && lastActivityStr != null) {
-              final lastActivity = DateTime.parse(lastActivityStr);
-              final now = DateTime.now().toUtc();
-              final difference = now.difference(lastActivity).inMinutes;
+            if (response.statusCode == 200) {
+              final List<dynamic> data = json.decode(response.body);
               
-              // If last activity within 5 minutes = online
-              actualOnlineStatus = difference <= 5;
+              if (data.isNotEmpty) {
+                final presenceData = data[0];
+                final isOnline = presenceData['is_online'] ?? false;
+                final lastSeenStr = presenceData['last_seen'];
+                
+                bool actualOnlineStatus = false;
+                int minutesAgo = 0;
+                
+                if (isOnline && lastSeenStr != null) {
+                  final lastSeen = DateTime.parse(lastSeenStr);
+                  final now = DateTime.now().toUtc();
+                  minutesAgo = now.difference(lastSeen).inMinutes;
+                  actualOnlineStatus = minutesAgo <= 5;
+                }
+                
+                setState(() {
+                  userProfile!['is_online'] = actualOnlineStatus;
+                });
+                
+                Fluttertoast.showToast(
+                  msg: "${actualOnlineStatus ? 'Online' : 'Offline'} (${minutesAgo}min ago)",
+                  toastLength: Toast.LENGTH_LONG,
+                );
+              } else {
+                Fluttertoast.showToast(msg: "No presence record");
+              }
+            } else {
+              Fluttertoast.showToast(msg: "HTTP ${response.statusCode}");
             }
-            
-            setState(() {
-              userProfile!['is_online'] = actualOnlineStatus;
-            });
-            
-            // Toast for debugging
-            Fluttertoast.showToast(
-              msg: "Status: ${actualOnlineStatus ? 'Online' : 'Offline'} (${difference ?? 0}min ago)",
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-            );
-            
           } catch (e) {
-            // Toast for error
-            Fluttertoast.showToast(
-              msg: "DB Error: $e",
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-            );
+            Fluttertoast.showToast(msg: "Error: $e");
           }
         } else {
-          // Toast for missing firebase_uid
-          Fluttertoast.showToast(
-            msg: "No firebase_uid found",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-          );
+          Fluttertoast.showToast(msg: "No firebase_uid");
         }
 
         // Set loading false AFTER all data is loaded
