@@ -78,6 +78,15 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   Future<void> _checkUserOnlineStatus() async {
     if (userProfile == null || userProfile!['firebase_uid'] == null) return;
     
+    // TEMPORARY TEST: Force online status to true
+    if (mounted) {
+      setState(() {
+        isUserOnline = true; // HARDCODED FOR TESTING
+        userProfile!['is_online'] = true;
+      });
+    }
+    return; // Skip API call for now
+    
     try {
       final isOnline = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
       if (mounted) {
