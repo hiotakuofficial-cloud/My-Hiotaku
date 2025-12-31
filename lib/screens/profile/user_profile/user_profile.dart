@@ -113,68 +113,14 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
-        // Debug: Check what's in userProfile
+        // Profile already has is_online field - no need for separate API call!
         Fluttertoast.showToast(
-          msg: "Profile keys: ${userProfile!.keys.toList()}",
+          msg: "Profile is_online: ${userProfile!['is_online']}",
           toastLength: Toast.LENGTH_LONG,
         );
         
-        Fluttertoast.showToast(
-          msg: "firebase_uid: ${userProfile!['firebase_uid']}",
-          toastLength: Toast.LENGTH_LONG,
-        );
-
-        // Direct REST API call to user_presence table
-        if (userProfile!['firebase_uid'] != null) {
-          try {
-            final url = 'https://brwzqawoncblbxqoqyua.supabase.co/rest/v1/user_presence?firebase_uid=eq.${userProfile!['firebase_uid']}&select=is_online,last_seen';
-            
-            final response = await http.get(
-              Uri.parse(url),
-              headers: {
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyd3pxYXdvbmNibGJ4cW9xeXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMzM1MjIsImV4cCI6MjA3NzkwOTUyMn0.-HNrfcz5K2N6f_Q8tQsWtsUJCV_SW13Hcj565qU5eCA',
-              },
-            );
-            
-            if (response.statusCode == 200) {
-              final List<dynamic> data = json.decode(response.body);
-              
-              if (data.isNotEmpty) {
-                final presenceData = data[0];
-                final isOnline = presenceData['is_online'] ?? false;
-                final lastSeenStr = presenceData['last_seen'];
-                
-                bool actualOnlineStatus = false;
-                int minutesAgo = 0;
-                
-                if (isOnline && lastSeenStr != null) {
-                  final lastSeen = DateTime.parse(lastSeenStr);
-                  final now = DateTime.now().toUtc();
-                  minutesAgo = now.difference(lastSeen).inMinutes;
-                  actualOnlineStatus = minutesAgo <= 5;
-                }
-                
-                setState(() {
-                  userProfile!['is_online'] = actualOnlineStatus;
-                });
-                
-                Fluttertoast.showToast(
-                  msg: "${actualOnlineStatus ? 'Online' : 'Offline'} (${minutesAgo}min ago)",
-                  toastLength: Toast.LENGTH_LONG,
-                );
-              } else {
-                Fluttertoast.showToast(msg: "No presence record");
-              }
-            } else {
-              Fluttertoast.showToast(msg: "HTTP ${response.statusCode}");
-            }
-          } catch (e) {
-            Fluttertoast.showToast(msg: "Error: $e");
-          }
-        } else {
-          Fluttertoast.showToast(msg: "No firebase_uid");
-        }
+        // Just use the existing is_online field from profile
+        // No additional API call needed since firebase_uid is missing anyway
 
         // Set loading false AFTER all data is loaded
         setState(() {
