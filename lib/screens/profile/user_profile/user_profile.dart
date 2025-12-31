@@ -111,27 +111,27 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
-        // Verify online status using direct database read (no WebSocket)
+        // Verify online status using direct database read (correct table structure)
         if (userProfile!['firebase_uid'] != null) {
           try {
-            // Direct Supabase query to user_presence table
+            // Direct Supabase query to user_presence table with correct fields
             final response = await Supabase.instance.client
                 .from('user_presence')
-                .select('is_online, last_seen')
+                .select('is_online, last_activity')  // Use last_activity instead of last_seen
                 .eq('firebase_uid', userProfile!['firebase_uid'])
                 .single();
             
             final isOnline = response['is_online'] ?? false;
-            final lastSeenStr = response['last_seen'];
+            final lastActivityStr = response['last_activity'];  // Correct field name
             
-            // Check 5-minute timeout rule
+            // Check 5-minute timeout rule using last_activity
             bool actualOnlineStatus = false;
-            if (isOnline && lastSeenStr != null) {
-              final lastSeen = DateTime.parse(lastSeenStr);
+            if (isOnline && lastActivityStr != null) {
+              final lastActivity = DateTime.parse(lastActivityStr);
               final now = DateTime.now().toUtc();
-              final difference = now.difference(lastSeen).inMinutes;
+              final difference = now.difference(lastActivity).inMinutes;
               
-              // If last seen within 5 minutes = online
+              // If last activity within 5 minutes = online
               actualOnlineStatus = difference <= 5;
             }
             
@@ -141,7 +141,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             
             // Toast for debugging
             Fluttertoast.showToast(
-              msg: "Online Status: ${actualOnlineStatus ? 'Online' : 'Offline'}",
+              msg: "Status: ${actualOnlineStatus ? 'Online' : 'Offline'} (${difference ?? 0}min ago)",
               toastLength: Toast.LENGTH_SHORT,
               gravity: ToastGravity.BOTTOM,
             );
@@ -149,7 +149,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           } catch (e) {
             // Toast for error
             Fluttertoast.showToast(
-              msg: "Error checking online status: $e",
+              msg: "DB Error: $e",
               toastLength: Toast.LENGTH_SHORT,
               gravity: ToastGravity.BOTTOM,
             );
@@ -157,7 +157,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         } else {
           // Toast for missing firebase_uid
           Fluttertoast.showToast(
-            msg: "No firebase_uid found for user",
+            msg: "No firebase_uid found",
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
           );
