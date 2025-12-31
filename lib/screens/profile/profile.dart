@@ -5,6 +5,7 @@ import 'handler/profile_handler.dart';
 import 'requests/requests.dart';
 import 'notifications/notification_of_user.dart';
 import 'notifications/handler/notification_of_user_handler.dart';
+import 'syncaccounts/sync_accounts.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -381,6 +382,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const RequestsPage()),
+                  );
+                } else if (title == 'Sync Account') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SyncAccountsPage()),
                   );
                 } else {
                   // Other options - show coming soon
