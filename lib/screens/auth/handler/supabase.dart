@@ -6,9 +6,9 @@ import '../../../database/data_validator.dart';
 class SupabaseHandler {
   // Supabase Configuration with fallback values
   static const String _supabaseUrl = String.fromEnvironment('SUPA_URL', 
-    defaultValue: 'https://brwzqawoncblbxqoqyua.supabase.co');
+    defaultValue: '');
   static const String _supabaseAnonKey = String.fromEnvironment('ANON_KEY',
-    defaultValue: 'sb_publishable_zws8lGHnbPyD4lUY8qc7wQ_OCP_vZI2');
+    defaultValue: '');
   
   // Base headers for all requests
   static Map<String, String> get _headers => {
