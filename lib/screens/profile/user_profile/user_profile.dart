@@ -66,11 +66,54 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   @override
   void dispose() {
     _animationController.dispose();
+    _presenceChannel?.unsubscribe();
     super.dispose();
   }
 
   void _checkCurrentUser() {
     // This will be called when profile data loads
+  }
+
+  // Check user online status (same as syncuser.dart)
+  Future<void> _checkUserOnlineStatus() async {
+    if (userProfile == null || userProfile!['firebase_uid'] == null) return;
+    
+    try {
+      final isOnline = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
+      if (mounted) {
+        setState(() {
+          isUserOnline = isOnline;
+        });
+      }
+    } catch (e) {
+      // Silent fail
+    }
+  }
+
+  // Subscribe to presence updates (same as syncuser.dart)
+  void _subscribeToPresenceUpdates() {
+    if (!WebSocketService.isReady) {
+      Future.delayed(Duration(seconds: 2), () {
+        if (mounted) _subscribeToPresenceUpdates();
+      });
+      return;
+    }
+    
+    try {
+      _presenceChannel = WebSocketService.subscribeToPresence((presence) {
+        if (userProfile != null && 
+            presence['firebase_uid'] == userProfile!['firebase_uid'] && 
+            mounted) {
+          setState(() {
+            isUserOnline = presence['is_online'] ?? false;
+          });
+        }
+      });
+    } catch (e) {
+      Future.delayed(Duration(seconds: 3), () {
+        if (mounted) _subscribeToPresenceUpdates();
+      });
+    }
   }
 
   void _loadUserProfile() async {
@@ -111,6 +154,10 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             isCurrentUser = false;
           }
         });
+
+        // Check online status and subscribe to updates (same as syncuser.dart)
+        await _checkUserOnlineStatus();
+        _subscribeToPresenceUpdates();
 
         // Check sync status separately if not current user
         if (!isCurrentUser) {
@@ -310,7 +357,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: userProfile!['is_online'] == true ? Colors.green : Colors.transparent,
+                  color: isUserOnline ? Colors.green : Colors.transparent,
                   width: 3,
                 ),
               ),
@@ -341,20 +388,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
                 ],
               ),
             ),
-            if (userProfile!['is_online'] == true)
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Color(0xFF121212), width: 3),
-                  ),
-                ),
-              ),
           ],
         ),
         SizedBox(height: 20),
@@ -378,12 +411,12 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
         Container(
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: userProfile!['is_online'] == true 
+            color: isUserOnline 
                 ? Colors.green.withOpacity(0.2) 
                 : Colors.grey.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
+              color: isUserOnline ? Colors.green : Colors.grey,
               width: 1,
             ),
           ),
@@ -393,13 +426,13 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               Icon(
                 Icons.circle,
                 size: 8,
-                color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
+                color: isUserOnline ? Colors.green : Colors.grey,
               ),
               SizedBox(width: 6),
               Text(
-                userProfile!['is_online'] == true ? 'Online' : 'Offline',
+                isUserOnline ? 'Online' : 'Offline',
                 style: TextStyle(
-                  color: userProfile!['is_online'] == true ? Colors.green : Colors.grey,
+                  color: isUserOnline ? Colors.green : Colors.grey,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
