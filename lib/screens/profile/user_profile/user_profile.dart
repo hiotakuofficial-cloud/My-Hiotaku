@@ -112,6 +112,18 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
+        // Verify online status using WebSocket (same as syncuser.dart)
+        if (userProfile!['firebase_uid'] != null) {
+          try {
+            final actualOnlineStatus = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
+            setState(() {
+              userProfile!['is_online'] = actualOnlineStatus;
+            });
+          } catch (e) {
+            // Silent fail - keep original database value
+          }
+        }
+
         // Check sync status separately if not current user
         if (!isCurrentUser) {
           final currentUser = FirebaseAuth.instance.currentUser;
