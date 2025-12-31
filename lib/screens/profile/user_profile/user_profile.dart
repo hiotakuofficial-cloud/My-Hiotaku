@@ -74,38 +74,7 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     // This will be called when profile data loads
   }
 
-  // Check user online status (same as syncuser.dart)
-  Future<void> _checkUserOnlineStatus() async {
-    if (userProfile == null || userProfile!['firebase_uid'] == null) return;
-    
-    // TEMPORARY TEST: Force online status to true
-    if (mounted) {
-      setState(() {
-        isUserOnline = true; // HARDCODED FOR TESTING
-        userProfile!['is_online'] = true;
-      });
-    }
-    return; // Skip API call for now
-    
-    try {
-      final isOnline = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
-      if (mounted) {
-        setState(() {
-          isUserOnline = isOnline;
-          userProfile!['is_online'] = isOnline; // Update database field too
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isUserOnline = false;
-          userProfile!['is_online'] = false;
-        });
-      }
-    }
-  }
-
-  // Subscribe to presence updates (same as syncuser.dart)
+  // Subscribe to presence updates (EXACT same as syncuser.dart)
   void _subscribeToPresenceUpdates() {
     if (!WebSocketService.isReady) {
       Future.delayed(Duration(seconds: 2), () {
@@ -116,12 +85,13 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
     
     try {
       _presenceChannel = WebSocketService.subscribeToPresence((presence) {
+        // Update user online status in real-time (same as syncuser.dart)
         if (userProfile != null && 
             presence['firebase_uid'] == userProfile!['firebase_uid'] && 
             mounted) {
           setState(() {
+            userProfile!['is_online'] = presence['is_online'] ?? false;
             isUserOnline = presence['is_online'] ?? false;
-            userProfile!['is_online'] = presence['is_online'] ?? false; // Update database field too
           });
         }
       });
@@ -171,8 +141,28 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
-        // Check online status and subscribe to updates (same as syncuser.dart)
-        await _checkUserOnlineStatus();
+        // Load online status EXACTLY like syncuser.dart
+        if (WebSocketService.isReady && userProfile!['firebase_uid'] != null) {
+          try {
+            final isOnline = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
+            userProfile!['is_online'] = isOnline;
+            setState(() {
+              isUserOnline = isOnline;
+            });
+          } catch (e) {
+            userProfile!['is_online'] = false;
+            setState(() {
+              isUserOnline = false;
+            });
+          }
+        } else {
+          userProfile!['is_online'] = false;
+          setState(() {
+            isUserOnline = false;
+          });
+        }
+
+        // Subscribe to presence updates
         _subscribeToPresenceUpdates();
 
         // Check sync status separately if not current user
