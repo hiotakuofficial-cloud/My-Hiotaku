@@ -98,7 +98,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
               List<Map<String, dynamic>>.from(favoritesResult['favorites'] ?? []) : [];
           syncedAccounts = syncedResult['success'] == true ? 
               List<Map<String, dynamic>>.from(syncedResult['synced_accounts'] ?? []) : [];
-          isLoading = false;
           hasNetworkError = false;
           
           // Check if current user after profile loads
@@ -123,6 +122,11 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             // Silent fail - keep original database value
           }
         }
+
+        // Set loading false AFTER all data is loaded
+        setState(() {
+          isLoading = false;
+        });
 
         // Check sync status separately if not current user
         if (!isCurrentUser) {
