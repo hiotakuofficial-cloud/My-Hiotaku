@@ -231,6 +231,101 @@ class WebSocketService {
         .subscribe();
   }
 
+  // Subscribe to chat messages in real-time
+  static RealtimeChannel subscribeToChatMessages(String roomId, Function(Map<String, dynamic>) onMessage) {
+    return _client
+        .channel('chat_messages_$roomId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'room_id',
+            value: roomId,
+          ),
+          callback: (payload) {
+            onMessage(payload.newRecord);
+          },
+        )
+        .subscribe();
+  }
+
+  // Subscribe to typing indicators
+  static RealtimeChannel subscribeToTypingIndicators(String roomId, Function(Map<String, dynamic>) onTyping) {
+    return _client
+        .channel('typing_$roomId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'typing_indicators',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'room_id',
+            value: roomId,
+          ),
+          callback: (payload) {
+            onTyping(payload.newRecord);
+          },
+        )
+        .subscribe();
+  }
+
+  // Subscribe to message reactions
+  static RealtimeChannel subscribeToMessageReactions(String messageId, Function(Map<String, dynamic>) onReaction) {
+    return _client
+        .channel('reactions_$messageId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'message_reactions',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'message_id',
+            value: messageId,
+          ),
+          callback: (payload) {
+            onReaction(payload.newRecord);
+          },
+        )
+        .subscribe();
+  }
+
+  // Subscribe to chat room updates
+  static RealtimeChannel subscribeToChatRooms(Function(Map<String, dynamic>) onRoomUpdate) {
+    return _client
+        .channel('chat_rooms_updates')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'chat_rooms',
+          callback: (payload) {
+            onRoomUpdate(payload.newRecord);
+          },
+        )
+        .subscribe();
+  }
+
+  // Subscribe to chat participants changes
+  static RealtimeChannel subscribeToChatParticipants(String roomId, Function(Map<String, dynamic>) onParticipantChange) {
+    return _client
+        .channel('participants_$roomId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'chat_participants',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'room_id',
+            value: roomId,
+          ),
+          callback: (payload) {
+            onParticipantChange(payload.newRecord);
+          },
+        )
+        .subscribe();
+  }
+
   // Check if user is online (SERVER TIME comparison)
   static Future<bool> isUserOnline(String firebaseUid) async {
     if (!_isInitialized) return false;
