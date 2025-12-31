@@ -27,8 +27,8 @@ class WebSocketService {
   static Future<void> initialize() async {
     try {
       await Supabase.initialize(
-        url: const String.fromEnvironment('SUPABASE_URL', defaultValue: ''),
-        anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: ''),
+        url: const String.fromEnvironment('SUPA_URL', defaultValue: ''),
+        anonKey: const String.fromEnvironment('ANON_KEY', defaultValue: ''),
       );
       _client = Supabase.instance.client;
       
