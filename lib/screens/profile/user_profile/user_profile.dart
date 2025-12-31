@@ -113,6 +113,17 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
+        // Debug: Check what's in userProfile
+        Fluttertoast.showToast(
+          msg: "Profile keys: ${userProfile!.keys.toList()}",
+          toastLength: Toast.LENGTH_LONG,
+        );
+        
+        Fluttertoast.showToast(
+          msg: "firebase_uid: ${userProfile!['firebase_uid']}",
+          toastLength: Toast.LENGTH_LONG,
+        );
+
         // Direct REST API call to user_presence table
         if (userProfile!['firebase_uid'] != null) {
           try {
