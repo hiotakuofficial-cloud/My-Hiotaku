@@ -111,28 +111,56 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
           }
         });
 
-        // Verify online status using WebSocket (same as syncuser.dart)
-        print('DEBUG: Starting online status verification...');
-        print('DEBUG: firebase_uid = ${userProfile!['firebase_uid']}');
-        print('DEBUG: WebSocketService.isReady = ${WebSocketService.isReady}');
-        
+        // Verify online status using direct database read (no WebSocket)
         if (userProfile!['firebase_uid'] != null) {
           try {
-            print('DEBUG: Calling WebSocketService.isUserOnline...');
-            final actualOnlineStatus = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
-            print('DEBUG: WebSocket returned: $actualOnlineStatus');
-            print('DEBUG: Original database is_online: ${userProfile!['is_online']}');
+            // Direct Supabase query to user_presence table
+            final response = await Supabase.instance.client
+                .from('user_presence')
+                .select('is_online, last_seen')
+                .eq('firebase_uid', userProfile!['firebase_uid'])
+                .single();
+            
+            final isOnline = response['is_online'] ?? false;
+            final lastSeenStr = response['last_seen'];
+            
+            // Check 5-minute timeout rule
+            bool actualOnlineStatus = false;
+            if (isOnline && lastSeenStr != null) {
+              final lastSeen = DateTime.parse(lastSeenStr);
+              final now = DateTime.now().toUtc();
+              final difference = now.difference(lastSeen).inMinutes;
+              
+              // If last seen within 5 minutes = online
+              actualOnlineStatus = difference <= 5;
+            }
             
             setState(() {
               userProfile!['is_online'] = actualOnlineStatus;
             });
-            print('DEBUG: Updated userProfile[is_online] to: ${userProfile!['is_online']}');
+            
+            // Toast for debugging
+            Fluttertoast.showToast(
+              msg: "Online Status: ${actualOnlineStatus ? 'Online' : 'Offline'}",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+            );
+            
           } catch (e) {
-            print('DEBUG: WebSocket error: $e');
-            // Silent fail - keep original database value
+            // Toast for error
+            Fluttertoast.showToast(
+              msg: "Error checking online status: $e",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+            );
           }
         } else {
-          print('DEBUG: firebase_uid is null, skipping verification');
+          // Toast for missing firebase_uid
+          Fluttertoast.showToast(
+            msg: "No firebase_uid found for user",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+          );
         }
 
         // Set loading false AFTER all data is loaded
