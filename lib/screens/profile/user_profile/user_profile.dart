@@ -66,51 +66,11 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   @override
   void dispose() {
     _animationController.dispose();
-    _presenceChannel?.unsubscribe();
     super.dispose();
   }
 
   void _checkCurrentUser() {
     // This will be called when profile data loads
-  }
-
-  // Check user's online status (same as syncuser.dart)
-  Future<void> _checkUserOnlineStatus() async {
-    if (userProfile == null) return;
-    
-    final userFirebaseUid = userProfile!['firebase_uid'];
-    if (userFirebaseUid == null) return;
-    
-    try {
-      final online = await WebSocketService.isUserOnline(userFirebaseUid);
-      if (mounted) {
-        setState(() {
-          isUserOnline = online;
-        });
-      }
-    } catch (e) {
-      // Silent fail
-    }
-  }
-
-  // Subscribe to presence updates (same as syncuser.dart)
-  void _subscribeToPresenceUpdates() {
-    if (userProfile == null) return;
-    
-    final userFirebaseUid = userProfile!['firebase_uid'];
-    if (userFirebaseUid == null || !WebSocketService.isReady) return;
-    
-    try {
-      _presenceChannel = WebSocketService.subscribeToPresence((presence) {
-        if (presence['firebase_uid'] == userFirebaseUid && mounted) {
-          setState(() {
-            isUserOnline = presence['is_online'] ?? false;
-          });
-        }
-      });
-    } catch (e) {
-      // Silent fail
-    }
   }
 
   void _loadUserProfile() async {
@@ -151,10 +111,6 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
             isCurrentUser = false;
           }
         });
-
-        // Check online status for the user
-        await _checkUserOnlineStatus();
-        _subscribeToPresenceUpdates();
 
         // Check sync status separately if not current user
         if (!isCurrentUser) {
