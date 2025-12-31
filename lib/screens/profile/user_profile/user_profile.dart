@@ -78,38 +78,51 @@ class _UserProfilePageState extends State<UserProfilePage> with TickerProviderSt
   Future<void> _checkUserOnlineStatus() async {
     if (userProfile == null || userProfile!['firebase_uid'] == null) return;
     
+    print('DEBUG: Checking online status for firebase_uid: ${userProfile!['firebase_uid']}');
+    
     try {
       final isOnline = await WebSocketService.isUserOnline(userProfile!['firebase_uid']);
+      print('DEBUG: User online status result: $isOnline');
+      
       if (mounted) {
         setState(() {
           isUserOnline = isOnline;
         });
+        print('DEBUG: Updated isUserOnline to: $isUserOnline');
       }
     } catch (e) {
-      // Silent fail
+      print('DEBUG: Error checking online status: $e');
     }
   }
 
   // Subscribe to presence updates (same as syncuser.dart)
   void _subscribeToPresenceUpdates() {
     if (!WebSocketService.isReady) {
+      print('DEBUG: WebSocket not ready, retrying in 2 seconds');
       Future.delayed(Duration(seconds: 2), () {
         if (mounted) _subscribeToPresenceUpdates();
       });
       return;
     }
     
+    print('DEBUG: Subscribing to presence updates for firebase_uid: ${userProfile!['firebase_uid']}');
+    
     try {
       _presenceChannel = WebSocketService.subscribeToPresence((presence) {
+        print('DEBUG: Received presence update: $presence');
+        
         if (userProfile != null && 
             presence['firebase_uid'] == userProfile!['firebase_uid'] && 
             mounted) {
+          print('DEBUG: Updating online status from presence: ${presence['is_online']}');
           setState(() {
             isUserOnline = presence['is_online'] ?? false;
           });
         }
       });
+      print('DEBUG: Successfully subscribed to presence updates');
     } catch (e) {
+      print('DEBUG: Error subscribing to presence: $e');
       Future.delayed(Duration(seconds: 3), () {
         if (mounted) _subscribeToPresenceUpdates();
       });
