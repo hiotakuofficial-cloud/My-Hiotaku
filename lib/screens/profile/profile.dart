@@ -5,7 +5,6 @@ import 'handler/profile_handler.dart';
 import 'requests/requests.dart';
 import 'notifications/notification_of_user.dart';
 import 'notifications/handler/notification_of_user_handler.dart';
-import 'syncaccounts/sync_accounts.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -296,7 +295,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildProfileOption(Icons.chat_outlined, 'Chat'),
                       _buildProfileOption(Icons.person_add_outlined, 'Requests'),
                       _buildProfileOption(Icons.favorite_outline, 'Favourites'),
-                      _buildProfileOption(Icons.sync_outlined, 'Sync Account'),
+                      _buildProfileOption(Icons.download_outlined, 'Downloads'),
                       _buildProfileOption(Icons.clear_all_outlined, 'Clear cache'),
                       _buildProfileOption(Icons.logout_outlined, userData == null ? 'Login' : 'Log out', isLogout: true),
                     ],
@@ -383,10 +382,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(builder: (context) => const RequestsPage()),
                   );
-                } else if (title == 'Sync Account') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SyncAccountsPage()),
+                } else if (title == 'Downloads') {
+                  // Downloads functionality - Coming Soon
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Downloads - Coming Soon!'),
+                      backgroundColor: Color(0xFFFF8C00),
+                    ),
                   );
                 } else {
                   // Other options - show coming soon
