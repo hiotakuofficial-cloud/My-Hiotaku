@@ -26,6 +26,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
   
   bool _isLoading = true;
   bool _isWebViewMode = false;
+  bool _showAllDownloads = false;
   String? _error;
   List<ZipDownload>? _zipDownloads;
   String _currentUrl = '';
@@ -415,14 +416,64 @@ class _DownloadWidgetState extends State<DownloadWidget>
       );
     }
 
-    return ListView.builder(
-      physics: BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 20),
-      itemCount: _zipDownloads!.length,
-      itemBuilder: (context, index) {
-        final zipDownload = _zipDownloads![index];
-        return _buildZipDownloadItem(zipDownload, index == _zipDownloads!.length - 1);
-      },
+    final displayCount = _showAllDownloads ? _zipDownloads!.length : 3;
+    final showButton = _zipDownloads!.length > 3;
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            physics: BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            itemCount: displayCount.clamp(0, _zipDownloads!.length),
+            itemBuilder: (context, index) {
+              final zipDownload = _zipDownloads![index];
+              return _buildZipDownloadItem(zipDownload, index == displayCount - 1 && !showButton);
+            },
+          ),
+        ),
+        if (showButton && !_showAllDownloads)
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF121212).withOpacity(0.0),
+                  Color(0xFF121212).withOpacity(0.8),
+                  Color(0xFF121212),
+                ],
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _showAllDownloads = true;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFF8C00),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Show More (${_zipDownloads!.length - 3})'),
+                    SizedBox(width: 8),
+                    Icon(Icons.expand_more, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
