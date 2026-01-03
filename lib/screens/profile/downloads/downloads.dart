@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:ui';
 import 'handler/download_handler.dart';
 
@@ -86,14 +85,6 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       final response = await DownloadHandler.searchAnime(query);
       if (response.success && response.data != null) {
         setState(() => _searchResults = response.data!);
-        
-        Fluttertoast.showToast(
-          msg: "Found ${response.data!.length} results",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Color(0xFFFF8C00),
-          textColor: Colors.white,
-        );
       }
     } catch (e) {
       // Handle search error silently
@@ -111,35 +102,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           _animeList = response.data!;
           _isLoading = false;
         });
-        
-        Fluttertoast.showToast(
-          msg: "Loaded ${_animeList.length} anime",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Color(0xFFFF8C00),
-          textColor: Colors.white,
-        );
       } else {
         setState(() => _isLoading = false);
-        
-        Fluttertoast.showToast(
-          msg: "Failed to load content",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      
-      Fluttertoast.showToast(
-        msg: "Network error",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
     }
   }
 
@@ -195,135 +162,117 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       ),
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
-        body: Column(
-          children: [
-            _buildHeader(),
-            _buildSearchSection(),
-            _buildCategoryTabs(),
-            Expanded(
-              child: ScaleTransition(
-                scale: _elasticAnimation,
-                child: RefreshIndicator(
-                  onRefresh: _onRefresh,
-                  backgroundColor: Color(0xFF1E1E1E),
-                  color: Color(0xFFFF8C00),
-                  child: _buildScrollableContent(),
-                ),
-              ),
+        body: ScaleTransition(
+          scale: _elasticAnimation,
+          child: RefreshIndicator(
+            onRefresh: _onRefresh,
+            backgroundColor: Color(0xFF1E1E1E),
+            color: Color(0xFFFF8C00),
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: BouncingScrollPhysics(),
+              slivers: [
+                _buildHeader(),
+                _buildSearchSection(),
+                _buildCategoryTabs(),
+                _buildContent(),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, left: 20, right: 20, bottom: 15),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF121212),
-            Color(0xFF121212).withOpacity(0.8),
-          ],
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      backgroundColor: Color(0xFF121212),
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+        onPressed: () => Navigator.pop(context),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        title: Text(
+          'Downloads',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              gradient: LinearGradient(
-                colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-              ),
-            ),
-            child: Icon(Icons.download_rounded, color: Colors.white, size: 20),
+      actions: [
+        IconButton(
+          icon: Icon(
+            _isSearchVisible ? Icons.close : Icons.search,
+            color: Colors.white,
+            size: 22,
           ),
-          SizedBox(width: 10),
-          Text(
-            'Downloads',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Spacer(),
-          GestureDetector(
-            onTap: _toggleSearch,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: Icon(
-                _isSearchVisible ? Icons.close : Icons.search,
-                color: Colors.white.withOpacity(0.8),
-                size: 20,
-              ),
-            ),
-          ),
-        ],
-      ),
+          onPressed: _toggleSearch,
+        ),
+      ],
     );
   }
 
   Widget _buildSearchSection() {
-    return AnimatedBuilder(
-      animation: _searchAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, -50 * (1 - _searchAnimation.value)),
-          child: Opacity(
-            opacity: _searchAnimation.value,
-            child: _isSearchVisible ? Container(
-              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1E1E1E),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
-                ),
-                child: TextField(
-                  controller: _searchTextController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Search anime...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    prefixIcon: Icon(Icons.search, color: Color(0xFFFF8C00)),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    return SliverToBoxAdapter(
+      child: AnimatedBuilder(
+        animation: _searchAnimation,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, -50 * (1 - _searchAnimation.value)),
+            child: Opacity(
+              opacity: _searchAnimation.value,
+              child: _isSearchVisible ? Container(
+                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1E1E1E),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
                   ),
-                  autofocus: true,
+                  child: TextField(
+                    controller: _searchTextController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search anime...',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      prefixIcon: Icon(Icons.search, color: Color(0xFFFF8C00)),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
+                    autofocus: true,
+                  ),
                 ),
-              ),
-            ) : SizedBox.shrink(),
-          ),
-        );
-      },
+              ) : SizedBox.shrink(),
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildCategoryTabs() {
-    return Container(
-      height: 50,
-      margin: EdgeInsets.symmetric(vertical: 10),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        children: [
-          _buildCategoryTab('Hindi Dub', DownloadHandler.hindiDub),
-          _buildCategoryTab('Movies', DownloadHandler.movie),
-          _buildCategoryTab('Hindi Sub', DownloadHandler.hindiSub),
-          _buildCategoryTab('Eng Sub', DownloadHandler.engSub),
-        ],
+    return SliverToBoxAdapter(
+      child: Container(
+        height: 50,
+        margin: EdgeInsets.symmetric(vertical: 10),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          children: [
+            _buildCategoryTab('Hindi Dub', DownloadHandler.hindiDub),
+            _buildCategoryTab('Movies', DownloadHandler.movie),
+            _buildCategoryTab('Hindi Sub', DownloadHandler.hindiSub),
+            _buildCategoryTab('Eng Sub', DownloadHandler.engSub),
+          ],
+        ),
       ),
     );
   }
@@ -356,27 +305,29 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     );
   }
 
-  Widget _buildScrollableContent() {
+  Widget _buildContent() {
     if (_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset(
-              'assets/animations/loading.json',
-              width: 100,
-              height: 100,
-              fit: BoxFit.contain,
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Loading content...',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 14,
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset(
+                'assets/animations/loading.json',
+                width: 100,
+                height: 100,
+                fit: BoxFit.contain,
               ),
-            ),
-          ],
+              SizedBox(height: 12),
+              Text(
+                'Loading content...',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -386,36 +337,40 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         : _animeList;
 
     if (displayList.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.white.withOpacity(0.3)),
-            SizedBox(height: 16),
-            Text(
-              _isSearchVisible ? 'No results found' : 'No content available',
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
-            ),
-          ],
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: Colors.white.withOpacity(0.3)),
+              SizedBox(height: 16),
+              Text(
+                _isSearchVisible ? 'No results found' : 'No content available',
+                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return GridView.builder(
-      controller: _scrollController,
-      physics: BouncingScrollPhysics(),
+    return SliverPadding(
       padding: EdgeInsets.all(20),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.7,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final anime = displayList[index];
+            return _buildAnimeCard(anime, index);
+          },
+          childCount: displayList.length,
+        ),
       ),
-      itemCount: displayList.length,
-      itemBuilder: (context, index) {
-        final anime = displayList[index];
-        return _buildAnimeCard(anime, index);
-      },
     );
   }
 
@@ -452,10 +407,10 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       anime.thumbnail,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: Color(0xFF2A2A2A),
-                        child: Icon(Icons.image_not_supported, 
-                            color: Colors.white.withOpacity(0.3)),
+                      errorBuilder: (context, error, stackTrace) => Image.asset(
+                        'assets/fallback/notfound.png',
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
@@ -506,10 +461,9 @@ class DownloadDetailsScreen extends StatelessWidget {
                 child: Image.network(
                   anime.thumbnail,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Color(0xFF2A2A2A),
-                    child: Icon(Icons.image_not_supported, 
-                        color: Colors.white.withOpacity(0.3), size: 64),
+                  errorBuilder: (context, error, stackTrace) => Image.asset(
+                    'assets/fallback/notfound.png',
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
