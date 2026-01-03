@@ -440,10 +440,67 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 }
 
-class DownloadDetailsScreen extends StatelessWidget {
+class DownloadDetailsScreen extends StatefulWidget {
   final AnimeItem anime;
 
   const DownloadDetailsScreen({Key? key, required this.anime}) : super(key: key);
+
+  @override
+  _DownloadDetailsScreenState createState() => _DownloadDetailsScreenState();
+}
+
+class _DownloadDetailsScreenState extends State<DownloadDetailsScreen> {
+  bool _isLoading = true;
+  AnimeDetails? _animeDetails;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAnimeDetails();
+  }
+
+  Future<void> _loadAnimeDetails() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await DownloadHandler.getAnimeDetails(widget.anime.id);
+      
+      if (response.success && response.data != null) {
+        setState(() {
+          _animeDetails = response.data;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = response.error ?? 'Failed to load details';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _cleanText(String text) {
+    return text
+        .replaceAll('&#038;', '')
+        .replaceAll('&amp;', '')
+        .replaceAll('&lt;', '')
+        .replaceAll('&gt;', '')
+        .replaceAll('&quot;', '')
+        .replaceAll('&#8217;', '')
+        .replaceAll('&nbsp;', '')
+        .replaceAll(RegExp(r'<[^>]*>'), '') // Remove HTML tags
+        .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces to single
+        .trim();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -457,9 +514,9 @@ class DownloadDetailsScreen extends StatelessWidget {
             backgroundColor: Color(0xFF121212),
             flexibleSpace: FlexibleSpaceBar(
               background: Hero(
-                tag: 'anime_${anime.id}',
+                tag: 'anime_${widget.anime.id}',
                 child: Image.network(
-                  anime.thumbnail,
+                  widget.anime.thumbnail,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Image.asset(
                     'assets/fallback/notfound.png',
@@ -476,7 +533,7 @@ class DownloadDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    anime.title,
+                    _cleanText(widget.anime.title),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -484,18 +541,98 @@ class DownloadDetailsScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(12),
+                  
+                  if (_isLoading)
+                    Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                      ),
+                    )
+                  else if (_error != null)
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        _error!,
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    )
+                  else if (_animeDetails != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF1E1E1E),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Description',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            _cleanText(_animeDetails!.content ?? 'No description available'),
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Text(
-                      'Download links will be loaded here...',
-                      style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                    SizedBox(height: 20),
+                    
+                    // Download Button
+                    Container(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // TODO: Show download links widget
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Download links widget coming soon!'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.download, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Download',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),

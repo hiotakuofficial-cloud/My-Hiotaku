@@ -118,9 +118,9 @@ class ApiResponse<T> {
 }
 
 class DownloadHandler {
-  // API Configuration - Use live API directly
-  static const String baseUrl = 'https://v1-w3sc.onrender.com/download/apiv2.php';
-  static const String token = 'afaea552101228848de8f8c7f48a1b7d7a6a042a6094274eaa9d30cb64bf91a7';
+  // API Configuration - Use environment variables like other services
+  static String get baseUrl => '${AppConfig.animeApiBaseUrl}/download/apiv2.php';
+  static String get token => AppConfig.apiToken;
   static const Duration _timeout = Duration(seconds: 30);
   
   static Map<String, String> get _headers => {
