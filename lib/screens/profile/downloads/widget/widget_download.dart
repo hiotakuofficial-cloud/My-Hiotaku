@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../handler/download_handler.dart';
 
 class DownloadWidget extends StatefulWidget {
@@ -108,6 +109,14 @@ class _DownloadWidgetState extends State<DownloadWidget>
               _isPageLoading = false;
             });
           },
+          onNavigationRequest: (NavigationRequest request) {
+            // Block redirects - only allow the original URL
+            if (request.url == _currentUrl) {
+              return NavigationDecision.navigate;
+            }
+            // Block all other redirects/ads
+            return NavigationDecision.prevent;
+          },
         ),
       )
       ..loadRequest(Uri.parse(url));
@@ -170,38 +179,110 @@ class _DownloadWidgetState extends State<DownloadWidget>
   }
 
   Widget _buildWebView() {
-    return Scaffold(
-      backgroundColor: Color(0xFF121212),
-      appBar: AppBar(
-        backgroundColor: Color(0xFF1E1E1E),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Color(0xFFFF8C00)),
-          onPressed: _closeWebView,
-        ),
-        title: Text(
-          'Download',
-          style: TextStyle(color: Colors.white, fontSize: 18),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => _webViewController.reload(),
-          ),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
-      body: Column(
-        children: [
-          if (_isPageLoading)
-            LinearProgressIndicator(
-              value: _loadingProgress / 100,
-              backgroundColor: Colors.grey[800],
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8C00)),
+      child: WillPopScope(
+        onWillPop: () async {
+          if (await _webViewController.canGoBack()) {
+            _webViewController.goBack();
+            return false;
+          }
+          return false; // Don't close bottom sheet on back press
+        },
+        child: Scaffold(
+          backgroundColor: Color(0xFF121212),
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            backgroundColor: Color(0xFF1E1E1E),
+            elevation: 0,
+            systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.dark,
+              statusBarIconBrightness: Brightness.light,
+              statusBarColor: Colors.transparent,
             ),
-          Expanded(
-            child: WebViewWidget(controller: _webViewController),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios, color: Color(0xFFFF8C00)),
+              onPressed: _closeWebView,
+            ),
+            title: Text(
+              'Download',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            actions: [
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, color: Colors.white),
+                color: Color(0xFF1E1E1E),
+                onSelected: (value) async {
+                  switch (value) {
+                    case 'refresh':
+                      _webViewController.reload();
+                      break;
+                    case 'chrome':
+                      final Uri url = Uri.parse(_currentUrl);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      }
+                      break;
+                    case 'desktop':
+                      _webViewController.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+                      _webViewController.reload();
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'refresh',
+                    child: Row(
+                      children: [
+                        Icon(Icons.refresh, color: Colors.white, size: 20),
+                        SizedBox(width: 12),
+                        Text('Refresh Page', style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'chrome',
+                    child: Row(
+                      children: [
+                        Icon(Icons.open_in_browser, color: Colors.white, size: 20),
+                        SizedBox(width: 12),
+                        Text('Open in Chrome', style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'desktop',
+                    child: Row(
+                      children: [
+                        Icon(Icons.desktop_windows, color: Colors.white, size: 20),
+                        SizedBox(width: 12),
+                        Text('Desktop Mode', style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+          body: Column(
+            children: [
+              if (_isPageLoading)
+                LinearProgressIndicator(
+                  value: _loadingProgress / 100,
+                  backgroundColor: Colors.grey[800],
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8C00)),
+                ),
+              Expanded(
+                child: WebViewWidget(controller: _webViewController),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
