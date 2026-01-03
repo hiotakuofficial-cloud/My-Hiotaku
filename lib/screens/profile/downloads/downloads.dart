@@ -165,18 +165,15 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             onRefresh: _onRefresh,
             backgroundColor: Color(0xFF1E1E1E),
             color: Color(0xFFFF8C00),
-            child: AbsorbPointer(
-              absorbing: _isLoading,
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: BouncingScrollPhysics(),
-                slivers: [
-                  _buildHeader(),
-                  _buildSearchSection(),
-                  _buildCategoryTabs(),
-                  _buildContent(),
-                ],
-              ),
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: BouncingScrollPhysics(),
+              slivers: [
+                _buildHeader(),
+                _buildSearchSection(),
+                _buildCategoryTabs(),
+                _buildContent(),
+              ],
             ),
           ),
         ),
