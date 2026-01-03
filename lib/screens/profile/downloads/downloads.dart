@@ -34,8 +34,6 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     super.initState();
     
     print('Downloads screen initializing...');
-    print('Base URL: ${DownloadHandler.baseUrl}');
-    print('Token: ${DownloadHandler.token}');
     
     _elasticController = AnimationController(
       duration: Duration(milliseconds: 1200),
@@ -55,6 +53,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     
     _slideAnimation = Tween<Offset>(begin: Offset(0, -0.3), end: Offset.zero)
         .animate(CurvedAnimation(parent: _elasticController, curve: Curves.easeOutCubic));
+    
+    // Start animation immediately
+    _elasticController.forward();
     
     _loadContent();
     _searchTextController.addListener(_onSearchChanged);
@@ -95,18 +96,20 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   Future<void> _loadContent() async {
+    print('Loading content for category: $_selectedCategory');
     setState(() => _isLoading = true);
     
     try {
       final response = await DownloadHandler.getHomeContent(type: _selectedCategory);
+      print('API Response: ${response.success}, Data count: ${response.data?.length}');
+      
       if (response.success && response.data != null) {
         setState(() {
           _animeList = response.data!;
           _isLoading = false;
         });
-        _elasticController.forward();
+        print('Content loaded successfully: ${_animeList.length} items');
       } else {
-        // API returned error
         setState(() => _isLoading = false);
         print('API Error: ${response.error}');
       }
