@@ -34,7 +34,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     super.initState();
     
     _elasticController = AnimationController(
-      duration: Duration(milliseconds: 1200),
+      duration: Duration(milliseconds: 400),
       vsync: this,
     );
     
@@ -43,8 +43,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       vsync: this,
     );
     
-    _elasticAnimation = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _elasticController, curve: Curves.elasticOut));
+    _elasticAnimation = Tween<double>(begin: 0.8, end: 1.0)
+        .animate(CurvedAnimation(parent: _elasticController, curve: Curves.easeOutCubic));
     
     _searchAnimation = Tween<double>(begin: 0.0, end: 1.0)
         .animate(CurvedAnimation(parent: _searchController, curve: Curves.easeInOut));
