@@ -27,7 +27,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
   bool _isLoading = true;
   bool _isWebViewMode = false;
   String? _error;
-  AnimeDetails? _animeDetails;
+  List<ZipDownload>? _zipDownloads;
   String _currentUrl = '';
   
   late WebViewController _webViewController;
@@ -44,7 +44,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
         .animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
     
-    _loadDownloadLinks();
+    _loadZipDownloads();
     _animationController.forward();
   }
 
@@ -54,23 +54,23 @@ class _DownloadWidgetState extends State<DownloadWidget>
     super.dispose();
   }
 
-  Future<void> _loadDownloadLinks() async {
+  Future<void> _loadZipDownloads() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final response = await DownloadHandler.getDownloadLinks(widget.animeId);
+      final response = await DownloadHandler.getZipDownloads(widget.animeId);
       
       if (response.success && response.data != null) {
         setState(() {
-          _animeDetails = response.data;
+          _zipDownloads = response.data;
           _isLoading = false;
         });
       } else {
         setState(() {
-          _error = response.error ?? 'Failed to load download links';
+          _error = response.error ?? 'Failed to load ZIP downloads';
           _isLoading = false;
         });
       }
@@ -127,33 +127,6 @@ class _DownloadWidgetState extends State<DownloadWidget>
       _isWebViewMode = false;
       _currentUrl = '';
     });
-  }
-
-  Map<String, List<DownloadLink>> _categorizeLinks() {
-    if (_animeDetails == null) return {};
-    
-    Map<String, List<DownloadLink>> categories = {};
-    
-    for (var link in _animeDetails!.downloads) {
-      String category = 'Other';
-      
-      if (link.episode?.contains('1080') == true) {
-        category = '1080p HD';
-      } else if (link.episode?.contains('720') == true) {
-        category = '720p HD';
-      } else if (link.episode?.contains('480') == true) {
-        category = '480p SD';
-      } else if (link.episode?.toLowerCase().contains('complete') == true) {
-        category = 'Complete Pack';
-      }
-      
-      if (!categories.containsKey(category)) {
-        categories[category] = [];
-      }
-      categories[category]!.add(link);
-    }
-    
-    return categories;
   }
 
   @override
@@ -362,7 +335,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
           ),
           SizedBox(height: 16),
           Text(
-            'Loading download links...',
+            'Loading ZIP downloads...',
             style: TextStyle(
               color: Colors.white.withOpacity(0.7),
               fontSize: 16,
@@ -387,7 +360,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
             ),
             SizedBox(height: 16),
             Text(
-              'Failed to load download links',
+              'Failed to load ZIP downloads',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -405,7 +378,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
             ),
             SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _loadDownloadLinks,
+              onPressed: _loadZipDownloads,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFFF8C00),
                 foregroundColor: Colors.white,
@@ -419,21 +392,19 @@ class _DownloadWidgetState extends State<DownloadWidget>
   }
 
   Widget _buildLinksList() {
-    final categories = _categorizeLinks();
-    
-    if (categories.isEmpty) {
+    if (_zipDownloads == null || _zipDownloads!.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.link_off,
+              Icons.archive_outlined,
               color: Colors.white.withOpacity(0.5),
               size: 64,
             ),
             SizedBox(height: 16),
             Text(
-              'No download links available',
+              'No ZIP downloads available',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 16,
@@ -447,134 +418,99 @@ class _DownloadWidgetState extends State<DownloadWidget>
     return ListView.builder(
       physics: BouncingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: 20),
-      itemCount: categories.length,
+      itemCount: _zipDownloads!.length,
       itemBuilder: (context, index) {
-        final category = categories.keys.elementAt(index);
-        final links = categories[category]!;
-        
-        return _buildCategorySection(category, links);
+        final zipDownload = _zipDownloads![index];
+        return _buildZipDownloadItem(zipDownload, index == _zipDownloads!.length - 1);
       },
     );
   }
 
-  Widget _buildCategorySection(String category, List<DownloadLink> links) {
+  Widget _buildZipDownloadItem(ZipDownload zipDownload, bool isLast) {
     return Container(
-      margin: EdgeInsets.only(bottom: 20),
+      margin: EdgeInsets.only(bottom: isLast ? 0 : 12),
       decoration: BoxDecoration(
         color: Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _openWebView(zipDownload.url),
+          child: Padding(
             padding: EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: Color(0xFFFF8C00).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    category,
-                    style: TextStyle(
-                      color: Color(0xFFFF8C00),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Icon(
+                    Icons.archive,
+                    color: Color(0xFFFF8C00),
+                    size: 24,
                   ),
                 ),
-                Spacer(),
-                Text(
-                  '${links.length} link${links.length > 1 ? 's' : ''}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 12,
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        zipDownload.text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFF8C00).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              zipDownload.quality,
+                              style: TextStyle(
+                                color: Color(0xFFFF8C00),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            zipDownload.platform,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
+                Icon(
+                  Icons.download,
+                  color: Color(0xFFFF8C00),
+                  size: 20,
                 ),
               ],
             ),
           ),
-          ...links.asMap().entries.map((entry) {
-            final index = entry.key;
-            final link = entry.value;
-            final isLast = index == links.length - 1;
-            
-            return _buildLinkItem(link, isLast);
-          }).toList(),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildLinkItem(DownloadLink link, bool isLast) {
-    return InkWell(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _openWebView(link.url);
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: isLast ? null : Border(
-            bottom: BorderSide(
-              color: Colors.white.withOpacity(0.1),
-              width: 0.5,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Color(0xFFFF8C00).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.link,
-                color: Color(0xFFFF8C00),
-                size: 20,
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    link.episode ?? 'Download Link',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (link.platform != null) ...[
-                    SizedBox(height: 4),
-                    Text(
-                      'Platform: ${link.platform}',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white.withOpacity(0.4),
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -63,6 +63,32 @@ class DownloadLink {
   }
 }
 
+class ZipDownload {
+  final String url;
+  final String quality;
+  final String type;
+  final String platform;
+  final String text;
+
+  ZipDownload({
+    required this.url,
+    required this.quality,
+    required this.type,
+    required this.platform,
+    required this.text,
+  });
+
+  factory ZipDownload.fromJson(Map<String, dynamic> json) {
+    return ZipDownload(
+      url: json['url'] ?? '',
+      quality: json['quality'] ?? '',
+      type: json['type'] ?? '',
+      platform: json['platform'] ?? '',
+      text: json['text'] ?? '',
+    );
+  }
+}
+
 class AnimeDetails {
   final int id;
   final String title;
@@ -291,6 +317,48 @@ class DownloadHandler {
         return ApiResponse(
           success: false,
           error: response['error'] ?? 'Failed to get anime details',
+        );
+      }
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  // 6. Get ZIP Downloads
+  static Future<ApiResponse<List<ZipDownload>>> getZipDownloads(int id) async {
+    try {
+      if (id <= 0) {
+        return ApiResponse(
+          success: false,
+          error: 'Invalid anime ID',
+        );
+      }
+
+      final params = {
+        'action': 'getzip',
+        'id': id.toString(),
+        'token': token,
+      };
+      
+      final response = await _makeRequest(params);
+      
+      if (response['success'] == true) {
+        final zipDownloads = (response['zip_downloads'] as List?)
+            ?.map((e) => ZipDownload.fromJson(e))
+            .toList() ?? [];
+        
+        return ApiResponse(
+          success: true,
+          data: zipDownloads,
+          total: response['total_zip_links'],
+        );
+      } else {
+        return ApiResponse(
+          success: false,
+          error: response['error'] ?? 'Failed to get ZIP downloads',
         );
       }
     } catch (e) {
