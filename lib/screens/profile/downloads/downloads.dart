@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'handler/download_handler.dart';
+import '../../errors/loading_error.dart';
+import '../../errors/no_internet.dart';
+import 'widget/widget_download.dart';
 
 class DownloadsScreen extends StatefulWidget {
   @override
@@ -508,6 +511,7 @@ class _DownloadDetailsScreenState extends State<DownloadDetailsScreen> {
     return Scaffold(
       backgroundColor: Color(0xFF121212),
       body: CustomScrollView(
+        physics: BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
             expandedHeight: 300,
@@ -573,11 +577,14 @@ class _DownloadDetailsScreenState extends State<DownloadDetailsScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // TODO: Show download links widget
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Download links widget coming soon!'),
-                              backgroundColor: Colors.orange,
+                          // Show download links widget
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => DownloadWidget(
+                              animeId: widget.anime.id,
+                              animeTitle: widget.anime.title,
                             ),
                           );
                         },
