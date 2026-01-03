@@ -85,11 +85,20 @@ class AnimeDetails {
   });
 
   factory AnimeDetails.fromJson(Map<String, dynamic> json) {
+    // Handle info field - can be List or Map
+    Map<String, dynamic> infoMap = {};
+    if (json['info'] is Map<String, dynamic>) {
+      infoMap = json['info'];
+    } else if (json['info'] is List && (json['info'] as List).isNotEmpty) {
+      // Convert list to map if needed
+      infoMap = {'data': json['info']};
+    }
+    
     return AnimeDetails(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       content: json['content'],
-      info: json['info'] ?? {},
+      info: infoMap,
       languageType: json['language_type'],
       totalDownloads: json['total_downloads'] ?? 0,
       downloads: (json['downloads'] as List?)

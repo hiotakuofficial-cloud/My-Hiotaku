@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'handler/download_handler.dart';
+import '../../errors/loading_error.dart';
+import '../../errors/no_internet.dart';
 
 class DownloadsScreen extends StatefulWidget {
   @override
@@ -85,10 +87,36 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       final response = await DownloadHandler.searchAnime(query);
       if (response.success && response.data != null) {
         setState(() => _searchResults = response.data!);
+      } else {
+        _showSearchError();
       }
     } catch (e) {
-      // Handle search error silently
+      _showSearchError();
     }
+  }
+
+  void _showSearchError() {
+    setState(() => _searchResults.clear());
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Expanded(child: Text('Search failed. Try again.')),
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                if (_searchQuery.isNotEmpty) _performSearch(_searchQuery);
+              },
+              child: Text('RETRY', style: TextStyle(color: Colors.orange)),
+            ),
+          ],
+        ),
+        backgroundColor: Color(0xFF1E1E1E),
+        duration: Duration(seconds: 4),
+      ),
+    );
   }
 
   Future<void> _loadContent() async {
@@ -103,11 +131,28 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           _isLoading = false;
         });
       } else {
-        setState(() => _isLoading = false);
+        _showErrorScreen(response.error ?? 'Failed to load content');
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      _showErrorScreen('Network error occurred');
     }
+  }
+
+  void _showErrorScreen(String error) {
+    setState(() => _isLoading = false);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => error.toLowerCase().contains('network') || 
+                              error.toLowerCase().contains('internet')
+            ? NoInternetScreen(onRetry: _loadContent)
+            : LoadingErrorScreen(
+                errorMessage: error,
+                onRetry: _loadContent,
+              ),
+      ),
+    );
   }
 
   Future<void> _onRefresh() async {
@@ -475,17 +520,28 @@ class _DownloadDetailsScreenState extends State<DownloadDetailsScreen> {
           _isLoading = false;
         });
       } else {
-        setState(() {
-          _error = response.error ?? 'Failed to load details';
-          _isLoading = false;
-        });
+        _showDetailsError(response.error ?? 'Failed to load details');
       }
     } catch (e) {
-      setState(() {
-        _error = 'Error: $e';
-        _isLoading = false;
-      });
+      _showDetailsError('Network error occurred');
     }
+  }
+
+  void _showDetailsError(String error) {
+    setState(() => _isLoading = false);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => error.toLowerCase().contains('network') || 
+                              error.toLowerCase().contains('internet')
+            ? NoInternetScreen(onRetry: _loadAnimeDetails)
+            : LoadingErrorScreen(
+                errorMessage: error,
+                onRetry: _loadAnimeDetails,
+              ),
+      ),
+    );
   }
 
   String _cleanText(String text) {
