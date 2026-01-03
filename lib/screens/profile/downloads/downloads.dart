@@ -34,8 +34,6 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   void initState() {
     super.initState();
     
-    print('Downloads screen initializing...');
-    
     _elasticController = AnimationController(
       duration: Duration(milliseconds: 1200),
       vsync: this,
@@ -55,9 +53,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     _slideAnimation = Tween<Offset>(begin: Offset(0, -0.3), end: Offset.zero)
         .animate(CurvedAnimation(parent: _elasticController, curve: Curves.easeOutCubic));
     
-    // Start animation immediately
     _elasticController.forward();
-    
     _loadContent();
     _searchTextController.addListener(_onSearchChanged);
   }
@@ -98,40 +94,23 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           backgroundColor: Color(0xFFFF8C00),
           textColor: Colors.white,
         );
-      } else {
-        Fluttertoast.showToast(
-          msg: "Search failed: ${response.error}",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
       }
     } catch (e) {
-      Fluttertoast.showToast(
-        msg: "Search error: $e",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
+      // Handle search error silently
     }
   }
 
   Future<void> _loadContent() async {
-    print('Loading content for category: $_selectedCategory');
     setState(() => _isLoading = true);
     
     try {
       final response = await DownloadHandler.getHomeContent(type: _selectedCategory);
-      print('API Response: ${response.success}, Data count: ${response.data?.length}');
       
       if (response.success && response.data != null) {
         setState(() {
           _animeList = response.data!;
           _isLoading = false;
         });
-        print('Content loaded successfully: ${_animeList.length} items');
         
         Fluttertoast.showToast(
           msg: "Loaded ${_animeList.length} anime",
@@ -142,10 +121,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         );
       } else {
         setState(() => _isLoading = false);
-        print('API Error: ${response.error}');
         
         Fluttertoast.showToast(
-          msg: "Failed to load content: ${response.error}",
+          msg: "Failed to load content",
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM,
           backgroundColor: Colors.red,
@@ -154,10 +132,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      print('Exception: $e');
       
       Fluttertoast.showToast(
-        msg: "Network error: $e",
+        msg: "Network error",
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: Colors.red,
@@ -168,13 +145,6 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
   Future<void> _onRefresh() async {
     HapticFeedback.lightImpact();
-    Fluttertoast.showToast(
-      msg: "Refreshing content...",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: Color(0xFFFF8C00),
-      textColor: Colors.white,
-    );
     await _loadContent();
   }
 
@@ -225,164 +195,135 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       ),
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
-        body: ScaleTransition(
-          scale: _elasticAnimation,
-          child: RefreshIndicator(
-            onRefresh: _onRefresh,
-            backgroundColor: Color(0xFF1E1E1E),
-            color: Color(0xFFFF8C00),
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: BouncingScrollPhysics(),
-              slivers: [
-                _buildHeader(),
-                _buildSearchSection(),
-                _buildCategoryTabs(),
-                _buildContent(),
-              ],
+        body: Column(
+          children: [
+            _buildHeader(),
+            _buildSearchSection(),
+            _buildCategoryTabs(),
+            Expanded(
+              child: ScaleTransition(
+                scale: _elasticAnimation,
+                child: RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  backgroundColor: Color(0xFF1E1E1E),
+                  color: Color(0xFFFF8C00),
+                  child: _buildScrollableContent(),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildHeader() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: Color(0xFF121212),
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      systemOverlayStyle: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
+    return Container(
+      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, left: 20, right: 20, bottom: 15),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF121212),
+            Color(0xFF121212).withOpacity(0.8),
+          ],
+        ),
       ),
-      flexibleSpace: SlideTransition(
-        position: _slideAnimation,
-        child: ScaleTransition(
-          scale: _elasticAnimation,
-          child: Container(
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF121212),
-                  Color(0xFF121212).withOpacity(0.8),
-                ],
+                colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
               ),
             ),
-            child: FlexibleSpaceBar(
-              titlePadding: EdgeInsets.only(left: 20, bottom: 16),
-              title: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-                      ),
-                    ),
-                    child: Icon(Icons.download_rounded, color: Colors.white, size: 20),
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    'Downloads',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Spacer(),
-                  GestureDetector(
-                    onTap: _toggleSearch,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      margin: EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF1E1E1E),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
-                      ),
-                      child: Icon(
-                        _isSearchVisible ? Icons.close : Icons.search,
-                        color: Colors.white.withOpacity(0.8),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
+            child: Icon(Icons.download_rounded, color: Colors.white, size: 20),
+          ),
+          SizedBox(width: 10),
+          Text(
+            'Downloads',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Spacer(),
+          GestureDetector(
+            onTap: _toggleSearch,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
+              ),
+              child: Icon(
+                _isSearchVisible ? Icons.close : Icons.search,
+                color: Colors.white.withOpacity(0.8),
+                size: 20,
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildSearchSection() {
-    return SliverToBoxAdapter(
-      child: AnimatedBuilder(
-        animation: _searchAnimation,
-        builder: (context, child) {
-          return Transform.translate(
-            offset: Offset(0, -50 * (1 - _searchAnimation.value)),
-            child: Opacity(
-              opacity: _searchAnimation.value,
-              child: _isSearchVisible ? Container(
-                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Color(0xFF1E1E1E),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  child: TextField(
-                    controller: _searchTextController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Search anime...',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                      prefixIcon: Icon(Icons.search, color: Color(0xFFFF8C00)),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    ),
-                    autofocus: true,
-                  ),
+    return AnimatedBuilder(
+      animation: _searchAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -50 * (1 - _searchAnimation.value)),
+          child: Opacity(
+            opacity: _searchAnimation.value,
+            child: _isSearchVisible ? Container(
+              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
-              ) : SizedBox.shrink(),
-            ),
-          );
-        },
-      ),
+                child: TextField(
+                  controller: _searchTextController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Search anime...',
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                    prefixIcon: Icon(Icons.search, color: Color(0xFFFF8C00)),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
+                  autofocus: true,
+                ),
+              ),
+            ) : SizedBox.shrink(),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildCategoryTabs() {
-    return SliverToBoxAdapter(
-      child: ScaleTransition(
-        scale: _elasticAnimation,
-        child: Container(
-          height: 50,
-          margin: EdgeInsets.symmetric(vertical: 10),
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            children: [
-              _buildCategoryTab('Hindi Dub', DownloadHandler.hindiDub),
-              _buildCategoryTab('Movies', DownloadHandler.movie),
-              _buildCategoryTab('Hindi Sub', DownloadHandler.hindiSub),
-              _buildCategoryTab('Eng Sub', DownloadHandler.engSub),
-            ],
-          ),
-        ),
+    return Container(
+      height: 50,
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          _buildCategoryTab('Hindi Dub', DownloadHandler.hindiDub),
+          _buildCategoryTab('Movies', DownloadHandler.movie),
+          _buildCategoryTab('Hindi Sub', DownloadHandler.hindiSub),
+          _buildCategoryTab('Eng Sub', DownloadHandler.engSub),
+        ],
       ),
     );
   }
@@ -415,31 +356,27 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     );
   }
 
-  Widget _buildContent() {
-    print('Building content - Loading: $_isLoading, Anime count: ${_animeList.length}');
-    
+  Widget _buildScrollableContent() {
     if (_isLoading) {
-      return SliverFillRemaining(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                'assets/animations/loading.json',
-                width: 100,
-                height: 100,
-                fit: BoxFit.contain,
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/animations/loading.json',
+              width: 100,
+              height: 100,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Loading content...',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
               ),
-              SizedBox(height: 12),
-              Text(
-                'Loading content...',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -449,40 +386,36 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         : _animeList;
 
     if (displayList.isEmpty) {
-      return SliverFillRemaining(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.search_off, size: 64, color: Colors.white.withOpacity(0.3)),
-              SizedBox(height: 16),
-              Text(
-                _isSearchVisible ? 'No results found' : 'No content available',
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
-              ),
-            ],
-          ),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.white.withOpacity(0.3)),
+            SizedBox(height: 16),
+            Text(
+              _isSearchVisible ? 'No results found' : 'No content available',
+              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
+            ),
+          ],
         ),
       );
     }
 
-    return SliverPadding(
+    return GridView.builder(
+      controller: _scrollController,
+      physics: BouncingScrollPhysics(),
       padding: EdgeInsets.all(20),
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final anime = displayList[index];
-            return _buildAnimeCard(anime, index);
-          },
-          childCount: displayList.length,
-        ),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.7,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
+      itemCount: displayList.length,
+      itemBuilder: (context, index) {
+        final anime = displayList[index];
+        return _buildAnimeCard(anime, index);
+      },
     );
   }
 
