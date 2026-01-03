@@ -157,16 +157,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         statusBarIconBrightness: Brightness.light,
         systemNavigationBarColor: Colors.transparent,
       ),
-      child: AbsorbPointer(
-        absorbing: _isLoading,
-        child: Scaffold(
-          backgroundColor: Color(0xFF121212),
-          body: ScaleTransition(
-            scale: _elasticAnimation,
-            child: RefreshIndicator(
-              onRefresh: _onRefresh,
-              backgroundColor: Color(0xFF1E1E1E),
-              color: Color(0xFFFF8C00),
+      child: Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: ScaleTransition(
+          scale: _elasticAnimation,
+          child: RefreshIndicator(
+            onRefresh: _onRefresh,
+            backgroundColor: Color(0xFF1E1E1E),
+            color: Color(0xFFFF8C00),
+            child: AbsorbPointer(
+              absorbing: _isLoading,
               child: CustomScrollView(
                 controller: _scrollController,
                 physics: BouncingScrollPhysics(),
