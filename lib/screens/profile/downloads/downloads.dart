@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:ui';
 import 'handler/download_handler.dart';
 
@@ -89,9 +90,31 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       final response = await DownloadHandler.searchAnime(query);
       if (response.success && response.data != null) {
         setState(() => _searchResults = response.data!);
+        
+        Fluttertoast.showToast(
+          msg: "Found ${response.data!.length} results",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Color(0xFFFF8C00),
+          textColor: Colors.white,
+        );
+      } else {
+        Fluttertoast.showToast(
+          msg: "Search failed: ${response.error}",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     } catch (e) {
-      // Handle search error silently
+      Fluttertoast.showToast(
+        msg: "Search error: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
     }
   }
 
@@ -109,18 +132,49 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           _isLoading = false;
         });
         print('Content loaded successfully: ${_animeList.length} items');
+        
+        Fluttertoast.showToast(
+          msg: "Loaded ${_animeList.length} anime",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Color(0xFFFF8C00),
+          textColor: Colors.white,
+        );
       } else {
         setState(() => _isLoading = false);
         print('API Error: ${response.error}');
+        
+        Fluttertoast.showToast(
+          msg: "Failed to load content: ${response.error}",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     } catch (e) {
       setState(() => _isLoading = false);
       print('Exception: $e');
+      
+      Fluttertoast.showToast(
+        msg: "Network error: $e",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
     }
   }
 
   Future<void> _onRefresh() async {
     HapticFeedback.lightImpact();
+    Fluttertoast.showToast(
+      msg: "Refreshing content...",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Color(0xFFFF8C00),
+      textColor: Colors.white,
+    );
     await _loadContent();
   }
 
