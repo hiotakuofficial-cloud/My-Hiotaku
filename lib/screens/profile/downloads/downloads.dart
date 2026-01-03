@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'handler/download_handler.dart';
 
@@ -156,21 +157,27 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         statusBarIconBrightness: Brightness.light,
         systemNavigationBarColor: Colors.transparent,
       ),
-      child: Scaffold(
-        backgroundColor: Color(0xFF121212),
-        body: RefreshIndicator(
-          onRefresh: _onRefresh,
-          backgroundColor: Color(0xFF1E1E1E),
-          color: Color(0xFFFF8C00),
-          child: CustomScrollView(
-            controller: _scrollController,
-            physics: BouncingScrollPhysics(),
-            slivers: [
-              _buildHeader(),
-              _buildSearchSection(),
-              _buildCategoryTabs(),
-              _buildContent(),
-            ],
+      child: AbsorbPointer(
+        absorbing: _isLoading,
+        child: Scaffold(
+          backgroundColor: Color(0xFF121212),
+          body: ScaleTransition(
+            scale: _elasticAnimation,
+            child: RefreshIndicator(
+              onRefresh: _onRefresh,
+              backgroundColor: Color(0xFF1E1E1E),
+              color: Color(0xFFFF8C00),
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: BouncingScrollPhysics(),
+                slivers: [
+                  _buildHeader(),
+                  _buildSearchSection(),
+                  _buildCategoryTabs(),
+                  _buildContent(),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -348,7 +355,25 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     if (_isLoading) {
       return SliverFillRemaining(
         child: Center(
-          child: CircularProgressIndicator(color: Color(0xFFFF8C00)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset(
+                'assets/animations/loading.json',
+                width: 120,
+                height: 120,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Loading content...',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
