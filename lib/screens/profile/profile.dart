@@ -5,6 +5,7 @@ import 'handler/profile_handler.dart';
 import 'requests/requests.dart';
 import 'notifications/notification_of_user.dart';
 import 'notifications/handler/notification_of_user_handler.dart';
+import 'downloads/downloads.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -383,12 +384,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     MaterialPageRoute(builder: (context) => const RequestsPage()),
                   );
                 } else if (title == 'Downloads') {
-                  // Downloads functionality - Coming Soon
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Downloads - Coming Soon!'),
-                      backgroundColor: Color(0xFFFF8C00),
-                    ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => DownloadsScreen()),
                   );
                 } else {
                   // Other options - show coming soon
