@@ -280,22 +280,22 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               title: Row(
                 children: [
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       gradient: LinearGradient(
                         colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
                       ),
                     ),
-                    child: Icon(Icons.download_rounded, color: Colors.white, size: 24),
+                    child: Icon(Icons.download_rounded, color: Colors.white, size: 20),
                   ),
-                  SizedBox(width: 12),
+                  SizedBox(width: 10),
                   Text(
                     'Downloads',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -303,18 +303,18 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   GestureDetector(
                     onTap: _toggleSearch,
                     child: Container(
-                      width: 44,
-                      height: 44,
+                      width: 36,
+                      height: 36,
                       margin: EdgeInsets.only(right: 20),
                       decoration: BoxDecoration(
                         color: Color(0xFF1E1E1E),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.white.withOpacity(0.1)),
                       ),
                       child: Icon(
                         _isSearchVisible ? Icons.close : Icons.search,
                         color: Colors.white.withOpacity(0.8),
-                        size: 22,
+                        size: 20,
                       ),
                     ),
                   ),
@@ -394,11 +394,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       onTap: () => _onCategoryChanged(category),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
-        margin: EdgeInsets.only(right: 12),
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        margin: EdgeInsets.only(right: 10),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? Color(0xFFFF8C00) : Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? Color(0xFFFF8C00) : Colors.white.withOpacity(0.1),
           ),
@@ -408,6 +408,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 14,
           ),
         ),
       ),
@@ -415,6 +416,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   }
 
   Widget _buildContent() {
+    print('Building content - Loading: $_isLoading, Anime count: ${_animeList.length}');
+    
     if (_isLoading) {
       return SliverFillRemaining(
         child: Center(
@@ -423,16 +426,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             children: [
               Lottie.asset(
                 'assets/animations/loading.json',
-                width: 120,
-                height: 120,
+                width: 100,
+                height: 100,
                 fit: BoxFit.contain,
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 12),
               Text(
                 'Loading content...',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.7),
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
               ),
             ],
