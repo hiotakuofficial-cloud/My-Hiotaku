@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import '../../../../config.dart';
 
 // Data Models
 class AnimeItem {
@@ -118,8 +119,8 @@ class ApiResponse<T> {
 
 class DownloadHandler {
   // API Configuration
-  static const String _baseUrl = 'http://localhost:8000/download/apiv2.php';
-  static const String _token = 'afaea552101228848de8f8c7f48a1b7d7a6a042a6094274eaa9d30cb64bf91a7';
+  static final String _baseUrl = '${AppConfig.animeApiBaseUrl}/download/apiv2.php';
+  static final String _token = AppConfig.app_hash_base256;
   static const Duration _timeout = Duration(seconds: 30);
   
   static Map<String, String> get _headers => {
