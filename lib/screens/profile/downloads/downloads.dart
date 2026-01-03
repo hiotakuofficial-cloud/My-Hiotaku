@@ -265,6 +265,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         margin: EdgeInsets.symmetric(vertical: 10),
         child: ListView(
           scrollDirection: Axis.horizontal,
+          physics: BouncingScrollPhysics(),
           padding: EdgeInsets.symmetric(horizontal: 20),
           children: [
             _buildCategoryTab('Hindi Dub', DownloadHandler.hindiDub),
@@ -512,6 +513,10 @@ class _DownloadDetailsScreenState extends State<DownloadDetailsScreen> {
             expandedHeight: 300,
             pinned: true,
             backgroundColor: Color(0xFF121212),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios, color: Color(0xFFFF8C00), size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Hero(
                 tag: 'anime_${widget.anime.id}',
