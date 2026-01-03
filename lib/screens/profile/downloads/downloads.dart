@@ -150,21 +150,28 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFF121212),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        backgroundColor: Color(0xFF1E1E1E),
-        color: Color(0xFFFF8C00),
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: BouncingScrollPhysics(),
-          slivers: [
-            _buildHeader(),
-            _buildSearchSection(),
-            _buildCategoryTabs(),
-            _buildContent(),
-          ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: RefreshIndicator(
+          onRefresh: _onRefresh,
+          backgroundColor: Color(0xFF1E1E1E),
+          color: Color(0xFFFF8C00),
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: BouncingScrollPhysics(),
+            slivers: [
+              _buildHeader(),
+              _buildSearchSection(),
+              _buildCategoryTabs(),
+              _buildContent(),
+            ],
+          ),
         ),
       ),
     );
@@ -175,9 +182,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Color(0xFF121212),
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
       flexibleSpace: SlideTransition(
         position: _slideAnimation,
         child: ScaleTransition(
