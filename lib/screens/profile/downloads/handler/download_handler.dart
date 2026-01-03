@@ -119,8 +119,12 @@ class ApiResponse<T> {
 
 class DownloadHandler {
   // API Configuration
-  static final String _baseUrl = '${AppConfig.animeApiBaseUrl}/download/apiv2.php';
-  static final String _token = AppConfig.app_hash_base256;
+  static final String _baseUrl = AppConfig.animeApiBaseUrl.isNotEmpty 
+      ? '${AppConfig.animeApiBaseUrl}/download/apiv2.php'
+      : 'https://v1-w3sc.onrender.com/download/apiv2.php';
+  static final String _token = AppConfig.app_hash_base256.isNotEmpty
+      ? AppConfig.app_hash_base256
+      : 'afaea552101228848de8f8c7f48a1b7d7a6a042a6094274eaa9d30cb64bf91a7';
   static const Duration _timeout = Duration(seconds: 30);
   
   static Map<String, String> get _headers => {
