@@ -33,6 +33,10 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   void initState() {
     super.initState();
     
+    print('Downloads screen initializing...');
+    print('Base URL: ${DownloadHandler.baseUrl}');
+    print('Token: ${DownloadHandler.token}');
+    
     _elasticController = AnimationController(
       duration: Duration(milliseconds: 1200),
       vsync: this,
@@ -101,9 +105,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           _isLoading = false;
         });
         _elasticController.forward();
+      } else {
+        // API returned error
+        setState(() => _isLoading = false);
+        print('API Error: ${response.error}');
       }
     } catch (e) {
       setState(() => _isLoading = false);
+      print('Exception: $e');
     }
   }
 

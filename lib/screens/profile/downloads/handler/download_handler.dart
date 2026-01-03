@@ -118,13 +118,9 @@ class ApiResponse<T> {
 }
 
 class DownloadHandler {
-  // API Configuration
-  static final String _baseUrl = AppConfig.animeApiBaseUrl.isNotEmpty 
-      ? '${AppConfig.animeApiBaseUrl}/download/apiv2.php'
-      : 'https://v1-w3sc.onrender.com/download/apiv2.php';
-  static final String _token = AppConfig.app_hash_base256.isNotEmpty
-      ? AppConfig.app_hash_base256
-      : 'afaea552101228848de8f8c7f48a1b7d7a6a042a6094274eaa9d30cb64bf91a7';
+  // API Configuration - Use live API directly
+  static const String baseUrl = 'https://v1-w3sc.onrender.com/download/apiv2.php';
+  static const String token = 'afaea552101228848de8f8c7f48a1b7d7a6a042a6094274eaa9d30cb64bf91a7';
   static const Duration _timeout = Duration(seconds: 30);
   
   static Map<String, String> get _headers => {
@@ -145,7 +141,7 @@ class DownloadHandler {
     try {
       final params = {
         'action': 'home',
-        'token': _token,
+        'token': token,
         if (type != null) 'type': type,
       };
       
@@ -188,7 +184,7 @@ class DownloadHandler {
       final params = {
         'action': 'search',
         'q': query.trim(),
-        'token': _token,
+        'token': token,
       };
       
       final response = await _makeRequest(params);
@@ -230,7 +226,7 @@ class DownloadHandler {
       final params = {
         'action': 'get',
         'id': id.toString(),
-        'token': _token,
+        'token': token,
         if (type != null) 'type': type,
       };
       
@@ -270,7 +266,7 @@ class DownloadHandler {
       final params = {
         'action': 'anime',
         'id': id.toString(),
-        'token': _token,
+        'token': token,
       };
       
       final response = await _makeRequest(params);
@@ -309,7 +305,7 @@ class DownloadHandler {
       final params = {
         'action': 'download',
         'url': url.trim(),
-        'token': _token,
+        'token': token,
       };
       
       final response = await _makeRequest(params);
@@ -336,7 +332,7 @@ class DownloadHandler {
   // Private method to make HTTP requests
   static Future<Map<String, dynamic>> _makeRequest(Map<String, String> params) async {
     try {
-      final uri = Uri.parse(_baseUrl).replace(queryParameters: params);
+      final uri = Uri.parse(baseUrl).replace(queryParameters: params);
       
       final response = await http.get(uri, headers: _headers).timeout(_timeout);
       
