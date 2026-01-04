@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../handler/download_handler.dart';
 
@@ -25,15 +24,9 @@ class _DownloadWidgetState extends State<DownloadWidget>
   late Animation<double> _fadeAnimation;
   
   bool _isLoading = true;
-  bool _isWebViewMode = false;
   bool _showAllDownloads = false;
   String? _error;
   List<ZipDownload>? _zipDownloads;
-  String _currentUrl = '';
-  
-  late WebViewController _webViewController;
-  bool _isPageLoading = true;
-  int _loadingProgress = 0;
 
   @override
   void initState() {
@@ -83,179 +76,89 @@ class _DownloadWidgetState extends State<DownloadWidget>
     }
   }
 
-  void _openWebView(String url) {
-    setState(() {
-      _isWebViewMode = true;
-      _currentUrl = url;
-      _isPageLoading = true;
-      _loadingProgress = 0;
-    });
-    
-    _webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {
-            setState(() {
-              _loadingProgress = progress;
-            });
-          },
-          onPageStarted: (String url) {
-            setState(() {
-              _isPageLoading = true;
-            });
-          },
-          onPageFinished: (String url) {
-            setState(() {
-              _isPageLoading = false;
-            });
-          },
-          onNavigationRequest: (NavigationRequest request) {
-            // Block redirects - only allow the original URL
-            if (request.url == _currentUrl) {
-              return NavigationDecision.navigate;
-            }
-            // Block all other redirects/ads
-            return NavigationDecision.prevent;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(url));
+  Future<void> _openInChrome(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
-  void _closeWebView() {
-    setState(() {
-      _isWebViewMode = false;
-      _currentUrl = '';
-    });
+  Future<void> _copyToClipboard(String url) async {
+    await Clipboard.setData(ClipboardData(text: url));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Link copied to clipboard!'),
+        backgroundColor: Color(0xFFFF8C00),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showDownloadOptions(ZipDownload zipDownload) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Color(0xFF1E1E1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[600],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              zipDownload.text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.open_in_browser, color: Color(0xFFFF8C00)),
+              title: Text('Open in Chrome', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _openInChrome(zipDownload.url);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.copy, color: Color(0xFFFF8C00)),
+              title: Text('Copy Link', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _copyToClipboard(zipDownload.url);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: Duration(milliseconds: 300),
-      height: _isWebViewMode 
-          ? MediaQuery.of(context).size.height 
-          : MediaQuery.of(context).size.height * 0.7,
+      height: MediaQuery.of(context).size.height * 0.7,
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Container(
           decoration: BoxDecoration(
             color: Color(0xFF121212),
-            borderRadius: _isWebViewMode 
-                ? BorderRadius.zero 
-                : BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: _isWebViewMode ? _buildWebView() : _buildDownloadLinks(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWebView() {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-      child: WillPopScope(
-        onWillPop: () async {
-          if (await _webViewController.canGoBack()) {
-            _webViewController.goBack();
-            return false;
-          }
-          return false; // Don't close bottom sheet on back press
-        },
-        child: Scaffold(
-          backgroundColor: Color(0xFF121212),
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            backgroundColor: Color(0xFF1E1E1E),
-            elevation: 0,
-            systemOverlayStyle: SystemUiOverlayStyle(
-              statusBarBrightness: Brightness.dark,
-              statusBarIconBrightness: Brightness.light,
-              statusBarColor: Colors.transparent,
-            ),
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios, color: Color(0xFFFF8C00)),
-              onPressed: _closeWebView,
-            ),
-            title: Text(
-              'Download',
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
-            actions: [
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: Colors.white),
-                color: Color(0xFF1E1E1E),
-                onSelected: (value) async {
-                  switch (value) {
-                    case 'refresh':
-                      _webViewController.reload();
-                      break;
-                    case 'chrome':
-                      final Uri url = Uri.parse(_currentUrl);
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
-                      }
-                      break;
-                    case 'desktop':
-                      _webViewController.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-                      _webViewController.reload();
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'refresh',
-                    child: Row(
-                      children: [
-                        Icon(Icons.refresh, color: Colors.white, size: 20),
-                        SizedBox(width: 12),
-                        Text('Refresh Page', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'chrome',
-                    child: Row(
-                      children: [
-                        Icon(Icons.open_in_browser, color: Colors.white, size: 20),
-                        SizedBox(width: 12),
-                        Text('Open in Chrome', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'desktop',
-                    child: Row(
-                      children: [
-                        Icon(Icons.desktop_windows, color: Colors.white, size: 20),
-                        SizedBox(width: 12),
-                        Text('Desktop Mode', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              if (_isPageLoading)
-                LinearProgressIndicator(
-                  value: _loadingProgress / 100,
-                  backgroundColor: Colors.grey[800],
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8C00)),
-                ),
-              Expanded(
-                child: WebViewWidget(controller: _webViewController),
-              ),
-            ],
-          ),
+          child: _buildDownloadLinks(),
         ),
       ),
     );
@@ -489,7 +392,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _openWebView(zipDownload.url),
+          onTap: () => _showDownloadOptions(zipDownload),
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Row(
