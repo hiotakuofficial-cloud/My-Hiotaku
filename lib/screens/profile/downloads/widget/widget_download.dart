@@ -27,6 +27,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
   bool _showAllDownloads = false;
   String? _error;
   List<ZipDownload>? _zipDownloads;
+  List<DownloadLink>? _episodeLinks;
 
   @override
   void initState() {
@@ -55,16 +56,23 @@ class _DownloadWidgetState extends State<DownloadWidget>
     });
 
     try {
-      final response = await DownloadHandler.getZipDownloads(widget.animeId);
+      // Load ZIP downloads
+      final zipResponse = await DownloadHandler.getZipDownloads(widget.animeId);
       
-      if (response.success && response.data != null) {
+      // Load episode downloads  
+      final episodeResponse = await DownloadHandler.getDownloadLinks(widget.animeId);
+      
+      if (zipResponse.success && zipResponse.data != null) {
         setState(() {
-          _zipDownloads = response.data;
+          _zipDownloads = zipResponse.data;
+          if (episodeResponse.success && episodeResponse.data != null) {
+            _episodeLinks = episodeResponse.data!.downloads;
+          }
           _isLoading = false;
         });
       } else {
         setState(() {
-          _error = response.error ?? 'Failed to load ZIP downloads';
+          _error = zipResponse.error ?? 'Failed to load downloads';
           _isLoading = false;
         });
       }
@@ -376,6 +384,39 @@ class _DownloadWidgetState extends State<DownloadWidget>
               ),
             ),
           ),
+        // Episode Downloads Section
+        if (_episodeLinks != null && _episodeLinks!.isNotEmpty) ...[
+          SizedBox(height: 20),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(Icons.play_circle_outline, color: Color(0xFFFF8C00), size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Episode Downloads',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              physics: BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              itemCount: _episodeLinks!.length,
+              itemBuilder: (context, index) {
+                final link = _episodeLinks![index];
+                return _buildEpisodeItem(link);
+              },
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -459,6 +500,79 @@ class _DownloadWidgetState extends State<DownloadWidget>
                   color: Color(0xFFFF8C00),
                   size: 20,
                 ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEpisodeItem(DownloadLink link) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _showDownloadOptions(ZipDownload(
+            text: link.episode ?? 'Episode',
+            url: link.url,
+            quality: link.quality ?? 'Unknown',
+            type: link.type ?? 'episode',
+            platform: link.platform ?? 'web',
+          )),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFF8C00),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    link.quality ?? 'HD',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        link.episode ?? 'Episode',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (link.size != null) ...[
+                        SizedBox(height: 4),
+                        Text(
+                          link.size!,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(Icons.download, color: Colors.white.withOpacity(0.7), size: 18),
               ],
             ),
           ),
