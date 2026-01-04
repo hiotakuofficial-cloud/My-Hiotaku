@@ -329,38 +329,28 @@ class _DownloadWidgetState extends State<DownloadWidget>
     }
 
     final displayCount = _showAllDownloads ? _zipDownloads!.length : 3;
-    final showButton = _zipDownloads!.length > 3;
+    final showZipButton = _zipDownloads!.length > 3;
+    
+    final episodeDisplayCount = _showAllEpisodes ? _episodeLinks!.length : 3;
+    final showEpisodeButton = _episodeLinks != null && _episodeLinks!.length > 3;
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            physics: BouncingScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            itemCount: displayCount.clamp(0, _zipDownloads!.length),
-            itemBuilder: (context, index) {
+    return Expanded(
+      child: SingleChildScrollView(
+        physics: BouncingScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ZIP Downloads
+            ...List.generate(displayCount.clamp(0, _zipDownloads!.length), (index) {
               final zipDownload = _zipDownloads![index];
-              return _buildZipDownloadItem(zipDownload, index == displayCount - 1 && !showButton);
-            },
-          ),
-        ),
-        if (showButton && !_showAllDownloads)
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF121212).withOpacity(0.0),
-                  Color(0xFF121212).withOpacity(0.8),
-                  Color(0xFF121212),
-                ],
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
-              child: ElevatedButton(
+              return _buildZipDownloadItem(zipDownload, false);
+            }),
+            
+            // Show More ZIP button
+            if (showZipButton && !_showAllDownloads) ...[
+              SizedBox(height: 12),
+              ElevatedButton(
                 onPressed: () {
                   setState(() {
                     _showAllDownloads = true;
@@ -377,77 +367,72 @@ class _DownloadWidgetState extends State<DownloadWidget>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Show More (${_zipDownloads!.length - 3})'),
+                    Text('Show More ZIP (${_zipDownloads!.length - 3})'),
                     SizedBox(width: 8),
                     Icon(Icons.expand_more, size: 20),
                   ],
                 ),
               ),
-            ),
-          ),
-        // Episode Downloads Section
-        if (_episodeLinks != null && _episodeLinks!.isNotEmpty) ...[
-          SizedBox(height: 20),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Icon(Icons.play_circle_outline, color: Color(0xFFFF8C00), size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Episode Downloads',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            ],
+            
+            // Episode Downloads Section
+            if (_episodeLinks != null && _episodeLinks!.isNotEmpty) ...[
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Icon(Icons.play_circle_outline, color: Color(0xFFFF8C00), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Episode Downloads',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              
+              // Episode items
+              ...List.generate(episodeDisplayCount.clamp(0, _episodeLinks!.length), (index) {
+                final link = _episodeLinks![index];
+                return _buildEpisodeItem(link);
+              }),
+              
+              // Show More Episodes button
+              if (showEpisodeButton && !_showAllEpisodes) ...[
+                SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _showAllEpisodes = true;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFFF8C00),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Show More Episodes (${_episodeLinks!.length - 3})'),
+                      SizedBox(width: 8),
+                      Icon(Icons.expand_more, size: 20),
+                    ],
                   ),
                 ),
               ],
-            ),
-          ),
-          SizedBox(height: 12),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                // Show limited episodes initially
-                ...(_showAllEpisodes ? _episodeLinks! : _episodeLinks!.take(3))
-                    .map((link) => _buildEpisodeItem(link))
-                    .toList(),
-                
-                // Show More button for episodes
-                if (!_showAllEpisodes && _episodeLinks!.length > 3)
-                  Container(
-                    margin: EdgeInsets.only(top: 12),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _showAllEpisodes = true;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFF8C00),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Show More Episodes (${_episodeLinks!.length - 3})'),
-                          SizedBox(width: 8),
-                          Icon(Icons.expand_more, size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ],
+            ],
+            
+            SizedBox(height: 20), // Bottom padding
+          ],
+        ),
+      ),
     );
   }
 
