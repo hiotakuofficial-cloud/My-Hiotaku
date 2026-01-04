@@ -25,6 +25,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
   
   bool _isLoading = true;
   bool _showAllDownloads = false;
+  bool _showAllEpisodes = false;
   String? _error;
   List<ZipDownload>? _zipDownloads;
   List<DownloadLink>? _episodeLinks;
@@ -405,15 +406,44 @@ class _DownloadWidgetState extends State<DownloadWidget>
             ),
           ),
           SizedBox(height: 12),
-          Expanded(
-            child: ListView.builder(
-              physics: BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _episodeLinks!.length,
-              itemBuilder: (context, index) {
-                final link = _episodeLinks![index];
-                return _buildEpisodeItem(link);
-              },
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                // Show limited episodes initially
+                ...(_showAllEpisodes ? _episodeLinks! : _episodeLinks!.take(3))
+                    .map((link) => _buildEpisodeItem(link))
+                    .toList(),
+                
+                // Show More button for episodes
+                if (!_showAllEpisodes && _episodeLinks!.length > 3)
+                  Container(
+                    margin: EdgeInsets.only(top: 12),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _showAllEpisodes = true;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFF8C00),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Show More Episodes (${_episodeLinks!.length - 3})'),
+                          SizedBox(width: 8),
+                          Icon(Icons.expand_more, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -509,6 +539,22 @@ class _DownloadWidgetState extends State<DownloadWidget>
   }
 
   Widget _buildEpisodeItem(DownloadLink link) {
+    // Extract quality from episode text if available
+    String displayQuality = link.quality ?? 'HD';
+    String displayTitle = link.episode ?? 'Episode';
+    
+    // Try to extract quality from episode text (e.g., "Episode 1 - 1080p")
+    if (link.episode != null && link.episode!.contains('1080p')) {
+      displayQuality = '1080p';
+      displayTitle = link.episode!.replaceAll(' - 1080p', '').replaceAll(' 1080p', '');
+    } else if (link.episode != null && link.episode!.contains('720p')) {
+      displayQuality = '720p';
+      displayTitle = link.episode!.replaceAll(' - 720p', '').replaceAll(' 720p', '');
+    } else if (link.episode != null && link.episode!.contains('480p')) {
+      displayQuality = '480p';
+      displayTitle = link.episode!.replaceAll(' - 480p', '').replaceAll(' 480p', '');
+    }
+    
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -521,9 +567,9 @@ class _DownloadWidgetState extends State<DownloadWidget>
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () => _showDownloadOptions(ZipDownload(
-            text: link.episode ?? 'Episode',
+            text: displayTitle,
             url: link.url,
-            quality: link.quality ?? 'Unknown',
+            quality: displayQuality,
             type: link.type ?? 'episode',
             platform: link.platform ?? 'web',
           )),
@@ -538,7 +584,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    link.quality ?? 'HD',
+                    displayQuality,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -552,7 +598,7 @@ class _DownloadWidgetState extends State<DownloadWidget>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        link.episode ?? 'Episode',
+                        displayTitle,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
