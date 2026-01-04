@@ -305,19 +305,23 @@ class _DownloadWidgetState extends State<DownloadWidget>
   }
 
   Widget _buildLinksList() {
-    if (_zipDownloads == null || _zipDownloads!.isEmpty) {
+    // Check if both ZIP and episodes are empty
+    bool hasZipDownloads = _zipDownloads != null && _zipDownloads!.isNotEmpty;
+    bool hasEpisodeDownloads = _episodeLinks != null && _episodeLinks!.isNotEmpty;
+    
+    if (!hasZipDownloads && !hasEpisodeDownloads) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.archive_outlined,
+              Icons.download_outlined,
               color: Colors.white.withOpacity(0.5),
               size: 64,
             ),
             SizedBox(height: 16),
             Text(
-              'No ZIP downloads available',
+              'No downloads available',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 16,
@@ -328,12 +332,6 @@ class _DownloadWidgetState extends State<DownloadWidget>
       );
     }
 
-    final displayCount = _showAllDownloads ? _zipDownloads!.length : 3;
-    final showZipButton = _zipDownloads!.length > 3;
-    
-    final episodeDisplayCount = _showAllEpisodes ? _episodeLinks!.length : 3;
-    final showEpisodeButton = _episodeLinks != null && _episodeLinks!.length > 3;
-
     return Expanded(
       child: SingleChildScrollView(
         physics: BouncingScrollPhysics(),
@@ -341,49 +339,51 @@ class _DownloadWidgetState extends State<DownloadWidget>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ZIP Downloads
-            ...List.generate(displayCount.clamp(0, _zipDownloads!.length), (index) {
-              final zipDownload = _zipDownloads![index];
-              return _buildZipDownloadItem(zipDownload, false);
-            }),
-            
-            // Show More ZIP button
-            if (showZipButton && !_showAllDownloads) ...[
-              SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _showAllDownloads = true;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFFF8C00),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            // ZIP Downloads Section (only if available)
+            if (hasZipDownloads) ...[
+              ...List.generate((_showAllDownloads ? _zipDownloads!.length : 3).clamp(0, _zipDownloads!.length), (index) {
+                final zipDownload = _zipDownloads![index];
+                return _buildZipDownloadItem(zipDownload, false);
+              }),
+              
+              // Show More ZIP button
+              if (_zipDownloads!.length > 3 && !_showAllDownloads) ...[
+                SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _showAllDownloads = true;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFFF8C00),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Show More ZIP (${_zipDownloads!.length - 3})'),
+                      SizedBox(width: 8),
+                      Icon(Icons.expand_more, size: 20),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Show More ZIP (${_zipDownloads!.length - 3})'),
-                    SizedBox(width: 8),
-                    Icon(Icons.expand_more, size: 20),
-                  ],
-                ),
-              ),
+              ],
             ],
             
-            // Episode Downloads Section
-            if (_episodeLinks != null && _episodeLinks!.isNotEmpty) ...[
-              SizedBox(height: 20),
+            // Episode Downloads Section (only if available)
+            if (hasEpisodeDownloads) ...[
+              if (hasZipDownloads) SizedBox(height: 20), // Add spacing if ZIP section exists
               Row(
                 children: [
                   Icon(Icons.play_circle_outline, color: Color(0xFFFF8C00), size: 20),
                   SizedBox(width: 8),
                   Text(
-                    'Episode Downloads',
+                    hasZipDownloads ? 'Episode Downloads' : 'Downloads', // Change title if no ZIP
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -395,13 +395,13 @@ class _DownloadWidgetState extends State<DownloadWidget>
               SizedBox(height: 12),
               
               // Episode items
-              ...List.generate(episodeDisplayCount.clamp(0, _episodeLinks!.length), (index) {
+              ...List.generate((_showAllEpisodes ? _episodeLinks!.length : 3).clamp(0, _episodeLinks!.length), (index) {
                 final link = _episodeLinks![index];
                 return _buildEpisodeItem(link);
               }),
               
               // Show More Episodes button
-              if (showEpisodeButton && !_showAllEpisodes) ...[
+              if (_episodeLinks!.length > 3 && !_showAllEpisodes) ...[
                 SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: () {
