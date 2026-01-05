@@ -336,12 +336,17 @@ class SupabaseHandler {
   static Future<List<Map<String, dynamic>>?> getConnectedFavorites(String userId) async {
     try {
       // Query both user1_id and user2_id to get all connections
-      final response = await supabase
-          .from('connected_fav')
-          .select()
-          .or('user1_id.eq.$userId,user2_id.eq.$userId');
+      final url = '$_supabaseUrl/rest/v1/connected_fav?or=(user1_id.eq.$userId,user2_id.eq.$userId)';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _headers,
+      );
       
-      return List<Map<String, dynamic>>.from(response);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      }
+      return null;
     } catch (e) {
       // Return null on database error - let caller handle gracefully
       return null;
