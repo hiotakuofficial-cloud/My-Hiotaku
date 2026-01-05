@@ -8,6 +8,7 @@ import '../../favourite/handler/favourite_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../errors/loading_error.dart';
 import '../../details/details.dart';
+import '../../favourite/syncuser/syncuser.dart';
 
 class ConnectedFavoritesPage extends StatefulWidget {
   @override
@@ -220,10 +221,7 @@ class _ConnectedFavoritesPageState extends State<ConnectedFavoritesPage>
             physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             slivers: [
               SliverToBoxAdapter(
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 0),
-                  child: _buildHeader(),
-                ),
+                child: _buildHeader(),
               ),
               SliverPadding(
                 padding: EdgeInsets.all(20),
@@ -319,100 +317,86 @@ class _ConnectedFavoritesPageState extends State<ConnectedFavoritesPage>
     return AnimatedBuilder(
       animation: _searchController,
       builder: (context, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
+        return Container(
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 10, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
                     child: Icon(
                       Icons.arrow_back_ios_new,
                       color: Colors.white.withOpacity(0.8),
-                      size: 20,
+                      size: 24,
                     ),
                   ),
-                ),
-                SizedBox(width: 15),
-                Expanded(
-                  child: isSearchMode 
-                    ? FadeTransition(
-                        opacity: _searchSlideAnimation,
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF1E1E1E),
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(color: Colors.white.withOpacity(0.2)),
-                          ),
-                          child: TextField(
-                            controller: _searchTextController,
-                            onChanged: _onSearchChanged,
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Search connected favorites...',
-                              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                              prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
+                  SizedBox(width: 20),
+                  Expanded(
+                    child: isSearchMode 
+                      ? FadeTransition(
+                          opacity: _searchSlideAnimation,
+                          child: Container(
+                            height: 45,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF1E1E1E),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
                             ),
-                            autofocus: true,
+                            child: TextField(
+                              controller: _searchTextController,
+                              onChanged: _onSearchChanged,
+                              style: TextStyle(color: Colors.white, fontSize: 14),
+                              decoration: InputDecoration(
+                                hintText: 'Search connected favorites...',
+                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.6), size: 20),
+                              ),
+                              autofocus: true,
+                            ),
+                          ),
+                        )
+                      : FadeTransition(
+                          opacity: Animation.fromValueListenable(
+                            ValueNotifier(1.0 - _searchSlideAnimation.value),
+                          ),
+                          child: Text(
+                            'Connected Favorites',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      )
-                    : FadeTransition(
-                        opacity: Animation.fromValueListenable(
-                          ValueNotifier(1.0 - _searchSlideAnimation.value),
-                        ),
-                        child: Text(
-                          'Connected',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                ),
-                SizedBox(width: 15),
-                GestureDetector(
-                  onTap: _toggleSearch,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
+                  ),
+                  SizedBox(width: 15),
+                  GestureDetector(
+                    onTap: _toggleSearch,
                     child: Icon(
                       isSearchMode ? Icons.close : Icons.search,
                       color: Colors.white.withOpacity(0.8),
+                      size: 24,
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 15),
-            Text(
-              '${filteredFavorites.length} shared favorites',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 14,
+                ],
               ),
-            ),
-          ],
+              SizedBox(height: 12),
+              Text(
+                '${filteredFavorites.length} shared favorites',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -480,7 +464,10 @@ class _ConnectedFavoritesPageState extends State<ConnectedFavoritesPage>
                 child: ElevatedButton(
                   onPressed: () {
                     HapticFeedback.lightImpact();
-                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SyncUserPage()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFFF8C00),

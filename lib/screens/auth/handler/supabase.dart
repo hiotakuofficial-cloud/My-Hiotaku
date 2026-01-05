@@ -335,10 +335,13 @@ class SupabaseHandler {
   /// Get connected favorites for user
   static Future<List<Map<String, dynamic>>?> getConnectedFavorites(String userId) async {
     try {
-      return await getData(
-        table: 'connected_fav',
-        filters: {'user1_id': userId},
-      );
+      // Query both user1_id and user2_id to get all connections
+      final response = await supabase
+          .from('connected_fav')
+          .select()
+          .or('user1_id.eq.$userId,user2_id.eq.$userId');
+      
+      return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       // Return null on database error - let caller handle gracefully
       return null;
