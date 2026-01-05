@@ -6,6 +6,7 @@ import 'requests/requests.dart';
 import 'notifications/notification_of_user.dart';
 import 'notifications/handler/notification_of_user_handler.dart';
 import 'downloads/downloads.dart';
+import 'favourite/connected.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -382,6 +383,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const RequestsPage()),
+                  );
+                } else if (title == 'Favourites') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ConnectedFavoritesPage()),
                   );
                 } else if (title == 'Downloads') {
                   Navigator.push(
