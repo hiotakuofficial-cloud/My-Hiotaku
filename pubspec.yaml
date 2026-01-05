@@ -24,6 +24,7 @@ dependencies:
   url_launcher: ^6.2.2
   device_info_plus: ^9.1.2
   package_info_plus: ^4.2.0
+  share_plus: ^7.2.2
 
 dev_dependencies:
   flutter_test:

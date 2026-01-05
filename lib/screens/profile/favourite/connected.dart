@@ -4,11 +4,14 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:lottie/lottie.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../favourite/handler/favourite_handler.dart';
 import '../../errors/no_internet.dart';
 import '../../errors/loading_error.dart';
 import '../../details/details.dart';
 import '../../favourite/syncuser/syncuser.dart';
+import '../../player/player/player.dart';
+import '../../auth/handler/supabase.dart';
 
 class ConnectedFavoritesPage extends StatefulWidget {
   @override
@@ -513,8 +516,6 @@ class _ConnectedFavoritesPageState extends State<ConnectedFavoritesPage>
   }
 
   Widget _buildFavoriteCard(Map<String, dynamic> favorite, int index) {
-    final isSelected = selectedAnimeId == favorite['anime_id'];
-    
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -536,116 +537,85 @@ class _ConnectedFavoritesPageState extends State<ConnectedFavoritesPage>
       },
       onLongPress: () {
         HapticFeedback.mediumImpact();
-        setState(() {
-          selectedAnimeId = isSelected ? null : favorite['anime_id'];
-        });
+        _showContextMenu(context, favorite);
       },
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 300),
+      child: Container(
         margin: EdgeInsets.only(bottom: 15),
         decoration: BoxDecoration(
+          color: Color(0xFF1E1E1E),
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: isSelected ? Color(0xFFFF8C00) : Colors.white.withOpacity(0.1),
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        child: Stack(
+        child: Row(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(15),
+            ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(15),
+                bottomLeft: Radius.circular(15),
               ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      bottomLeft: Radius.circular(15),
+              child: Container(
+                width: 100,
+                height: 140,
+                child: favorite['anime_image'] != null
+                  ? Image.network(
+                      favorite['anime_image'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Color(0xFF2A2A2A),
+                          child: Icon(Icons.image_not_supported, color: Colors.white.withOpacity(0.5)),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Color(0xFF2A2A2A),
+                      child: Icon(Icons.image, color: Colors.white.withOpacity(0.5)),
                     ),
-                    child: Container(
-                      width: 100,
-                      height: 140,
-                      child: favorite['anime_image'] != null
-                        ? Image.network(
-                            favorite['anime_image'],
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Color(0xFF2A2A2A),
-                                child: Icon(Icons.image_not_supported, color: Colors.white.withOpacity(0.5)),
-                              );
-                            },
-                          )
-                        : Container(
-                            color: Color(0xFF2A2A2A),
-                            child: Icon(Icons.image, color: Colors.white.withOpacity(0.5)),
-                          ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            favorite['anime_title'] ?? 'Unknown Title',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Added ${_formatDate(favorite['added_at'])}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(Icons.favorite, color: Color(0xFFFF8C00), size: 16),
-                              SizedBox(width: 4),
-                              Text(
-                                'Shared favorite',
-                                style: TextStyle(
-                                  color: Color(0xFFFF8C00),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
-            if (isSelected)
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(15),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      favorite['anime_title'] ?? 'Unknown Title',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                      child: _buildUserDetails(favorite),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Added ${_formatDate(favorite['added_at'])}',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.favorite, color: Color(0xFFFF8C00), size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Shared favorite',
+                          style: TextStyle(
+                            color: Color(0xFFFF8C00),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -706,6 +676,217 @@ class _ConnectedFavoritesPageState extends State<ConnectedFavoritesPage>
         ],
       ),
     );
+  }
+
+  void _showContextMenu(BuildContext context, Map<String, dynamic> favorite) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 60,
+                          height: 80,
+                          child: favorite['anime_image'] != null
+                            ? Image.network(favorite['anime_image'], fit: BoxFit.cover)
+                            : Container(color: Color(0xFF2A2A2A)),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              favorite['anime_title'] ?? 'Unknown Title',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Added ${_formatDate(favorite['added_at'])}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  _buildContextMenuItem(
+                    icon: Icons.play_arrow,
+                    title: 'Watch Now',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlayerScreen(
+                            animeId: favorite['anime_id'] ?? '',
+                            animeTitle: favorite['anime_title'] ?? '',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildContextMenuItem(
+                    icon: Icons.share,
+                    title: 'Share',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _shareAnime(favorite);
+                    },
+                  ),
+                  _buildContextMenuItem(
+                    icon: Icons.info_outline,
+                    title: 'View Details',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AnimeDetailsPage(
+                            animeId: favorite['anime_id'] ?? '',
+                            title: favorite['anime_title'] ?? '',
+                            animeType: 'anime',
+                            description: '',
+                            genres: [],
+                            poster: favorite['anime_image'] ?? '',
+                            rating: 0.0,
+                            year: '',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContextMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        margin: EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white.withOpacity(0.8), size: 20),
+            SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Spacer(),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white.withOpacity(0.4),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _shareAnime(Map<String, dynamic> favorite) async {
+    try {
+      // Get current user info
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+      
+      final user = await SupabaseHandler.getUserByFirebaseUID(currentUser.uid);
+      final username = user?['username'] ?? 'Anonymous';
+      
+      // Create share message
+      final shareText = '''Hiotaku | Shared by $username
+
+Hey!  
+Want to watch this anime together?
+
+Anime ID: ${favorite['anime_id'] ?? ''}
+
+Note: This link works only inside the Hiotaku chat system.''';
+      
+      // Copy to clipboard
+      await Clipboard.setData(ClipboardData(text: shareText));
+      
+      // Show native share dialog
+      await Share.share(
+        shareText,
+        subject: 'Check out this anime: ${favorite['anime_title'] ?? 'Unknown'}',
+      );
+      
+      // Show confirmation
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Anime shared and copied to clipboard!'),
+            backgroundColor: Color(0xFFFF8C00),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share anime'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   String _formatDate(dynamic dateTime) {

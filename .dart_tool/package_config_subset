@@ -74,6 +74,10 @@ convert
 3.4
 file:///root/.pub-cache/hosted/pub.dev/convert-3.1.2/
 file:///root/.pub-cache/hosted/pub.dev/convert-3.1.2/lib/
+cross_file
+3.7
+file:///root/.pub-cache/hosted/pub.dev/cross_file-0.3.5/
+file:///root/.pub-cache/hosted/pub.dev/cross_file-0.3.5/lib/
 crypto
 3.4
 file:///root/.pub-cache/hosted/pub.dev/crypto-3.0.7/
@@ -248,8 +252,8 @@ file:///root/.pub-cache/hosted/pub.dev/meta-1.16.0/
 file:///root/.pub-cache/hosted/pub.dev/meta-1.16.0/lib/
 mime
 3.2
-file:///root/.pub-cache/hosted/pub.dev/mime-2.0.0/
-file:///root/.pub-cache/hosted/pub.dev/mime-2.0.0/lib/
+file:///root/.pub-cache/hosted/pub.dev/mime-1.0.6/
+file:///root/.pub-cache/hosted/pub.dev/mime-1.0.6/lib/
 package_info_plus
 2.18
 file:///root/.pub-cache/hosted/pub.dev/package_info_plus-4.2.0/
@@ -346,6 +350,14 @@ rxdart
 2.12
 file:///root/.pub-cache/hosted/pub.dev/rxdart-0.28.0/
 file:///root/.pub-cache/hosted/pub.dev/rxdart-0.28.0/lib/
+share_plus
+2.18
+file:///root/.pub-cache/hosted/pub.dev/share_plus-7.2.2/
+file:///root/.pub-cache/hosted/pub.dev/share_plus-7.2.2/lib/
+share_plus_platform_interface
+2.18
+file:///root/.pub-cache/hosted/pub.dev/share_plus_platform_interface-3.4.0/
+file:///root/.pub-cache/hosted/pub.dev/share_plus_platform_interface-3.4.0/lib/
 shared_preferences
 3.5
 file:///root/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
@@ -450,6 +462,10 @@ url_launcher_windows
 3.4
 file:///root/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
 file:///root/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/lib/
+uuid
+3.0
+file:///root/.pub-cache/hosted/pub.dev/uuid-4.5.2/
+file:///root/.pub-cache/hosted/pub.dev/uuid-4.5.2/lib/
 vector_math
 2.14
 file:///root/.pub-cache/hosted/pub.dev/vector_math-2.1.4/
