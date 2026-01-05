@@ -1,5 +1,8 @@
 import '../../../services/api_service.dart';
 import '../../../models/api_models.dart';
+import '../../../services/notification_service.dart';
+import '../../auth/handler/supabase.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DetailsHandler {
   // Determine which API to use based on anime type and get details
@@ -204,6 +207,54 @@ class DetailsHandler {
         duration: episode['duration'] ?? 'Unknown',
       );
     }).toList();
+  }
+
+  // Send notification to connected users when favorite is added
+  static Future<void> notifyConnectedUsers({
+    required String animeTitle,
+    required String userId,
+  }) async {
+    try {
+      // Get connected users
+      final connectedUsers = await SupabaseHandler.getData(
+        table: 'merged_accounts',
+        filters: {'user1_id': userId},
+      );
+      
+      final connectedUsers2 = await SupabaseHandler.getData(
+        table: 'merged_accounts',
+        filters: {'user2_id': userId},
+      );
+      
+      List<String> userIds = [];
+      
+      // Add user2_id from first query
+      if (connectedUsers != null) {
+        for (var connection in connectedUsers) {
+          userIds.add(connection['user2_id'].toString());
+        }
+      }
+      
+      // Add user1_id from second query
+      if (connectedUsers2 != null) {
+        for (var connection in connectedUsers2) {
+          userIds.add(connection['user1_id'].toString());
+        }
+      }
+      
+      // Send notification to each connected user
+      for (String connectedUserId in userIds) {
+        await NotificationService.sendNotification(
+          userId: connectedUserId,
+          title: 'New Favorite Added',
+          body: 'Your friend added "$animeTitle" to favorites!',
+          type: 'favorite_added',
+          screen: '/favourite',
+        );
+      }
+    } catch (e) {
+      // Silent fail
+    }
   }
 }
 

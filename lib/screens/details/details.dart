@@ -195,6 +195,12 @@ class _AnimeDetailsPageState extends State<AnimeDetailsPage> {
           isBookmarked = true;
         });
         _showSnackBar('Added to favorites! ❤️');
+        
+        // Notify connected users
+        await DetailsHandler.notifyConnectedUsers(
+          animeTitle: widget.title,
+          userId: userData['id'].toString(),
+        );
       } else {
         _showSnackBar('Failed to add to favorites');
       }
