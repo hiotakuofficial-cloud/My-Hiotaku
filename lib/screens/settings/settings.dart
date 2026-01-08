@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/cupertino.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -78,31 +77,25 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
                     HapticFeedback.lightImpact();
                     Navigator.pop(context);
                   },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+                  child: Icon(
+                    Icons.arrow_back_ios,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 24,
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      'Settings',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
                   ),
                 ),
-                SizedBox(width: 20),
-                Text(
-                  'Settings',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                SizedBox(width: 24), // Balance the back icon
               ],
             ),
           ),
@@ -118,13 +111,13 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
         children: [
           _buildSection('User Settings', [
             _buildSettingItem(
-              CupertinoIcons.person_circle,
+              Icons.person_outline,
               'Account Settings',
               'Profile edit, Change password',
               () => _onTap('Account Settings'),
             ),
             _buildSettingItem(
-              CupertinoIcons.bell,
+              Icons.notifications_outlined,
               'Notification Settings',
               'Push notifications on/off',
               () => _onTap('Notification Settings'),
@@ -135,13 +128,13 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
           
           _buildSection('Privacy & Security', [
             _buildSettingItem(
-              CupertinoIcons.doc_text,
+              Icons.description_outlined,
               'Terms of Service',
               'Read our terms',
               () => _onTap('Terms of Service'),
             ),
             _buildSettingItem(
-              CupertinoIcons.lock_shield,
+              Icons.security_outlined,
               'Privacy Policy',
               'Your privacy matters',
               () => _onTap('Privacy Policy'),
@@ -152,19 +145,19 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
           
           _buildSection('About', [
             _buildSettingItem(
-              CupertinoIcons.info_circle,
+              Icons.info_outline,
               'App Version',
               '1.0.1+2',
               () => _onTap('App Version'),
             ),
             _buildSettingItem(
-              CupertinoIcons.chat_bubble_2,
+              Icons.support_outlined,
               'Contact Support',
               'Get help and support',
               () => _onTap('Contact Support'),
             ),
             _buildSettingItem(
-              CupertinoIcons.share,
+              Icons.share_outlined,
               'Share App',
               'Share with friends',
               () => _onTap('Share App'),
@@ -190,16 +183,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-            ),
-          ),
-          child: Column(children: items),
-        ),
+        Column(children: items),
       ],
     );
   }
@@ -260,7 +244,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               ),
             ),
             Icon(
-              CupertinoIcons.chevron_right,
+              Icons.chevron_right,
               color: Colors.white.withOpacity(0.4),
               size: 18,
             ),
