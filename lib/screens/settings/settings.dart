@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'screens/user_notification.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -120,7 +121,25 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               Icons.notifications_outlined,
               'Notification Settings',
               'Push notifications on/off',
-              () => _onTap('Notification Settings'),
+              () => Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => UserNotificationPage(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(1.0, 0.0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      )),
+                      child: child,
+                    );
+                  },
+                  transitionDuration: Duration(milliseconds: 300),
+                ),
+              ),
             ),
           ]),
           
@@ -199,7 +218,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withOpacity(0.1),
               width: 0.5,
             ),
           ),
@@ -207,16 +226,16 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
         child: Row(
           children: [
             Container(
-              width: 45,
-              height: 45,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: Color(0xFFFF8C00).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: Color(0xFFFF8C00),
-                size: 22,
+                color: Colors.white,
+                size: 20,
               ),
             ),
             SizedBox(width: 15),
