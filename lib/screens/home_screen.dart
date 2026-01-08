@@ -17,6 +17,7 @@ import 'pages/recently_added.dart';
 import 'auth/login.dart';
 import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
+import 'settings/settings.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../notifications/handler/firebase_messaging_handler.dart';
 import '../services/websocket_service.dart';
@@ -354,11 +355,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                     );
                   } else {
-                    // User logged in - navigate to settings (will create later)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Settings page coming soon!'),
-                        backgroundColor: Color(0xFFFF8C00),
+                    // User logged in - navigate to settings
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SettingsPage(),
                       ),
                     );
                   }
