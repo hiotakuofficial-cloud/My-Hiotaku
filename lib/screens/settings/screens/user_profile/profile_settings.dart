@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/handler/supabase.dart';
+import '../../../auth/forgot.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   @override
@@ -558,6 +559,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
+        physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: EdgeInsets.all(20),
         child: Form(
           key: _formKey,
@@ -783,6 +785,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
+        physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: EdgeInsets.all(20),
         child: Form(
           key: _formKey,
@@ -874,7 +877,32 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 },
               ),
               
-              SizedBox(height: 40),
+              SizedBox(height: 20),
+              
+              // Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ForgotPasswordScreen(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: Color(0xFF6C5CE7),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              
+              SizedBox(height: 20),
               
               SizedBox(
                 width: double.infinity,
