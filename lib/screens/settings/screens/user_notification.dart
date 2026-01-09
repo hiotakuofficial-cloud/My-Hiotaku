@@ -108,16 +108,17 @@ class _UserNotificationPageState extends State<UserNotificationPage> with Ticker
       child: Scaffold(
         backgroundColor: Color(0xFF121212),
         body: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
+          physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           child: Container(
-            height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+            ),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
             child: Column(
               children: [
                 _buildHeader(),
                 SizedBox(height: 30),
                 _buildNotificationSettings(),
-                Spacer(),
               ],
             ),
           ),
