@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/user_notification.dart';
 import 'screens/user_profile/profile_settings.dart';
 import 'screens/terms_of_service.dart';
@@ -16,6 +17,9 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
   late AnimationController _headerController;
   late Animation<double> _headerAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _isLoading = true;
+  bool _isUserLoggedIn = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -33,7 +37,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
       CurvedAnimation(parent: _headerController, curve: Curves.easeOutCubic),
     );
     
-    _headerController.forward();
+    _checkUserAuthentication();
   }
 
   @override
@@ -59,7 +63,13 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               children: [
                 _buildHeader(),
                 SizedBox(height: 30),
-                _buildSettingsList(),
+                _isLoading
+                    ? _buildLoadingState()
+                    : _errorMessage != null
+                        ? _buildErrorState()
+                        : _isUserLoggedIn
+                            ? _buildSettingsList()
+                            : _buildNotLoggedInState(),
               ],
             ),
           ),
@@ -377,5 +387,157 @@ High-quality streaming, curated anime content, and a seamless viewing experience
       
       await Share.share(fallbackText);
     }
+  }
+
+  Future<void> _checkUserAuthentication() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      // Check if user is logged in
+      final user = FirebaseAuth.instance.currentUser;
+      
+      setState(() {
+        _isUserLoggedIn = user != null;
+        _isLoading = false;
+      });
+
+      _headerController.forward();
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Network connection error. Please check your internet connection.';
+      });
+    }
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        children: [
+          SizedBox(height: 100),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8C00)),
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Checking authentication...',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        children: [
+          SizedBox(height: 100),
+          Icon(
+            Icons.wifi_off,
+            color: Colors.white.withOpacity(0.5),
+            size: 64,
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Network Connection Error',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Please check your internet connection',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: _checkUserAuthentication,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF8C00),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+            ),
+            child: Text(
+              'Retry',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotLoggedInState() {
+    return Center(
+      child: Column(
+        children: [
+          SizedBox(height: 100),
+          Icon(
+            Icons.lock_outline,
+            color: Colors.white.withOpacity(0.5),
+            size: 64,
+          ),
+          SizedBox(height: 20),
+          Text(
+            'You\'re Not Logged In',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'To access settings and personalize your experience, please log in to your account first.',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF8C00),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+            ),
+            child: Text(
+              'Login First',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
