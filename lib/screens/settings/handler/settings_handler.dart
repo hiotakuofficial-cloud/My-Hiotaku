@@ -133,9 +133,6 @@ class SettingsHandler {
         'sender': sender,
       };
       
-      print('Support Request URL: $url'); // Debug
-      print('Support Request Body: $body'); // Debug
-      
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -144,9 +141,6 @@ class SettingsHandler {
         },
         body: body,
       ).timeout(AppConfig.requestTimeout);
-      
-      print('Support Response Status: ${response.statusCode}'); // Debug
-      print('Support Response Body: ${response.body}'); // Debug
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -161,15 +155,26 @@ class SettingsHandler {
       } else {
         return {
           'success': false,
-          'error': 'Failed to submit support request: ${response.statusCode}',
+          'error': 'Server error (${response.statusCode})',
         };
       }
     } catch (e) {
-      print('Support Request Exception: $e'); // Debug
-      return {
-        'success': false,
-        'error': 'Network error: ${e.toString()}',
-      };
+      if (e.toString().contains('TimeoutException')) {
+        return {
+          'success': false,
+          'error': 'Request timeout - check internet connection',
+        };
+      } else if (e.toString().contains('SocketException')) {
+        return {
+          'success': false,
+          'error': 'No internet connection',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Network error: ${e.toString()}',
+        };
+      }
     }
   }
 
