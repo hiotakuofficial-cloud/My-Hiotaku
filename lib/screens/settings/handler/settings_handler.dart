@@ -143,12 +143,7 @@ class SettingsHandler {
       ).timeout(AppConfig.requestTimeout);
       
       if (response.statusCode == 200) {
-        // Extract JSON from response (ignore PHP warnings)
-        final responseBody = response.body;
-        final jsonStart = responseBody.indexOf('{');
-        final jsonString = jsonStart != -1 ? responseBody.substring(jsonStart) : responseBody;
-        
-        final data = json.decode(jsonString);
+        final data = json.decode(response.body);
         return {
           'success': data['success'] ?? false,
           'message': data['message'],
