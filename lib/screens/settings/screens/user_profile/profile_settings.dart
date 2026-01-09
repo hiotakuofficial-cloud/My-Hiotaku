@@ -875,11 +875,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 },
               ),
               
-              SizedBox(height: 20),
+              SizedBox(height: 8),
               
               // Forgot Password Link
               Align(
-                alignment: Alignment.centerRight,
+                alignment: Alignment.centerLeft,
                 child: TextButton(
                   onPressed: () {
                     Navigator.push(
