@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'screens/user_notification.dart';
 import 'screens/user_profile/profile_settings.dart';
 import 'screens/terms_of_service.dart';
 import 'screens/privacy_policy.dart';
+import 'handler/settings_handler.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -242,7 +244,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               Icons.share_outlined,
               'Share App',
               'Share with friends',
-              () => _onTap('Share App'),
+              () => _shareApp(),
             ),
           ]),
         ],
@@ -339,5 +341,41 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
   void _onTap(String setting) {
     // Handle navigation here
     print('Tapped: $setting');
+  }
+
+  Future<void> _shareApp() async {
+    try {
+      // Get app download link from API
+      final result = await SettingsHandler.getAppDownloadLink();
+      
+      if (result['success'] == true && result['download_link'] != null) {
+        final appUrl = result['download_link'];
+        final shareText = '''Experience Anime the Right Way with Hiotaku
+
+High-quality streaming, curated anime content, and a seamless viewing experience built for true anime fans.
+
+👉 Get started: $appUrl''';
+        
+        await Share.share(shareText);
+      } else {
+        // Fallback if API fails
+        const fallbackText = '''Experience Anime the Right Way with Hiotaku
+
+High-quality streaming, curated anime content, and a seamless viewing experience built for true anime fans.
+
+👉 Download the app and start watching!''';
+        
+        await Share.share(fallbackText);
+      }
+    } catch (e) {
+      // Fallback on error
+      const fallbackText = '''Experience Anime the Right Way with Hiotaku
+
+High-quality streaming, curated anime content, and a seamless viewing experience built for true anime fans.
+
+👉 Download the app and start watching!''';
+      
+      await Share.share(fallbackText);
+    }
   }
 }
