@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/user_notification.dart';
+import 'screens/user_profile/profile_settings.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -115,7 +116,25 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               Icons.person_outline,
               'Account Settings',
               'Profile edit, Change password',
-              () => _onTap('Account Settings'),
+              () => Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => ProfileSettingsScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(1.0, 0.0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      )),
+                      child: child,
+                    );
+                  },
+                  transitionDuration: Duration(milliseconds: 300),
+                ),
+              ),
             ),
             _buildSettingItem(
               Icons.notifications_outlined,
