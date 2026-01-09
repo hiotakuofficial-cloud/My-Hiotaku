@@ -71,13 +71,13 @@ class SettingsHandler {
       } else {
         return {
           'success': false,
-          'error': 'Failed to get download link: ${response.statusCode}',
+          'error': 'Unable to get download link',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: ${e.toString()}',
+        'error': 'Connection failed',
       };
     }
   }
@@ -103,13 +103,13 @@ class SettingsHandler {
       } else {
         return {
           'success': false,
-          'error': 'Failed to update URL: ${response.statusCode}',
+          'error': 'Unable to update download link',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: ${e.toString()}',
+        'error': 'Connection failed',
       };
     }
   }
@@ -148,26 +148,14 @@ class SettingsHandler {
       } else {
         return {
           'success': false,
-          'error': 'Server error (${response.statusCode}): ${response.body}',
+          'error': 'Unable to process request',
         };
       }
     } catch (e) {
-      if (e.toString().contains('TimeoutException')) {
-        return {
-          'success': false,
-          'error': 'Request timeout - check internet connection',
-        };
-      } else if (e.toString().contains('SocketException')) {
-        return {
-          'success': false,
-          'error': 'No internet connection',
-        };
-      } else {
-        return {
-          'success': false,
-          'error': 'Network error: ${e.toString()}',
-        };
-      }
+      return {
+        'success': false,
+        'error': 'Connection failed',
+      };
     }
   }
 
@@ -197,13 +185,13 @@ class SettingsHandler {
       } else {
         return {
           'success': false,
-          'error': 'Failed to get support messages: ${response.statusCode}',
+          'error': 'Unable to get messages',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: ${e.toString()}',
+        'error': 'Connection failed',
       };
     }
   }
@@ -231,13 +219,13 @@ class SettingsHandler {
       } else {
         return {
           'success': false,
-          'error': 'Failed to delete support ticket: ${response.statusCode}',
+          'error': 'Unable to delete ticket',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: ${e.toString()}',
+        'error': 'Connection failed',
       };
     }
   }
