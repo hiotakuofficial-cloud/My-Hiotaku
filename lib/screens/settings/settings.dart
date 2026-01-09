@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'screens/user_notification.dart';
 import 'screens/user_profile/profile_settings.dart';
 import 'screens/terms_of_service.dart';
+import 'screens/privacy_policy.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -194,7 +195,25 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               Icons.security_outlined,
               'Privacy Policy',
               'Your privacy matters',
-              () => _onTap('Privacy Policy'),
+              () => Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => PrivacyPolicyPage(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(1.0, 0.0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      )),
+                      child: child,
+                    );
+                  },
+                  transitionDuration: Duration(milliseconds: 300),
+                ),
+              ),
             ),
           ]),
           
