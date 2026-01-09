@@ -84,11 +84,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
                 position: _slideAnimation,
                 child: SingleChildScrollView(
                   physics: BouncingScrollPhysics(),
-                  padding: EdgeInsets.only(bottom: 100),
                   child: Column(
                     children: [
                       _buildHeader(),
-                      SizedBox(height: 20),
                       _isLoading
                           ? _buildLoadingState()
                           : _errorMessage != null
@@ -203,15 +201,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
   }
 
   Widget _buildContent() {
-    return Padding(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        children: [
-          _buildProfileCard(),
-          SizedBox(height: 24),
-          _buildActionButtons(),
-        ],
-      ),
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        _buildProfileCard(),
+        SizedBox(height: 40),
+        _buildActionButtons(),
+        SizedBox(height: 100), // Extra space for elastic scroll
+      ],
     );
   }
 
@@ -222,94 +219,158 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
     final username = _userData?['username'] ?? '';
     final avatarUrl = _userData?['avatar_url'] ?? user?.photoURL;
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xFF2A2A2A), width: 1),
-      ),
-      child: Column(
-        children: [
-          // Profile Image
-          _buildProfileImage(avatarUrl, displayName),
-          SizedBox(height: 16),
-          
-          // Display Name
-          Text(
-            displayName,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          
-          if (username.isNotEmpty) ...[
-            SizedBox(height: 4),
-            Text(
-              '@$username',
-              style: TextStyle(
-                color: Color(0xFF6C5CE7),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+    return Column(
+      children: [
+        // Profile Image
+        Stack(
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+              ),
+              child: ClipOval(
+                child: _buildProfileImage(avatarUrl, displayName),
               ),
             ),
           ],
-          
-          SizedBox(height: 8),
-          
-          // Email
+        ),
+        
+        SizedBox(height: 16),
+        
+        // Display Name
+        Text(
+          displayName,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        
+        if (username.isNotEmpty) ...[
+          SizedBox(height: 4),
           Text(
-            email,
+            '@$username',
             style: TextStyle(
-              color: Colors.grey[400],
+              color: Colors.white.withOpacity(0.6),
               fontSize: 14,
             ),
           ),
-          
-          SizedBox(height: 16),
-          
-          // Join Date
-          if (_userData?['created_at'] != null) ...[
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Color(0xFF2A2A2A),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Joined ${_formatDate(_userData!['created_at'])}',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 12,
-                ),
+        ],
+        
+        SizedBox(height: 8),
+        
+        // Email
+        Text(
+          email,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.6),
+            fontSize: 14,
+          ),
+        ),
+        
+        SizedBox(height: 16),
+        
+        // Join Date
+        if (_userData?['created_at'] != null) ...[
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Joined ${_formatDate(_userData!['created_at'])}',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 12,
               ),
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
-  Widget _buildDefaultAvatar(String name) {
+  Widget _buildProfileImage(String? avatarUrl, String displayName) {
+    if (_isLoading) {
+      return Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey.withOpacity(0.3),
+        ),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF8C00),
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+    
+    // Try to load from assets first
+    if (avatarUrl != null && avatarUrl.startsWith('assets/')) {
+      return Image.asset(
+        avatarUrl,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackAvatar(displayName);
+        },
+      );
+    }
+    
+    // Try to load from network (Firebase photo URL)
+    if (avatarUrl != null && avatarUrl.startsWith('http')) {
+      return Image.network(
+        avatarUrl,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFFF8C00),
+              strokeWidth: 2,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackAvatar(displayName);
+        },
+      );
+    }
+    
+    // Fallback to default avatar
+    return _buildFallbackAvatar(displayName);
+  }
+
+  Widget _buildFallbackAvatar(String displayName) {
+    String initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'H';
     return Container(
-      width: double.infinity,
-      height: double.infinity,
+      width: 100,
+      height: 100,
       decoration: BoxDecoration(
+        shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [Color(0xFF6C5CE7), Color(0xFF74B9FF)],
+          colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: Center(
         child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : 'U',
+          initial,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 32,
+            fontSize: 40,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -317,121 +378,69 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
     );
   }
 
-  Widget _buildProfileImage(String? avatarUrl, String displayName) {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Color(0xFF6C5CE7), width: 2),
-      ),
-      child: ClipOval(
-        child: avatarUrl != null && avatarUrl.isNotEmpty
-            ? (avatarUrl.startsWith('http')
-                ? Image.network(
-                    avatarUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildDefaultAvatar(displayName);
-                    },
-                  )
-                : Image.asset(
-                    avatarUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildDefaultAvatar(displayName);
-                    },
-                  ))
-            : _buildDefaultAvatar(displayName),
-      ),
-    );
-  }
+
+
+
 
   Widget _buildActionButtons() {
-    return Column(
-      children: [
-        _buildActionButton(
-          icon: Icons.edit_outlined,
-          title: 'Edit Profile',
-          subtitle: 'Update your profile information',
-          onTap: () => _navigateToEditProfile(),
-        ),
-        SizedBox(height: 16),
-        _buildActionButton(
-          icon: Icons.lock_outline,
-          title: 'Change Password',
-          subtitle: 'Update your account password',
-          onTap: () => _navigateToChangePassword(),
-        ),
-      ],
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          _buildActionButton(
+            icon: Icons.edit_outlined,
+            title: 'Edit Profile',
+            onTap: () => _navigateToEditProfile(),
+          ),
+          _buildActionButton(
+            icon: Icons.lock_outline,
+            title: 'Change Password',
+            onTap: () => _navigateToChangePassword(),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildActionButton({
     required IconData icon,
     required String title,
-    required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Container(
-      width: double.infinity,
-      child: Material(
-        color: Color(0xFF1A1A1A),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              border: Border.all(color: Color(0xFF2A2A2A), width: 1),
-              borderRadius: BorderRadius.circular(12),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white.withOpacity(0.8),
+                size: 20,
+              ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF6C5CE7).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Color(0xFF6C5CE7),
-                    size: 24,
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.grey[600],
-                  size: 16,
-                ),
-              ],
+            title: Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white.withOpacity(0.4),
+              size: 16,
             ),
           ),
         ),
