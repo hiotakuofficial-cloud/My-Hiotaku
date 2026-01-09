@@ -168,6 +168,12 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
           
           _buildSection('Privacy & Security', [
             _buildSettingItem(
+              Icons.lock_outlined,
+              'Lock Chat',
+              'Secure your conversations',
+              () => _onTap('Lock Chat'),
+            ),
+            _buildSettingItem(
               Icons.description_outlined,
               'Terms of Service',
               'Read our terms',
