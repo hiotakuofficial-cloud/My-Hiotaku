@@ -380,7 +380,7 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
 
       final result = await SettingsHandler.submitSupportRequest(
         username: user.displayName ?? user.email?.split('@')[0] ?? 'User',
-        userId: user.uid,
+        userId: user.uid.substring(0, 20), // Truncate to 20 chars for API limit
         message: _messageController.text.trim(),
       );
 
