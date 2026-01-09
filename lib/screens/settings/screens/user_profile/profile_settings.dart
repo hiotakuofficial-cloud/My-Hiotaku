@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/handler/supabase.dart';
 import '../../../auth/forgot.dart';
@@ -73,39 +74,48 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFF0A0A0A),
-      body: RefreshIndicator(
-        onRefresh: () async => _loadUserData(),
-        color: Color(0xFFFF8C00),
-        backgroundColor: Color(0xFF1E1E1E),
-        child: AnimatedBuilder(
-          animation: _headerController,
-          builder: (context, child) {
-            return FadeTransition(
-              opacity: _headerAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
-                    child: Column(
-                      children: [
-                        _buildHeader(),
-                        SizedBox(height: 20),
-                        _isLoading
-                            ? _buildLoadingState()
-                            : _errorMessage != null
-                                ? _buildErrorState()
-                                : _buildContent(),
-                      ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: RefreshIndicator(
+          onRefresh: () async => _loadUserData(),
+          color: Color(0xFFFF8C00),
+          backgroundColor: Color(0xFF1E1E1E),
+          child: AnimatedBuilder(
+            animation: _headerController,
+            builder: (context, child) {
+              return FadeTransition(
+                opacity: _headerAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: SingleChildScrollView(
+                    physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    child: Container(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+                      ),
+                      padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
+                      child: Column(
+                        children: [
+                          _buildHeader(),
+                          SizedBox(height: 30),
+                          _isLoading
+                              ? _buildLoadingState()
+                              : _errorMessage != null
+                                  ? _buildErrorState()
+                                  : _buildContent(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -113,35 +123,31 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
 
   Widget _buildHeader() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(24),
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 48,
-              height: 48,
-              child: Center(
-                child: Icon(
-                  Icons.arrow_back_ios,
-                  color: Colors.white.withOpacity(0.8),
-                  size: 20,
-                ),
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.pop(context);
+          },
+          child: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white.withOpacity(0.7),
+            size: 24,
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Text(
+              'Profile Settings',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
         ),
-        Text(
-          'Profile Settings',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(width: 48), // Balance the back button
+        SizedBox(width: 24),
       ],
     );
   }
@@ -208,11 +214,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
   Widget _buildContent() {
     return Column(
       children: [
-        SizedBox(height: 20),
         _buildProfileCard(),
         SizedBox(height: 40),
         _buildActionButtons(),
-        SizedBox(height: 100), // Extra space for elastic scroll
       ],
     );
   }
@@ -407,27 +411,23 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
 
 
   Widget _buildActionButtons() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          _buildActionButton(
-            icon: Icons.edit_outlined,
-            title: 'Edit Profile',
-            onTap: () => _navigateToEditProfile(),
-          ),
-          Container(
-            height: 0.5,
-            color: Colors.white.withOpacity(0.1),
-            margin: EdgeInsets.symmetric(horizontal: 16),
-          ),
-          _buildActionButton(
-            icon: Icons.lock_outline,
-            title: 'Change Password',
-            onTap: () => _navigateToChangePassword(),
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        _buildActionButton(
+          icon: Icons.edit_outlined,
+          title: 'Edit Profile',
+          onTap: () => _navigateToEditProfile(),
+        ),
+        Container(
+          height: 0.5,
+          color: Colors.white.withOpacity(0.1),
+        ),
+        _buildActionButton(
+          icon: Icons.lock_outline,
+          title: 'Change Password',
+          onTap: () => _navigateToChangePassword(),
+        ),
+      ],
     );
   }
 
@@ -440,9 +440,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
         child: Container(
-          margin: EdgeInsets.only(bottom: 8),
           child: ListTile(
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             leading: Container(
