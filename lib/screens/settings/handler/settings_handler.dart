@@ -169,12 +169,10 @@ class SettingsHandler {
   // Get support messages
   static Future<Map<String, dynamic>> getSupportMessages({
     required String support, // 'all' or userId
-    int limit = 50,
   }) async {
     try {
       final url = _buildSupportTicketUrl('get', {
         'support': support,
-        'limit': limit.toString(),
       });
       
       final response = await http.get(
