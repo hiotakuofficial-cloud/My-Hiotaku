@@ -5,6 +5,7 @@ import '../../../config.dart';
 class SettingsHandler {
   // App Download API Configuration
   static const String _supportApiEndpoint = '/support/v1/app.php';
+  static const String _supportTicketEndpoint = '/support/v1/index.php';
   static const String _authKey = 'nehubaby';
   static const String _authKey2 = 'pihupapa';
   
@@ -25,6 +26,22 @@ class SettingsHandler {
         .join('&');
     
     return '${AppConfig.animeApiBaseUrl}$_supportApiEndpoint?$queryParams';
+  }
+
+  // Build support ticket API URL
+  static String _buildSupportTicketUrl(String action, Map<String, String> params) {
+    final allParams = <String, String>{
+      'action': action,
+      'authkey': _authKey,
+      'authkey2': _authKey2,
+      ...params,
+    };
+    
+    final queryParams = allParams.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+    
+    return '${AppConfig.animeApiBaseUrl}$_supportTicketEndpoint?$queryParams';
   }
   
   // Get current app download link
@@ -80,6 +97,131 @@ class SettingsHandler {
         return {
           'success': false,
           'error': 'Failed to update URL: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Submit support request
+  static Future<Map<String, dynamic>> submitSupportRequest({
+    required String username,
+    required String userId,
+    required String message,
+    String sender = 'user',
+  }) async {
+    try {
+      final url = _buildSupportTicketUrl('support', {});
+      
+      final body = {
+        'authkey': _authKey,
+        'authkey2': _authKey2,
+        'username': username,
+        'userId': userId,
+        'message': message,
+        'sender': sender,
+      };
+      
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          ...AppConfig.defaultHeaders,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body,
+      ).timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': data['success'] ?? false,
+          'message': data['message'],
+          'support_ticket': data['support_ticket'],
+          'ticket_id': data['ticket_id'],
+          'timestamp': data['timestamp'],
+          'error': data['error'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to submit support request: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get support messages
+  static Future<Map<String, dynamic>> getSupportMessages({
+    required String support, // 'all' or userId
+    int limit = 50,
+  }) async {
+    try {
+      final url = _buildSupportTicketUrl('get', {
+        'support': support,
+        'limit': limit.toString(),
+      });
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: AppConfig.defaultHeaders,
+      ).timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': data['success'] ?? false,
+          'messages': data['messages'],
+          'count': data['count'],
+          'limit': data['limit'],
+          'error': data['error'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to get support messages: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Delete support ticket
+  static Future<Map<String, dynamic>> deleteSupportTicket(int supportId) async {
+    try {
+      final url = _buildSupportTicketUrl('delete', {
+        'supportId': supportId.toString(),
+      });
+      
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: AppConfig.defaultHeaders,
+      ).timeout(AppConfig.requestTimeout);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': data['success'] ?? false,
+          'message': data['message'],
+          'deleted_id': data['deleted_id'],
+          'error': data['error'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to delete support ticket: ${response.statusCode}',
         };
       }
     } catch (e) {
