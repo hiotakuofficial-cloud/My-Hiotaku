@@ -384,6 +384,18 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
         message: _messageController.text.trim(),
       );
 
+      // Debug toast to show request details
+      if (result['debug'] != null) {
+        final debug = result['debug'];
+        Fluttertoast.showToast(
+          msg: "DEBUG: URL: ${debug['url']}\nUser: ${debug['username']}\nUID: ${debug['userId']}\nMsg: ${debug['message']}",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.blue,
+          textColor: Colors.white,
+        );
+      }
+
       if (result['success'] == true) {
         setState(() {
           _isLoading = false;

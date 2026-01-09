@@ -124,22 +124,25 @@ class SettingsHandler {
     try {
       final url = '${AppConfig.animeApiBaseUrl}$_supportTicketEndpoint?action=support';
       
-      final body = {
-        'authkey': _authKey,
-        'authkey2': _authKey2,
+      // Simple form data encoding
+      final bodyData = 'authkey=$_authKey&authkey2=$_authKey2&username=${Uri.encodeComponent(username)}&userId=${Uri.encodeComponent(userId)}&message=${Uri.encodeComponent(message)}&sender=$sender';
+      
+      // Debug info for toast
+      final debugInfo = {
+        'url': url,
+        'body': bodyData,
         'username': username,
         'userId': userId,
         'message': message,
-        'sender': sender,
       };
       
       final response = await http.post(
         Uri.parse(url),
         headers: {
-          ...AppConfig.defaultHeaders,
           'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Hiotaku-App/1.0',
         },
-        body: body,
+        body: bodyData,
       ).timeout(AppConfig.requestTimeout);
       
       if (response.statusCode == 200) {
@@ -151,28 +154,41 @@ class SettingsHandler {
           'ticket_id': data['ticket_id'],
           'timestamp': data['timestamp'],
           'error': data['error'],
+          'debug': debugInfo,
         };
       } else {
         return {
           'success': false,
-          'error': 'Server error (${response.statusCode})',
+          'error': 'Server error (${response.statusCode}): ${response.body}',
+          'debug': debugInfo,
         };
       }
     } catch (e) {
+      final debugInfo = {
+        'url': '${AppConfig.animeApiBaseUrl}$_supportTicketEndpoint?action=support',
+        'username': username,
+        'userId': userId,
+        'message': message,
+        'error': e.toString(),
+      };
+      
       if (e.toString().contains('TimeoutException')) {
         return {
           'success': false,
           'error': 'Request timeout - check internet connection',
+          'debug': debugInfo,
         };
       } else if (e.toString().contains('SocketException')) {
         return {
           'success': false,
           'error': 'No internet connection',
+          'debug': debugInfo,
         };
       } else {
         return {
           'success': false,
           'error': 'Network error: ${e.toString()}',
+          'debug': debugInfo,
         };
       }
     }
