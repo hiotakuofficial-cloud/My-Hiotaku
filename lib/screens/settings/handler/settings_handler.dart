@@ -133,6 +133,9 @@ class SettingsHandler {
         'sender': sender,
       };
       
+      print('Support Request URL: $url'); // Debug
+      print('Support Request Body: $body'); // Debug
+      
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -141,6 +144,9 @@ class SettingsHandler {
         },
         body: body,
       ).timeout(AppConfig.requestTimeout);
+      
+      print('Support Response Status: ${response.statusCode}'); // Debug
+      print('Support Response Body: ${response.body}'); // Debug
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -159,6 +165,7 @@ class SettingsHandler {
         };
       }
     } catch (e) {
+      print('Support Request Exception: $e'); // Debug
       return {
         'success': false,
         'error': 'Network error: ${e.toString()}',
