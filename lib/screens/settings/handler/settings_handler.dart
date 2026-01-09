@@ -122,7 +122,7 @@ class SettingsHandler {
     String sender = 'user',
   }) async {
     try {
-      final url = _buildSupportTicketUrl('support', {});
+      final url = '${AppConfig.animeApiBaseUrl}$_supportTicketEndpoint?action=support';
       
       final body = {
         'authkey': _authKey,
@@ -143,7 +143,12 @@ class SettingsHandler {
       ).timeout(AppConfig.requestTimeout);
       
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        // Extract JSON from response (ignore PHP warnings)
+        final responseBody = response.body;
+        final jsonStart = responseBody.indexOf('{');
+        final jsonString = jsonStart != -1 ? responseBody.substring(jsonStart) : responseBody;
+        
+        final data = json.decode(jsonString);
         return {
           'success': data['success'] ?? false,
           'message': data['message'],

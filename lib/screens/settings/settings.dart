@@ -506,7 +506,8 @@ High-quality streaming, curated anime content, and a seamless viewing experience
   }
 
   Widget _buildNotLoggedInState() {
-    return Center(
+    return SlideTransition(
+      position: _slideAnimation,
       child: Column(
         children: [
           SizedBox(height: 100),

@@ -364,7 +364,7 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
       }
 
       final result = await SettingsHandler.submitSupportRequest(
-        username: user.displayName ?? 'User',
+        username: user.displayName ?? user.email?.split('@')[0] ?? 'User',
         userId: user.uid,
         message: _messageController.text.trim(),
       );
@@ -379,6 +379,7 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
         }
       });
     } catch (e) {
+      print('Support request error: $e'); // Debug log
       setState(() {
         _isLoading = false;
         _isFailed = true;
