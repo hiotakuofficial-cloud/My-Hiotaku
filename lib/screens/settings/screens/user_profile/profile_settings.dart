@@ -74,7 +74,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF0A0A0A),
-      body: SafeArea(
+      body: RefreshIndicator(
+        onRefresh: () async => _loadUserData(),
+        color: Color(0xFFFF8C00),
+        backgroundColor: Color(0xFF1E1E1E),
         child: AnimatedBuilder(
           animation: _headerController,
           builder: (context, child) {
@@ -83,16 +86,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
               child: SlideTransition(
                 position: _slideAnimation,
                 child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      _buildHeader(),
-                      _isLoading
-                          ? _buildLoadingState()
-                          : _errorMessage != null
-                              ? _buildErrorState()
-                              : _buildContent(),
-                    ],
+                  physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  child: Container(
+                    padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 20),
+                    child: Column(
+                      children: [
+                        _buildHeader(),
+                        SizedBox(height: 20),
+                        _isLoading
+                            ? _buildLoadingState()
+                            : _errorMessage != null
+                                ? _buildErrorState()
+                                : _buildContent(),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -104,40 +111,37 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 48,
-                height: 48,
-                child: Center(
-                  child: Icon(
-                    Icons.arrow_back_ios,
-                    color: Colors.white.withOpacity(0.8),
-                    size: 20,
-                  ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 20,
                 ),
               ),
             ),
           ),
-          Text(
-            'Profile Settings',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        Text(
+          'Profile Settings',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
-          SizedBox(width: 48), // Balance the back button
-        ],
-      ),
+        ),
+        SizedBox(width: 48), // Balance the back button
+      ],
     );
   }
 
@@ -295,6 +299,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
     );
   }
 
+  String _getProfileImagePath(Map<String, dynamic>? userData) {
+    String? profileImage = userData?['avatar_url'];
+    if (profileImage == null || profileImage.isEmpty) {
+      return 'assets/profile/default/default.png';
+    }
+    
+    if (profileImage.startsWith('male') || profileImage.startsWith('female')) {
+      String gender = profileImage.startsWith('male') ? 'male' : 'female';
+      return 'assets/profile/$gender/$profileImage';
+    }
+    
+    if (profileImage.startsWith('http')) {
+      return profileImage; // Network URL
+    }
+    
+    return 'assets/profile/default/default.png';
+  }
+
   Widget _buildProfileImage(String? avatarUrl, String displayName) {
     if (_isLoading) {
       return Container(
@@ -313,10 +335,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
       );
     }
     
+    // Get proper image path
+    String imagePath = _getProfileImagePath(_userData);
+    
     // Try to load from assets first
-    if (avatarUrl != null && avatarUrl.startsWith('assets/')) {
+    if (imagePath.startsWith('assets/')) {
       return Image.asset(
-        avatarUrl,
+        imagePath,
         width: 100,
         height: 100,
         fit: BoxFit.cover,
@@ -327,9 +352,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
     }
     
     // Try to load from network (Firebase photo URL)
-    if (avatarUrl != null && avatarUrl.startsWith('http')) {
+    if (imagePath.startsWith('http')) {
       return Image.network(
-        avatarUrl,
+        imagePath,
         width: 100,
         height: 100,
         fit: BoxFit.cover,
@@ -361,8 +386,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
         shape: BoxShape.circle,
         gradient: LinearGradient(
           colors: [Color(0xFFFF8C00), Color(0xFFFF6B00)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
       ),
       child: Center(
@@ -370,7 +393,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
           initial,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 40,
+            fontSize: 36,
             fontWeight: FontWeight.bold,
           ),
         ),
