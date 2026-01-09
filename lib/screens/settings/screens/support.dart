@@ -396,8 +396,8 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
           _isFailed = true;
         });
         Fluttertoast.showToast(
-          msg: "Error: ${result['error'] ?? 'Unknown error'}",
-          toastLength: Toast.LENGTH_LONG,
+          msg: "Failed to send request. Please try again.",
+          toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
           backgroundColor: Colors.red,
           textColor: Colors.white,
@@ -409,8 +409,8 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
         _isFailed = true;
       });
       Fluttertoast.showToast(
-        msg: "Network error: ${e.toString()}",
-        toastLength: Toast.LENGTH_LONG,
+        msg: "Network connection error. Please check your internet.",
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: Colors.red,
         textColor: Colors.white,
