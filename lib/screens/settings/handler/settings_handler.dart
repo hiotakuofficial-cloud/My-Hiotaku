@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../config.dart';
 
 class SettingsHandler {
@@ -8,6 +9,12 @@ class SettingsHandler {
   static const String _supportTicketEndpoint = '/support/v1/index.php';
   static const String _authKey = 'nehubaby';
   static const String _authKey2 = 'pihupapa';
+  
+  // Get current user's Firebase UID
+  static String? getCurrentUserId() {
+    final user = FirebaseAuth.instance.currentUser;
+    return user?.uid;
+  }
   
   // Build support API URL
   static String _buildSupportUrl(String action, {String? url}) {
