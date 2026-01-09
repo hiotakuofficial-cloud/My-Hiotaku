@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../handler/settings_handler.dart';
 
 class SupportPage extends StatefulWidget {
@@ -346,6 +347,13 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
 
   Future<void> _submitSupportRequest() async {
     if (_messageController.text.trim().isEmpty) {
+      Fluttertoast.showToast(
+        msg: "Please enter a message",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
       return;
     }
 
@@ -365,7 +373,7 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
 
       final result = await SettingsHandler.submitSupportRequest(
         username: user.displayName ?? user.email?.split('@')[0] ?? 'User',
-        userId: user.uid.substring(0, 20), // Truncate to 20 chars for API limit
+        userId: user.uid.substring(0, 20),
         message: _messageController.text.trim(),
       );
 
@@ -375,17 +383,38 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
           _isSuccess = true;
           _supportTicket = result['support_ticket'];
         });
+        Fluttertoast.showToast(
+          msg: "Support request sent successfully!",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
       } else {
         setState(() {
           _isLoading = false;
           _isFailed = true;
         });
+        Fluttertoast.showToast(
+          msg: "Error: ${result['error'] ?? 'Unknown error'}",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
         _isFailed = true;
       });
+      Fluttertoast.showToast(
+        msg: "Network error: ${e.toString()}",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
     }
   }
 }
