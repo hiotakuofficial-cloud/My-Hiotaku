@@ -415,6 +415,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Tick
             title: 'Edit Profile',
             onTap: () => _navigateToEditProfile(),
           ),
+          Container(
+            height: 0.5,
+            color: Colors.white.withOpacity(0.1),
+            margin: EdgeInsets.symmetric(horizontal: 16),
+          ),
           _buildActionButton(
             icon: Icons.lock_outline,
             title: 'Change Password',
