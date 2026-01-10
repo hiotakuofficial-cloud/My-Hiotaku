@@ -7,6 +7,7 @@ import 'screens/user_profile/profile_settings.dart';
 import 'screens/terms_of_service.dart';
 import 'screens/privacy_policy.dart';
 import 'screens/support.dart';
+import 'screens/chat_lock.dart';
 import 'handler/settings_handler.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -184,7 +185,25 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               Icons.lock_outlined,
               'Lock Chat',
               'Secure your conversations',
-              () => _onTap('Lock Chat'),
+              () => Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => ChatLockPage(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(1.0, 0.0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      )),
+                      child: child,
+                    );
+                  },
+                  transitionDuration: Duration(milliseconds: 300),
+                ),
+              ),
             ),
             _buildSettingItem(
               Icons.description_outlined,
