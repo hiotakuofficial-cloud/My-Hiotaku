@@ -383,13 +383,6 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
           _isSuccess = true;
           _supportTicket = result['support_ticket'];
         });
-        Fluttertoast.showToast(
-          msg: "Support request sent successfully!",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
       } else {
         setState(() {
           _isLoading = false;
