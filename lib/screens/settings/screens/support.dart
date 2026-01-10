@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import '../handler/settings_handler.dart';
 
 class SupportPage extends StatefulWidget {
@@ -347,13 +346,6 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
 
   Future<void> _submitSupportRequest() async {
     if (_messageController.text.trim().isEmpty) {
-      Fluttertoast.showToast(
-        msg: "Please enter a message",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
       return;
     }
 
@@ -388,26 +380,12 @@ class _SupportPageState extends State<SupportPage> with TickerProviderStateMixin
           _isLoading = false;
           _isFailed = true;
         });
-        Fluttertoast.showToast(
-          msg: "Failed to send request. Please try again.",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
         _isFailed = true;
       });
-      Fluttertoast.showToast(
-        msg: "Network connection error. Please check your internet.",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
     }
   }
 }
