@@ -17,7 +17,7 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
   late Animation<double> _headerAnimation;
   late Animation<Offset> _slideAnimation;
   
-  int _currentState = 0; // 0: Toggle, 1: Set Password, 2: Enter Password
+  int _currentState = 0; // 0: Toggle, 1: Select Length, 2: Set Password, 3: Confirm Password, 4: Enter Password
   bool _isLockEnabled = false;
   bool _isLoading = false;
   int _passwordLength = 4;
@@ -49,7 +49,7 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
     
     if (widget.directToPasswordEntry && _isLockEnabled) {
       setState(() {
-        _currentState = 2; // Direct to password entry
+        _currentState = 4; // Direct to password entry
       });
     }
     
@@ -80,8 +80,9 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
             padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 100),
             child: Column(
               children: [
-                _buildHeader(),
-                SizedBox(height: 30),
+                // Show header only for toggle and select length states
+                if (_currentState == 0 || _currentState == 1) _buildHeader(),
+                if (_currentState == 0 || _currentState == 1) SizedBox(height: 30),
                 _buildCurrentState(),
               ],
             ),
@@ -138,8 +139,12 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
       case 0:
         return _buildToggleState();
       case 1:
-        return _buildSetPasswordState();
+        return _buildSelectLengthState();
       case 2:
+        return _buildSetPasswordState();
+      case 3:
+        return _buildConfirmPasswordState();
+      case 4:
         return _buildEnterPasswordState();
       default:
         return _buildToggleState();
@@ -242,33 +247,28 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
     );
   }
   
-  Widget _buildSetPasswordState() {
+  Widget _buildSelectLengthState() {
     return SlideTransition(
       position: _slideAnimation,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 50),
-          Text(
-            'Set Your Password',
-            style: TextStyle(
-              color: Color(0xFFFF8C00),
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
+          SizedBox(height: 100),
+          Icon(
+            Icons.pin,
+            color: Color(0xFFFF8C00),
+            size: 80,
           ),
           SizedBox(height: 30),
-          
-          // Password Length Selection
           Text(
-            'Password Length',
+            'Choose Password Length',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 15),
+          SizedBox(height: 50),
+          
           Row(
             children: [
               Expanded(
@@ -276,15 +276,13 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
                   onTap: () {
                     setState(() {
                       _passwordLength = 4;
-                      _password = '';
-                      _confirmPassword = '';
                     });
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
                       color: _passwordLength == 4 ? Color(0xFFFF8C00) : Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _passwordLength == 4 ? Color(0xFFFF8C00) : Colors.white.withOpacity(0.1),
                       ),
@@ -293,29 +291,27 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
                       '4 Digits',
                       style: TextStyle(
                         color: _passwordLength == 4 ? Colors.white : Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: 15),
+              SizedBox(width: 20),
               Expanded(
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
                       _passwordLength = 6;
-                      _password = '';
-                      _confirmPassword = '';
                     });
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
                       color: _passwordLength == 6 ? Color(0xFFFF8C00) : Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _passwordLength == 6 ? Color(0xFFFF8C00) : Colors.white.withOpacity(0.1),
                       ),
@@ -324,8 +320,8 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
                       '6 Digits',
                       style: TextStyle(
                         color: _passwordLength == 6 ? Colors.white : Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -335,42 +331,16 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
             ],
           ),
           
-          SizedBox(height: 30),
-          
-          // Password Input
-          Text(
-            'Enter Password',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 15),
-          _buildPasswordDots(_password, _passwordLength),
-          
-          SizedBox(height: 30),
-          
-          // Confirm Password Input
-          Text(
-            'Confirm Password',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 15),
-          _buildPasswordDots(_confirmPassword, _passwordLength),
-          
-          SizedBox(height: 40),
-          _buildNumberPad(),
-          
-          SizedBox(height: 30),
+          SizedBox(height: 50),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _canSavePassword() ? _savePassword : null,
+              onPressed: () {
+                setState(() {
+                  _currentState = 2; // Go to set password
+                  _password = '';
+                });
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFFF8C00),
                 foregroundColor: Colors.white,
@@ -380,7 +350,7 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
                 padding: EdgeInsets.symmetric(vertical: 16),
               ),
               child: Text(
-                'Save Password',
+                'Next',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -393,18 +363,58 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
     );
   }
   
-  Widget _buildEnterPasswordState() {
-    return SlideTransition(
-      position: _slideAnimation,
+  Widget _buildSetPasswordState() {
+    return Container(
+      height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(height: 100),
-          Icon(
-            Icons.lock,
-            color: Color(0xFFFF8C00),
-            size: 80,
+          Text(
+            'Set Password',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          SizedBox(height: 30),
+          SizedBox(height: 40),
+          _buildPasswordDots(_password, _passwordLength),
+          SizedBox(height: 40),
+          _buildNumberPad(),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildConfirmPasswordState() {
+    return Container(
+      height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Confirm Password',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 40),
+          _buildPasswordDots(_confirmPassword, _passwordLength),
+          SizedBox(height: 40),
+          _buildNumberPad(),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildEnterPasswordState() {
+    return Container(
+      height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
           Text(
             'Enter Password',
             style: TextStyle(
@@ -558,14 +568,27 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
   
   void _onNumberPressed(String number) {
     setState(() {
-      if (_currentState == 1) {
+      if (_currentState == 2) {
         // Set password state
-        if (_password.length < _passwordLength && _confirmPassword.length == 0) {
+        if (_password.length < _passwordLength) {
           _password += number;
-        } else if (_confirmPassword.length < _passwordLength) {
-          _confirmPassword += number;
+          if (_password.length == _passwordLength) {
+            // Auto move to confirm password
+            setState(() {
+              _currentState = 3;
+              _confirmPassword = '';
+            });
+          }
         }
-      } else if (_currentState == 2) {
+      } else if (_currentState == 3) {
+        // Confirm password state
+        if (_confirmPassword.length < _passwordLength) {
+          _confirmPassword += number;
+          if (_confirmPassword.length == _passwordLength) {
+            _checkPasswordMatch();
+          }
+        }
+      } else if (_currentState == 4) {
         // Enter password state
         if (_enteredPassword.length < _passwordLength) {
           _enteredPassword += number;
@@ -579,10 +602,11 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
   
   void _onClearPressed() {
     setState(() {
-      if (_currentState == 1) {
+      if (_currentState == 2) {
         _password = '';
+      } else if (_currentState == 3) {
         _confirmPassword = '';
-      } else if (_currentState == 2) {
+      } else if (_currentState == 4) {
         _enteredPassword = '';
       }
     });
@@ -590,24 +614,20 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
   
   void _onDeletePressed() {
     setState(() {
-      if (_currentState == 1) {
-        if (_confirmPassword.isNotEmpty) {
-          _confirmPassword = _confirmPassword.substring(0, _confirmPassword.length - 1);
-        } else if (_password.isNotEmpty) {
+      if (_currentState == 2) {
+        if (_password.isNotEmpty) {
           _password = _password.substring(0, _password.length - 1);
         }
-      } else if (_currentState == 2) {
+      } else if (_currentState == 3) {
+        if (_confirmPassword.isNotEmpty) {
+          _confirmPassword = _confirmPassword.substring(0, _confirmPassword.length - 1);
+        }
+      } else if (_currentState == 4) {
         if (_enteredPassword.isNotEmpty) {
           _enteredPassword = _enteredPassword.substring(0, _enteredPassword.length - 1);
         }
       }
     });
-  }
-  
-  bool _canSavePassword() {
-    return _password.length == _passwordLength && 
-           _confirmPassword.length == _passwordLength && 
-           _password == _confirmPassword;
   }
   
   Future<void> _checkLockStatus() async {
@@ -664,16 +684,29 @@ class _ChatLockPageState extends State<ChatLockPage> with TickerProviderStateMix
     if (_isLockEnabled) {
       // Turn off - verify password first
       setState(() {
-        _currentState = 2;
+        _currentState = 4;
         _enteredPassword = '';
       });
     } else {
-      // Turn on - set password
+      // Turn on - select password length first
       setState(() {
         _currentState = 1;
+        _passwordLength = 4;
+      });
+    }
+  }
+  
+  void _checkPasswordMatch() {
+    if (_password == _confirmPassword) {
+      _savePassword();
+    } else {
+      // Passwords don't match, go back to set password
+      setState(() {
+        _currentState = 2;
         _password = '';
         _confirmPassword = '';
       });
+      HapticFeedback.heavyImpact();
     }
   }
   
