@@ -8,6 +8,10 @@ import 'notifications/handler/notification_of_user_handler.dart';
 import 'downloads/downloads.dart';
 import 'favourite/connected.dart';
 import '../settings/settings.dart';
+import '../settings/screens/chat_lock.dart';
+import 'chat/screens/chat.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -377,7 +381,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               } else {
                 // Handle specific options
-                if (title == 'Clear cache') {
+                if (title == 'Chat') {
+                  _navigateToChat();
+                } else if (title == 'Clear cache') {
                   _openAppSettings();
                 } else if (title == 'Requests') {
                   Navigator.push(
@@ -861,5 +867,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
+  }
+
+  // Check if chat lock is enabled
+  Future<bool> _isChatLockEnabled() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/chat_lock.txt');
+      
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final lines = content.split('\n');
+        if (lines.isNotEmpty) {
+          return lines[0] == 'true';
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Navigate to chat with lock verification
+  Future<void> _navigateToChat() async {
+    try {
+      final isLockEnabled = await _isChatLockEnabled();
+      
+      if (isLockEnabled) {
+        // Show chat lock screen for password verification
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatLockPage(directToPasswordEntry: true),
+          ),
+        );
+        
+        // If password verification successful, navigate to chat
+        if (result == true) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ChatScreen()),
+          );
+        }
+      } else {
+        // No lock enabled, directly navigate to chat
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ChatScreen()),
+        );
+      }
+    } catch (e) {
+      // Handle error - show snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to access chat. Please try again.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
