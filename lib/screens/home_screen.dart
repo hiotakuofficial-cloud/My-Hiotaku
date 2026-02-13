@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'dart:async';
+import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/api_service.dart';
@@ -21,6 +22,7 @@ import 'settings/settings.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../notifications/handler/firebase_messaging_handler.dart';
 import '../services/websocket_service.dart';
+import '../widgets/update.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -53,15 +55,60 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     
-    // Load home data and user data in parallel
-    Future.wait([
-      _loadHomeData(),
-      _loadUserData(),
-    ]);
+    // Check network first
+    _checkNetworkAndLoad();
     
     _startAutoSlide();
     _initializeFCMIfLoggedIn();
     _initializeWebSocketIfLoggedIn();
+  }
+
+  Future<void> _checkNetworkAndLoad() async {
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(Duration(seconds: 3));
+      
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        // Has internet - load data
+        await Future.wait([
+          _loadHomeData(),
+          _loadUserData(),
+        ]);
+        
+        // Check for updates after home screen loads
+        if (mounted) {
+          UpdateChecker.checkForUpdates(context);
+        }
+      } else {
+        // No internet
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => NoInternetScreen(
+                onRetry: () => _retryConnection(),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Network error
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => NoInternetScreen(
+              onRetry: () => _retryConnection(),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _retryConnection() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => HomeScreen()),
+    );
   }
 
   // Initialize WebSocket for logged in users (optimized)
