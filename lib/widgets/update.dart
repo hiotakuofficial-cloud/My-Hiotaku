@@ -205,7 +205,6 @@ class DownloadProgressData extends ChangeNotifier {
       final result = await OpenFile.open(
         _filePath!,
         type: 'application/vnd.android.package-archive',
-        uti: 'com.android.package-archive',
       );
       
       debugPrint('Install result: ${result.type} - ${result.message}');
