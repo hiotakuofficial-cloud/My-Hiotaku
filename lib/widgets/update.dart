@@ -185,8 +185,24 @@ class DownloadProgressData extends ChangeNotifier {
     if (_filePath == null) return;
     
     try {
-      final result = await OpenFile.open(_filePath!);
-      debugPrint('Install result: ${result.message}');
+      final file = File(_filePath!);
+      if (!await file.exists()) {
+        debugPrint('APK file not found');
+        return;
+      }
+      
+      // Open APK for installation
+      final result = await OpenFile.open(
+        _filePath!,
+        type: 'application/vnd.android.package-archive',
+        uti: 'com.android.package-archive',
+      );
+      
+      debugPrint('Install result: ${result.type} - ${result.message}');
+      
+      if (result.type != ResultType.done) {
+        debugPrint('Install failed: ${result.message}');
+      }
     } catch (e) {
       debugPrint('Install error: $e');
     }
