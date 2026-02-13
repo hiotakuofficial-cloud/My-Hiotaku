@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 
 class UpdateChecker {
@@ -191,6 +192,15 @@ class DownloadProgressData extends ChangeNotifier {
         return;
       }
       
+      // Check install permission for Android 8.0+
+      if (Platform.isAndroid) {
+        final hasPermission = await _checkInstallPermission();
+        if (!hasPermission) {
+          await _requestInstallPermission();
+          return;
+        }
+      }
+      
       // Open APK for installation
       final result = await OpenFile.open(
         _filePath!,
@@ -205,6 +215,29 @@ class DownloadProgressData extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Install error: $e');
+    }
+  }
+
+  Future<bool> _checkInstallPermission() async {
+    try {
+      // Use permission_handler to check install permission
+      final status = await Permission.requestInstallPackages.status;
+      return status.isGranted;
+    } catch (e) {
+      debugPrint('Permission check error: $e');
+      return false;
+    }
+  }
+
+  Future<void> _requestInstallPermission() async {
+    try {
+      final status = await Permission.requestInstallPackages.request();
+      if (status.isDenied || status.isPermanentlyDenied) {
+        // Open app settings if permission denied
+        await openAppSettings();
+      }
+    } catch (e) {
+      debugPrint('Permission request error: $e');
     }
   }
 
