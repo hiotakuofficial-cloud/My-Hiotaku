@@ -1,0 +1,46 @@
+name: my_hiotaku
+description: Hiotaku Flutter App
+version: 1.0.1+2
+
+environment:
+  sdk: '>=2.19.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  supabase_flutter: ^2.3.4
+  path_provider: ^2.1.1
+  lottie: ^3.1.2
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.20.0
+  firebase_messaging: ^14.9.4
+  flutter_local_notifications: ^16.3.2
+  google_sign_in: ^6.2.2
+  shared_preferences: ^2.2.2
+  permission_handler: ^11.3.1
+  webview_flutter: ^4.4.2
+  fluttertoast: ^8.2.4
+  url_launcher: ^6.2.2
+  device_info_plus: ^9.1.2
+  package_info_plus: ^4.2.0
+  share_plus: ^7.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/animations/
+    - assets/onboarding/
+    - assets/profile/
+    - assets/profile/default/
+    - assets/profile/male/
+    - assets/profile/female/
+    - assets/fallback/
+    - assets/icons/
+    - assets/manifest.json
