@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
 
 class UpdateChecker {
@@ -105,11 +106,13 @@ class DownloadProgressData extends ChangeNotifier {
   double _progress = 0.0;
   bool _isDownloadComplete = false;
   String? _filePath;
+  String? _errorMessage;
 
   bool get isDownloading => _isDownloading;
   double get progress => _progress;
   bool get isDownloadComplete => _isDownloadComplete;
   String? get filePath => _filePath;
+  String? get errorMessage => _errorMessage;
 
   Future<void> startDownload(String url) async {
     if (_isDownloading) return;
@@ -117,11 +120,17 @@ class DownloadProgressData extends ChangeNotifier {
     _isDownloading = true;
     _progress = 0.0;
     _isDownloadComplete = false;
+    _errorMessage = null;
     notifyListeners();
 
     try {
+      // Get external storage directory
       final dir = await getExternalStorageDirectory();
-      final savePath = '${dir!.path}/hiotaku_update.apk';
+      if (dir == null) {
+        throw Exception('Storage not available');
+      }
+      
+      final savePath = '${dir.path}/hiotaku_update.apk';
       
       // Delete old APK if exists
       final file = File(savePath);
@@ -130,6 +139,8 @@ class DownloadProgressData extends ChangeNotifier {
       }
       
       final dio = Dio();
+      
+      // Download with proper configuration
       await dio.download(
         url,
         savePath,
@@ -141,26 +152,53 @@ class DownloadProgressData extends ChangeNotifier {
         },
         options: Options(
           followRedirects: true,
+          maxRedirects: 5,
           validateStatus: (status) => status! < 500,
+          receiveTimeout: const Duration(minutes: 5),
         ),
       );
 
-      _filePath = savePath;
-      _isDownloading = false;
-      _isDownloadComplete = true;
-      notifyListeners();
+      // Verify file exists and has size
+      if (await file.exists()) {
+        final fileSize = await file.length();
+        if (fileSize > 0) {
+          _filePath = savePath;
+          _isDownloading = false;
+          _isDownloadComplete = true;
+          notifyListeners();
+        } else {
+          throw Exception('Downloaded file is empty');
+        }
+      } else {
+        throw Exception('Download failed - file not found');
+      }
     } catch (e) {
       _isDownloading = false;
       _progress = 0.0;
+      _errorMessage = e.toString();
       notifyListeners();
-      debugPrint('Download failed: $e');
+      debugPrint('Download error: $e');
     }
   }
 
   Future<void> installApk() async {
-    if (_filePath != null) {
-      await OpenFile.open(_filePath!);
+    if (_filePath == null) return;
+    
+    try {
+      final result = await OpenFile.open(_filePath!);
+      debugPrint('Install result: ${result.message}');
+    } catch (e) {
+      debugPrint('Install error: $e');
     }
+  }
+
+  void reset() {
+    _isDownloading = false;
+    _progress = 0.0;
+    _isDownloadComplete = false;
+    _filePath = null;
+    _errorMessage = null;
+    notifyListeners();
   }
 }
 
@@ -284,23 +322,20 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
+                      SvgPicture.asset(
+                        'assets/update_logo.svg',
                         height: 180,
                         width: 180,
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.blue.withOpacity(0.3),
-                              Colors.cyan.withOpacity(0.2),
-                              Colors.transparent,
-                            ],
+                        fit: BoxFit.contain,
+                        placeholderBuilder: (context) => SizedBox(
+                          height: 180,
+                          width: 180,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white.withOpacity(0.3),
+                              strokeWidth: 2,
+                            ),
                           ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.system_update_alt_rounded,
-                          size: 100,
-                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -395,6 +430,16 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
                                   buttonEndColor = Colors.green.shade400;
                                   buttonShadowColor = Colors.greenAccent;
                                   effectivePulseValue = _buttonPulseAnimation.value;
+                                } else if (downloadData.errorMessage != null) {
+                                  buttonText = "Retry Download";
+                                  onPressedCallback = () {
+                                    downloadData.reset();
+                                    downloadData.startDownload(widget.updateData['link']);
+                                  };
+                                  buttonStartColor = Colors.orange.shade600;
+                                  buttonEndColor = Colors.orange.shade400;
+                                  buttonShadowColor = Colors.orangeAccent;
+                                  effectivePulseValue = 1.0;
                                 } else {
                                   buttonText = "Download";
                                   onPressedCallback = () {
