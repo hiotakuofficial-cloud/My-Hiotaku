@@ -8,7 +8,6 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
 
 class UpdateChecker {
@@ -182,6 +181,7 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
+    
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -284,11 +284,24 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SvgPicture.asset(
-                        'assets/update_logo.svg',
+                      Container(
                         height: 180,
                         width: 180,
-                        fit: BoxFit.contain,
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.blue.withOpacity(0.3),
+                              Colors.cyan.withOpacity(0.2),
+                              Colors.transparent,
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.system_update_alt_rounded,
+                          size: 100,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
                       ),
                       const SizedBox(height: 24),
                       Text(
