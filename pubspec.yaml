@@ -48,4 +48,3 @@ flutter:
     - assets/fallback/
     - assets/icons/
     - assets/manifest.json
-    - assets/update_logo.svg

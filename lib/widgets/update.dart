@@ -8,7 +8,6 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 
@@ -370,21 +369,11 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SvgPicture.asset(
-                        'assets/update_logo.svg',
+                      Image.asset(
+                        'assets/images/update_logo.png',
                         height: 180,
                         width: 180,
                         fit: BoxFit.contain,
-                        placeholderBuilder: (context) => SizedBox(
-                          height: 180,
-                          width: 180,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white.withOpacity(0.3),
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 24),
                       Text(
