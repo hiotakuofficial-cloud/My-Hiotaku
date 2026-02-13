@@ -51,7 +51,7 @@ class UpdateChecker {
 
   static void _showUpdateDialog(BuildContext context, Map<String, dynamic> updateData) {
     // Delay to ensure home screen is fully rendered
-    Future.delayed(const Duration(milliseconds: 800), () {
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (!context.mounted) return;
       
       showGeneralDialog<void>(
@@ -59,7 +59,7 @@ class UpdateChecker {
         barrierColor: Colors.transparent,
         barrierDismissible: false,
         barrierLabel: 'Update',
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: const Duration(milliseconds: 400),
         pageBuilder: (dialogContext, animation, secondaryAnimation) {
           return ChangeNotifierProvider<DownloadProgressData>(
             create: (context) => DownloadProgressData(),
@@ -75,18 +75,18 @@ class UpdateChecker {
                 Positioned.fill(
                   child: BackdropFilter(
                     filter: ImageFilter.blur(
-                      sigmaX: animation.value * 8.0,
-                      sigmaY: animation.value * 8.0,
+                      sigmaX: animation.value * 6.0,
+                      sigmaY: animation.value * 6.0,
                     ),
                     child: Container(
-                      color: Colors.black.withOpacity(animation.value * 0.2),
+                      color: Colors.black.withOpacity(animation.value * 0.3),
                     ),
                   ),
                 ),
                 ScaleTransition(
                   scale: CurvedAnimation(
                     parent: animation,
-                    curve: Curves.elasticOut,
+                    curve: Curves.easeOutCubic,
                   ),
                   child: childWidget,
                 ),
@@ -124,6 +124,12 @@ class DownloadProgressData extends ChangeNotifier {
       final dir = await getExternalStorageDirectory();
       final savePath = '${dir!.path}/hiotaku_update.apk';
       
+      // Delete old APK if exists
+      final file = File(savePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+      
       final dio = Dio();
       await dio.download(
         url,
@@ -134,6 +140,10 @@ class DownloadProgressData extends ChangeNotifier {
             notifyListeners();
           }
         },
+        options: Options(
+          followRedirects: true,
+          validateStatus: (status) => status! < 500,
+        ),
       );
 
       _filePath = savePath;
@@ -142,6 +152,7 @@ class DownloadProgressData extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _isDownloading = false;
+      _progress = 0.0;
       notifyListeners();
       debugPrint('Download failed: $e');
     }
@@ -275,10 +286,11 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
                     children: [
                       SvgPicture.asset(
                         'assets/update_logo.svg',
-                        height: 140,
-                        fit: BoxFit.cover,
+                        height: 180,
+                        width: 180,
+                        fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       Text(
                         widget.updateData['update_name'] ?? "New Update Available!",
                         textAlign: TextAlign.center,
@@ -362,14 +374,14 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
                                   buttonShadowColor = Colors.grey.shade400;
                                   effectivePulseValue = 1.0;
                                 } else if (downloadData.isDownloadComplete) {
-                                  buttonText = "Install";
+                                  buttonText = "Install Now";
                                   onPressedCallback = () async {
                                     await downloadData.installApk();
                                   };
                                   buttonStartColor = Colors.green.shade600;
                                   buttonEndColor = Colors.green.shade400;
                                   buttonShadowColor = Colors.greenAccent;
-                                  effectivePulseValue = 1.0;
+                                  effectivePulseValue = _buttonPulseAnimation.value;
                                 } else {
                                   buttonText = "Download";
                                   onPressedCallback = () {
@@ -461,9 +473,9 @@ class _UpdateDialogState extends State<UpdateDialog> with SingleTickerProviderSt
                                                     child: Row(
                                                       mainAxisAlignment: MainAxisAlignment.center,
                                                       children: <Widget>[
-                                                        Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-                                                        SizedBox(width: 8),
-                                                        Text("Ready to Install", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                                        Icon(Icons.check_circle, color: Colors.white, size: 18),
+                                                        SizedBox(width: 6),
+                                                        Text("Tap to Install", style: TextStyle(color: Colors.white, fontSize: 11)),
                                                       ],
                                                     ),
                                                   ),
