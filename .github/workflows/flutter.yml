@@ -1,0 +1,77 @@
+name: Flutter Build APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            android/.gradle
+            .dart_tool
+          key: ${{ runner.os }}-flutter-${{ hashFiles('pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.3'
+          channel: 'stable'
+
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.HIOTAKU_KEYSTORE }}" | base64 --decode > android/app/hiotaku-v2-release.keystore
+          ls -la android/app/hiotaku-v2-release.keystore
+          file android/app/hiotaku-v2-release.keystore
+
+      - name: Verify Dart SDK Version
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+            --dart-define=API_URL=${{ secrets.API_URL }} \
+            --dart-define=API_TOKEN=${{ secrets.API_TOKEN }} \
+            --dart-define=SUPA_URL=${{ secrets.SUPA_URL }} \
+            --dart-define=ANON_KEY=${{ secrets.ANON_KEY }} \
+            --dart-define=FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }} \
+            --dart-define=FIREBASE_APP_ID_WEB=${{ secrets.FIREBASE_APP_ID_WEB }} \
+            --dart-define=FIREBASE_APP_ID_ANDROID=${{ secrets.FIREBASE_APP_ID_ANDROID }} \
+            --dart-define=FIREBASE_APP_ID_IOS=${{ secrets.FIREBASE_APP_ID_IOS }} \
+            --dart-define=FIREBASE_APP_ID_MACOS=${{ secrets.FIREBASE_APP_ID_MACOS }} \
+            --dart-define=FIREBASE_APP_ID_WINDOWS=${{ secrets.FIREBASE_APP_ID_WINDOWS }} \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }} \
+            --dart-define=FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }} \
+            --dart-define=FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }} \
+            --dart-define=FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }} \
+            --dart-define=IOS_BUNDLE_ID=${{ secrets.IOS_BUNDLE_ID }} \
+            --dart-define=ENVIRONMENT=production
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
