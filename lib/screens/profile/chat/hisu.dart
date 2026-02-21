@@ -619,20 +619,22 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
           _words.add(allWords[currentIndex]);
           _wordOpacities.add(0.0);
           
+          final capturedIndex = currentIndex;
+          
           // Fade in current word
           Future.delayed(const Duration(milliseconds: 50), () {
-            if (mounted && currentIndex < _wordOpacities.length) {
+            if (mounted && capturedIndex < _wordOpacities.length) {
               setState(() {
-                _wordOpacities[currentIndex] = 0.5;
+                _wordOpacities[capturedIndex] = 0.5;
               });
             }
           });
           
           // Fully visible after delay
           Future.delayed(const Duration(milliseconds: 200), () {
-            if (mounted && currentIndex < _wordOpacities.length) {
+            if (mounted && capturedIndex < _wordOpacities.length) {
               setState(() {
-                _wordOpacities[currentIndex] = 1.0;
+                _wordOpacities[capturedIndex] = 1.0;
               });
             }
           });
@@ -641,10 +643,6 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
         });
       } else {
         timer.cancel();
-        // Fallback to full text
-        setState(() {
-          _animatedText = text;
-        });
       }
     });
   }
@@ -759,42 +757,31 @@ class _ChatInputArea extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(28.0),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                      child: TextField(
-                        controller: textController,
-                        maxLines: null,
-                        textInputAction: TextInputAction.newline,
-                        decoration: InputDecoration(
-                          hintText: 'Type a message...',
-                          hintStyle: const TextStyle(color: Colors.white54),
-                          filled: true,
-                          fillColor: Colors.grey.shade800.withOpacity(0.4),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(28.0),
-                            borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.15),
-                              width: 0.2,
-                            ),
+                      filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(28.0),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.15),
+                            width: 0.2,
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(28.0),
-                            borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.15),
-                              width: 0.2,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(28.0),
-                            borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.25),
-                              width: 0.2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20.0, vertical: 12.0),
                         ),
-                        onSubmitted: (_) => onSendMessage(),
-                        style: const TextStyle(color: Colors.white),
+                        child: TextField(
+                          controller: textController,
+                          maxLines: null,
+                          textInputAction: TextInputAction.newline,
+                          decoration: const InputDecoration(
+                            hintText: 'Type a message...',
+                            hintStyle: TextStyle(color: Colors.white54),
+                            filled: false,
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 20.0, vertical: 12.0),
+                          ),
+                          onSubmitted: (_) => onSendMessage(),
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
