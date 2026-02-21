@@ -411,31 +411,31 @@ class HisuDrawerScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF17171a),
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF17171a),
+        backgroundColor: const Color(0xFF121212),
         elevation: 0,
-        title: Text('Hisu Ai', style: theme.textTheme.headlineSmall),
+        title: const Text('Hisu Ai', style: TextStyle(color: Colors.white)),
         automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(
         onRefresh: () => _handleRefresh(context),
-        color: isDark ? Colors.white : Colors.black,
-        backgroundColor: isDark ? Colors.black : Colors.white,
+        color: Colors.white,
+        backgroundColor: const Color(0xFF121212),
         child: ListView(
           padding: const EdgeInsets.all(8.0),
           children: [
             ListTile(
-              leading: Icon(Icons.add_circle_outline, color: isDark ? Colors.white : Colors.black),
-              title: Text('New Chat', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+              leading: const Icon(Icons.add_circle_outline, color: Colors.white),
+              title: const Text('New Chat', style: TextStyle(color: Colors.white)),
               onTap: () async {
                 await HisuHandler.clearChatHistory();
                 onClose();
               },
             ),
             ListTile(
-              leading: Icon(Icons.settings_outlined, color: isDark ? Colors.white : Colors.black),
-              title: Text('Settings', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+              leading: const Icon(Icons.settings_outlined, color: Colors.white),
+              title: const Text('Settings', style: TextStyle(color: Colors.white)),
               onTap: () {
                 onClose();
               },
