@@ -215,16 +215,20 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       backgroundColor: Colors.transparent,
       builder: (BuildContext sheetContext) {
         final ColorScheme colorScheme = Theme.of(sheetContext).colorScheme;
+        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
+        
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(sheetContext).cardColor.withOpacity(0.7),
+                color: isDark 
+                    ? Colors.grey.shade900.withOpacity(0.95)
+                    : Colors.grey.shade100.withOpacity(0.95),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
                 border: Border.all(
-                  color: colorScheme.onSurface.withOpacity(0.2),
+                  color: colorScheme.onSurface.withOpacity(0.1),
                   width: 0.5,
                 ),
               ),
@@ -238,7 +242,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: colorScheme.onSurface.withOpacity(0.2),
+                        color: colorScheme.onSurface.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -331,6 +335,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
         children: <Widget>[
           _GlassPillContainer(
             onTap: widget.onMenuPressed,
+            isCircle: true,
             child: Icon(
               Icons.menu,
               color: iconColor,
@@ -402,16 +407,16 @@ class HisuDrawerScreen extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           children: [
             ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('New Chat'),
+              leading: Icon(Icons.add_circle_outline, color: isDark ? Colors.white : Colors.black),
+              title: Text('New Chat', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
               onTap: () async {
                 await HisuHandler.clearChatHistory();
                 onClose();
               },
             ),
             ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Settings'),
+              leading: Icon(Icons.settings_outlined, color: isDark ? Colors.white : Colors.black),
+              title: Text('Settings', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
               onTap: () {
                 onClose();
               },
@@ -427,26 +432,35 @@ class HisuDrawerScreen extends StatelessWidget {
 class _GlassPillContainer extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
+  final bool isCircle;
 
-  const _GlassPillContainer({required this.child, this.onTap});
+  const _GlassPillContainer({
+    required this.child,
+    this.onTap,
+    this.isCircle = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final radius = isCircle ? 50.0 : 50.0;
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(50.0),
+        borderRadius: BorderRadius.circular(radius),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(50.0),
+          borderRadius: BorderRadius.circular(radius),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              padding: isCircle 
+                  ? const EdgeInsets.all(10.0)
+                  : const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(50.0),
+                color: const Color(0xFF212121).withOpacity(0.4),
+                borderRadius: BorderRadius.circular(radius),
                 border: Border.all(
                   color: colorScheme.onSurfaceVariant.withOpacity(0.2),
                   width: 0.5,
@@ -576,7 +590,9 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
             Text(
               _animatedText,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: isUser ? Colors.white : theme.colorScheme.onSurface,
+                color: isUser 
+                    ? Colors.white 
+                    : theme.colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
             if (widget.message.animeCards.isNotEmpty)
@@ -625,24 +641,31 @@ class _ChatInputArea extends StatelessWidget {
               IconButton(
                 icon: Icon(isEditing ? Icons.cancel : Icons.add_circle_outline),
                 onPressed: isEditing ? onCancelEdit : onPlusPressed,
-                color: theme.colorScheme.onSurfaceVariant,
+                color: Colors.white,
               ),
               Expanded(
-                child: TextField(
-                  controller: textController,
-                  decoration: InputDecoration(
-                    hintText: 'Type a message...',
-                    filled: true,
-                    fillColor: theme.colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(28.0),
-                      borderSide: BorderSide.none,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28.0),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                    child: TextField(
+                      controller: textController,
+                      maxLines: null,
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        filled: true,
+                        fillColor: Colors.grey.shade800.withOpacity(0.3),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(28.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20.0, vertical: 12.0),
+                      ),
+                      onSubmitted: (_) => onSendMessage(),
+                      style: TextStyle(color: theme.colorScheme.onSurface),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20.0, vertical: 12.0),
                   ),
-                  onSubmitted: (_) => onSendMessage(),
-                  style: TextStyle(color: theme.colorScheme.onSurface),
                 ),
               ),
               const SizedBox(width: 8.0),
