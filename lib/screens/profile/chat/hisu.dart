@@ -221,10 +221,10 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
             filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(sheetContext).cardColor.withValues(alpha: 0.7),
+                color: Theme.of(sheetContext).cardColor.withOpacity(0.7),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
                 border: Border.all(
-                  color: colorScheme.onSurface.withValues(alpha: 0.2),
+                  color: colorScheme.onSurface.withOpacity(0.2),
                   width: 0.5,
                 ),
               ),
@@ -238,7 +238,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: colorScheme.onSurface.withValues(alpha: 0.2),
+                        color: colorScheme.onSurface.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -445,10 +445,10 @@ class _GlassPillContainer extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(50.0),
                 border: Border.all(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.2),
                   width: 0.5,
                 ),
               ),
