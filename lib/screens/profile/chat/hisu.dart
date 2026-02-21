@@ -348,9 +348,6 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
   }
 
   Widget _buildTopBar(double topPadding, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isDark ? Colors.grey.shade400 : Colors.black54;
-
     return Positioned(
       top: topPadding + 8.0,
       left: 16.0,
@@ -361,9 +358,9 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
           _GlassPillContainer(
             onTap: widget.onMenuPressed,
             isCircle: true,
-            child: Icon(
+            child: const Icon(
               Icons.menu,
-              color: iconColor,
+              color: Colors.white,
               size: 24.0,
             ),
           ),
@@ -377,17 +374,17 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
             ),
           ),
           _GlassPillContainer(
-            child: Row(
+            child: const Row(
               children: [
                 Icon(
                   Icons.search_rounded,
-                  color: iconColor,
+                  color: Colors.white,
                   size: 24.0,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Icon(
                   Icons.more_vert_rounded,
-                  color: iconColor,
+                  color: Colors.white,
                   size: 24.0,
                 ),
               ],
