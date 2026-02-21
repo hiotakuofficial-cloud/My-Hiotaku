@@ -172,7 +172,9 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
         _messages.add(ChatMessage(text: text, sender: SenderType.user));
         _isAITyping = true;
       });
-      _scrollToBottom();
+      
+      // Scroll after user message
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
       final result = await HisuHandler.sendMessage(text);
 
@@ -200,7 +202,9 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       }
       
       _saveChatHistory();
-      _scrollToBottom();
+      
+      // Scroll after AI response
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     }
     _textController.clear();
   }
@@ -694,19 +698,20 @@ class _TypingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 22.0),
         child: Shimmer.fromColors(
-          baseColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-          highlightColor: isDark ? Colors.grey[400]! : Colors.grey[100]!,
+          baseColor: Colors.grey[600]!,
+          highlightColor: Colors.grey[300]!,
+          period: const Duration(milliseconds: 1500),
           child: Text(
             'Thinking...',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
