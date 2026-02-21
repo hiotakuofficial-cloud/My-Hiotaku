@@ -330,7 +330,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                     },
                   ),
                 ),
-                ChatInputArea(
+                _ChatInputArea(
                   textController: _textController,
                   onSendMessage: _handleSendMessage,
                   onStopGeneration: _handleStopGeneration,
