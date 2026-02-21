@@ -546,12 +546,14 @@ class _ChatMessageBubble extends StatefulWidget {
 class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
   String _animatedText = '';
   Timer? _timer;
+  bool _hasAnimated = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.message.sender == SenderType.ai) {
+    if (widget.message.sender == SenderType.ai && !_hasAnimated) {
       _animateText(widget.message.text);
+      _hasAnimated = true;
     } else {
       _animatedText = widget.message.text;
     }
@@ -562,8 +564,9 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
     super.didUpdateWidget(oldWidget);
     if (widget.message.text != oldWidget.message.text) {
       _timer?.cancel();
-      if (widget.message.sender == SenderType.ai) {
+      if (widget.message.sender == SenderType.ai && !_hasAnimated) {
         _animateText(widget.message.text);
+        _hasAnimated = true;
       } else {
         setState(() {
           _animatedText = widget.message.text;
@@ -584,7 +587,7 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
     _animatedText = '';
 
     _timer = Timer.periodic(typingSpeed, (timer) {
-      if (words.isNotEmpty) {
+      if (words.isNotEmpty && mounted) {
         setState(() {
           _animatedText += '${words.removeAt(0)} ';
         });
