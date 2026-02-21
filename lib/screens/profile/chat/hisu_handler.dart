@@ -42,21 +42,28 @@ class HisuHandler {
         'apikey': _apiKey,
       };
       
-      // Add conversation context if available (max 500 chars)
+      // Add conversation context if available (max 500 chars AFTER encoding)
       if (conversationContext != null && conversationContext.isNotEmpty) {
-        final truncatedContext = conversationContext.length > 500 
-            ? conversationContext.substring(conversationContext.length - 500)
-            : conversationContext;
         // Sanitize: remove only control characters and newlines
-        final sanitizedContext = truncatedContext
+        var sanitizedContext = conversationContext
             .replaceAll(RegExp(r'[\r\n\t\x00-\x1F\x7F]'), ' ')
             .replaceAll(RegExp(r'\s+'), ' ')
             .trim();
-        if (sanitizedContext.isNotEmpty) {
-          // URL encode to safely pass emojis and special characters in HTTP header
-          final encodedContext = Uri.encodeComponent(sanitizedContext);
+        
+        // URL encode first
+        var encodedContext = Uri.encodeComponent(sanitizedContext);
+        
+        // Then truncate encoded string to 500 chars if needed
+        if (encodedContext.length > 500) {
+          // Truncate and re-encode to ensure valid encoding
+          final maxOriginalLength = (sanitizedContext.length * 500 / encodedContext.length).floor();
+          sanitizedContext = sanitizedContext.substring(sanitizedContext.length - maxOriginalLength);
+          encodedContext = Uri.encodeComponent(sanitizedContext);
+        }
+        
+        if (encodedContext.isNotEmpty) {
           headers['user-memory'] = encodedContext;
-          Fluttertoast.showToast(msg: "🧠 Context: ${sanitizedContext.length} chars (encoded)", toastLength: Toast.LENGTH_SHORT);
+          Fluttertoast.showToast(msg: "🧠 Context: ${encodedContext.length} chars (encoded)", toastLength: Toast.LENGTH_SHORT);
         }
       }
       
