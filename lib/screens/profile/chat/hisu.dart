@@ -189,9 +189,12 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
 
   String _buildConversationContext() {
     // Build context from last 5 messages (max 500 chars)
-    final recentMessages = _messages.length > 5 
-        ? _messages.sublist(_messages.length - 5)
-        : _messages;
+    // Exclude the last message (current user message being sent)
+    final messagesToInclude = _messages.length > 1 ? _messages.length - 1 : 0;
+    if (messagesToInclude == 0) return '';
+    
+    final startIndex = messagesToInclude > 5 ? messagesToInclude - 5 : 0;
+    final recentMessages = _messages.sublist(startIndex, messagesToInclude);
     
     final context = recentMessages.map((msg) {
       final sender = msg.sender == SenderType.user ? 'User' : 'Hisu';
