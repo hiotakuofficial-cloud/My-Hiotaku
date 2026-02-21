@@ -50,11 +50,13 @@ class ChatMessage {
   final String text;
   final SenderType sender;
   final List<AnimeCard> animeCards;
+  final bool skipAnimation;
 
   const ChatMessage({
     required this.text,
     required this.sender,
     this.animeCards = const [],
+    this.skipAnimation = false,
   });
 }
 
@@ -140,6 +142,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
           animeCards: (msg['animeCards'] as List?)
               ?.map((card) => AnimeCard.fromJson(card))
               .toList() ?? [],
+          skipAnimation: true, // Skip animation for loaded history
         )));
       });
       _scrollToBottom();
@@ -593,7 +596,7 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
   @override
   void initState() {
     super.initState();
-    if (widget.message.sender == SenderType.ai && !_hasAnimated) {
+    if (widget.message.sender == SenderType.ai && !_hasAnimated && !widget.message.skipAnimation) {
       _animateText(widget.message.text);
       _hasAnimated = true;
     } else {
