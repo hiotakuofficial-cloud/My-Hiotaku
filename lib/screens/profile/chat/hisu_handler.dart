@@ -17,6 +17,7 @@ class HisuHandler {
 
   // Send message to Hisu API
   static Future<Map<String, dynamic>> sendMessage(String message, {String? conversationContext}) async {
+    final client = http.Client();
     try {
       // Validate API URL
       if (_apiUrl.isEmpty) {
@@ -42,11 +43,12 @@ class HisuHandler {
         headers['user-memory'] = truncatedContext;
       }
       
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: headers,
-        body: jsonEncode({'message': message}),
-      ).timeout(const Duration(seconds: 30));
+      final request = http.Request('POST', Uri.parse(_apiUrl))
+        ..headers.addAll(headers)
+        ..body = jsonEncode({'message': message});
+      
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -84,6 +86,8 @@ class HisuHandler {
         'success': false,
         'error': 'Connection failed. Please try again later.',
       };
+    } finally {
+      client.close();
     }
   }
 
