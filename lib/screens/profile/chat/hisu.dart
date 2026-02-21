@@ -18,6 +18,7 @@ class HisuChatPage extends StatefulWidget {
 
 class _HisuChatPageState extends State<HisuChatPage> {
   final GlobalKey<CustomDrawerState> _drawerKey = GlobalKey<CustomDrawerState>();
+  final GlobalKey<_HisuChatScreenState> _chatScreenKey = GlobalKey<_HisuChatScreenState>();
 
   @override
   void initState() {
@@ -35,8 +36,14 @@ class _HisuChatPageState extends State<HisuChatPage> {
       key: _drawerKey,
       drawerScreen: HisuDrawerScreen(
         onClose: () => _drawerKey.currentState?.toggle(),
+        onNewChat: () => _chatScreenKey.currentState?._createNewChat(),
+        sessions: _chatScreenKey.currentState?._allSessions ?? [],
+        currentSession: _chatScreenKey.currentState?._currentSession,
+        onSessionSelect: (session) => _chatScreenKey.currentState?._switchSession(session),
+        onSessionDelete: (id) => _chatScreenKey.currentState?._deleteSession(id),
       ),
       mainScreen: HisuChatScreen(
+        key: _chatScreenKey,
         onMenuPressed: () => _drawerKey.currentState?.toggle(),
       ),
     );
@@ -589,65 +596,172 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
 }
 
 // --- Drawer Screen ---
-class HisuDrawerScreen extends StatelessWidget {
+class HisuDrawerScreen extends StatefulWidget {
   final VoidCallback onClose;
-  const HisuDrawerScreen({super.key, required this.onClose});
+  final VoidCallback onNewChat;
+  final List<ChatSession> sessions;
+  final ChatSession? currentSession;
+  final Function(ChatSession) onSessionSelect;
+  final Function(String) onSessionDelete;
+  
+  const HisuDrawerScreen({
+    super.key,
+    required this.onClose,
+    required this.onNewChat,
+    required this.sessions,
+    required this.currentSession,
+    required this.onSessionSelect,
+    required this.onSessionDelete,
+  });
 
-  Future<void> _handleRefresh(BuildContext context) async {
-    await Future.delayed(const Duration(seconds: 1));
-    await HisuHandler.clearChatHistory();
-    // Trigger rebuild by closing and reopening
-    onClose();
+  @override
+  State<HisuDrawerScreen> createState() => _HisuDrawerScreenState();
+}
+
+class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final filteredSessions = widget.sessions.where((session) {
+      if (_searchQuery.isEmpty) return true;
+      return session.title.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      body: RefreshIndicator(
-        onRefresh: () => _handleRefresh(context),
-        color: Colors.white,
-        backgroundColor: const Color(0xFF121212),
-        child: ListView(
-          padding: const EdgeInsets.all(0),
+      body: SafeArea(
+        child: Column(
           children: [
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Hisu Ai',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+            // Search box with new chat button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF212121),
+                        borderRadius: BorderRadius.circular(40),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.15),
+                          width: 0.2,
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search chats...',
+                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                          prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: onClose,
+                  ),
+                  const SizedBox(width: 12),
+                  // New chat button
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF212121),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.15),
+                        width: 0.2,
+                      ),
                     ),
-                  ],
-                ),
+                    child: IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () {
+                        widget.onNewChat();
+                        widget.onClose();
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
+            
             const Divider(color: Colors.white12, height: 1),
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline, color: Colors.white),
-              title: const Text('New Chat', style: TextStyle(color: Colors.white)),
-              onTap: () async {
-                await HisuHandler.clearChatHistory();
-                onClose();
-              },
+            
+            // Sessions list
+            Expanded(
+              child: filteredSessions.isEmpty
+                  ? Center(
+                      child: Text(
+                        _searchQuery.isEmpty ? 'No chats yet' : 'No results found',
+                        style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filteredSessions.length,
+                      itemBuilder: (context, index) {
+                        final session = filteredSessions[index];
+                        final isActive = widget.currentSession?.id == session.id;
+                        
+                        return ListTile(
+                          selected: isActive,
+                          selectedTileColor: Colors.white.withOpacity(0.1),
+                          leading: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
+                          title: Text(
+                            session.title,
+                            style: const TextStyle(color: Colors.white),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            _formatDate(session.updatedAt),
+                            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.white54, size: 20),
+                            onPressed: () {
+                              widget.onSessionDelete(session.id);
+                            },
+                          ),
+                          onTap: () {
+                            widget.onSessionSelect(session);
+                            widget.onClose();
+                          },
+                        );
+                      },
+                    ),
             ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined, color: Colors.white),
-              title: const Text('Settings', style: TextStyle(color: Colors.white)),
-              onTap: () {
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    
+    if (diff.inDays == 0) {
+      return 'Today';
+    } else if (diff.inDays == 1) {
+      return 'Yesterday';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays} days ago';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+}
                 onClose();
               },
             ),
