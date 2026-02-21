@@ -152,7 +152,7 @@
     },
     {
       "name": "test_api",
-      "version": "0.7.7",
+      "version": "0.7.9",
       "dependencies": [
         "async",
         "boolean_selector",
@@ -191,7 +191,7 @@
     },
     {
       "name": "matcher",
-      "version": "0.12.17",
+      "version": "0.12.18",
       "dependencies": [
         "async",
         "meta",
@@ -271,14 +271,14 @@
     },
     {
       "name": "material_color_utilities",
-      "version": "0.11.1",
+      "version": "0.13.0",
       "dependencies": [
         "collection"
       ]
     },
     {
       "name": "characters",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "dependencies": []
     },
     {
@@ -584,20 +584,6 @@
       ]
     },
     {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "dependencies": [
-        "collection"
-      ]
-    },
-    {
-      "name": "crypto",
-      "version": "3.0.7",
-      "dependencies": [
-        "typed_data"
-      ]
-    },
-    {
       "name": "win32_registry",
       "version": "1.1.5",
       "dependencies": [
@@ -781,6 +767,13 @@
       ]
     },
     {
+      "name": "crypto",
+      "version": "3.0.7",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
       "name": "glob",
       "version": "2.1.3",
       "dependencies": [
@@ -792,21 +785,10 @@
       ]
     },
     {
-      "name": "archive",
-      "version": "4.0.7",
+      "name": "typed_data",
+      "version": "1.4.0",
       "dependencies": [
-        "crypto",
-        "path",
-        "posix"
-      ]
-    },
-    {
-      "name": "posix",
-      "version": "6.0.3",
-      "dependencies": [
-        "ffi",
-        "meta",
-        "path"
+        "collection"
       ]
     },
     {
@@ -904,6 +886,23 @@
       ]
     },
     {
+      "name": "archive",
+      "version": "4.0.9",
+      "dependencies": [
+        "path",
+        "posix"
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.0.3",
+      "dependencies": [
+        "ffi",
+        "meta",
+        "path"
+      ]
+    },
+    {
       "name": "url_launcher_web",
       "version": "2.4.2",
       "dependencies": [
@@ -932,7 +931,7 @@
     },
     {
       "name": "petitparser",
-      "version": "7.0.1",
+      "version": "7.0.2",
       "dependencies": [
         "collection",
         "meta"
@@ -1010,7 +1009,7 @@
     },
     {
       "name": "webview_flutter_wkwebview",
-      "version": "3.23.6",
+      "version": "3.23.7",
       "dependencies": [
         "flutter",
         "meta",
@@ -1180,8 +1179,17 @@
       "dependencies": []
     },
     {
+      "name": "vector_graphics",
+      "version": "1.1.19",
+      "dependencies": [
+        "flutter",
+        "http",
+        "vector_graphics_codec"
+      ]
+    },
+    {
       "name": "vector_graphics_compiler",
-      "version": "1.1.20",
+      "version": "1.2.0",
       "dependencies": [
         "args",
         "meta",
@@ -1197,15 +1205,6 @@
       "dependencies": [
         "meta",
         "vector_math"
-      ]
-    },
-    {
-      "name": "vector_graphics",
-      "version": "1.1.19",
-      "dependencies": [
-        "flutter",
-        "http",
-        "vector_graphics_codec"
       ]
     },
     {
