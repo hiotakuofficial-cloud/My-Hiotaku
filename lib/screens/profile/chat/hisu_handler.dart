@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 class HisuHandler {
   static const String _historyKey = 'hisu_chat_history';
@@ -23,14 +22,12 @@ class HisuHandler {
     try {
       // Validate API URL
       if (_apiUrl.isEmpty) {
-        Fluttertoast.showToast(msg: "❌ API URL empty", gravity: ToastGravity.CENTER);
         return {
           'success': false,
           'error': 'API configuration error. Please contact support.',
         };
       }
 
-      Fluttertoast.showToast(msg: "📤 Sending: ${message.substring(0, message.length > 20 ? 20 : message.length)}...", toastLength: Toast.LENGTH_SHORT);
 
       client = http.Client();
       
@@ -46,7 +43,6 @@ class HisuHandler {
       if (conversationContext != null && conversationContext.isNotEmpty) {
         // Context is already cleaned and truncated to 500 chars
         headers['user-memory'] = conversationContext;
-        Fluttertoast.showToast(msg: "🧠 Context: ${conversationContext.length} chars", toastLength: Toast.LENGTH_SHORT);
       }
       
       final request = http.Request('POST', Uri.parse(_apiUrl))
@@ -55,16 +51,13 @@ class HisuHandler {
         ..followRedirects = true
         ..maxRedirects = 5;
       
-      Fluttertoast.showToast(msg: "⏳ Waiting for response...", toastLength: Toast.LENGTH_SHORT);
       
       final streamedResponse = await client.send(request).timeout(const Duration(seconds: 45));
       final response = await http.Response.fromStream(streamedResponse);
 
-      Fluttertoast.showToast(msg: "📥 Status: ${response.statusCode}", toastLength: Toast.LENGTH_SHORT);
 
       // Validate response body
       if (response.body.isEmpty) {
-        Fluttertoast.showToast(msg: "⚠️ Empty response body", gravity: ToastGravity.CENTER);
         if (retryCount < maxRetries) {
           await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
           return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
@@ -75,30 +68,25 @@ class HisuHandler {
         };
       }
 
-      Fluttertoast.showToast(msg: "📦 Body: ${response.body.length} bytes", toastLength: Toast.LENGTH_SHORT);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
-        Fluttertoast.showToast(msg: "✅ Success: ${data['success']}", toastLength: Toast.LENGTH_SHORT);
         
         if (data['success'] == true) {
           final responseText = data['response'] ?? '';
-          Fluttertoast.showToast(msg: "💬 Response: ${responseText.substring(0, responseText.length > 30 ? 30 : responseText.length)}...", toastLength: Toast.LENGTH_SHORT);
           return {
             'success': true,
             'response': responseText,
             'anime_cards': data['anime_cards'] ?? [],
           };
         } else {
-          Fluttertoast.showToast(msg: "❌ API Error: ${data['error']}", gravity: ToastGravity.CENTER);
           return {
             'success': false,
             'error': data['error'] ?? 'API returned unsuccessful response',
           };
         }
       } else {
-        Fluttertoast.showToast(msg: "⚠️ HTTP ${response.statusCode}", gravity: ToastGravity.CENTER);
         // Retry on server errors
         if (retryCount < maxRetries && (response.statusCode >= 500 || response.statusCode == 307)) {
           await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
@@ -110,7 +98,6 @@ class HisuHandler {
         };
       }
     } on TimeoutException {
-      Fluttertoast.showToast(msg: "⏱️ Timeout! Retry ${retryCount + 1}/${maxRetries + 1}", gravity: ToastGravity.CENTER);
       // Retry on timeout
       if (retryCount < maxRetries) {
         await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
@@ -121,7 +108,6 @@ class HisuHandler {
         'error': 'Request timeout. Please check your internet connection.',
       };
     } on FormatException catch (e) {
-      Fluttertoast.showToast(msg: "🔧 Parse Error: ${e.toString().substring(0, 50)}", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
       // Retry on format errors (malformed response)
       if (retryCount < maxRetries) {
         await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
@@ -132,7 +118,6 @@ class HisuHandler {
         'error': 'Invalid response from server. Please try again.',
       };
     } catch (e) {
-      Fluttertoast.showToast(msg: "💥 Error: ${e.toString().substring(0, 50)}", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
       // Retry on any other error
       if (retryCount < maxRetries) {
         await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
