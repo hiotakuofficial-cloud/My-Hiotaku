@@ -688,10 +688,27 @@ class _ChatInputArea extends StatelessWidget {
                           hintText: 'Type a message...',
                           hintStyle: const TextStyle(color: Colors.white54),
                           filled: true,
-                          fillColor: Colors.grey.shade800.withOpacity(0.3),
+                          fillColor: Colors.grey.shade800.withOpacity(0.4),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(28.0),
-                            borderSide: BorderSide.none,
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.15),
+                              width: 1.0,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28.0),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.15),
+                              width: 1.0,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28.0),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.25),
+                              width: 1.0,
+                            ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 20.0, vertical: 12.0),
