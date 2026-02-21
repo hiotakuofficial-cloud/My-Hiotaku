@@ -21,11 +21,15 @@ class HisuHandler {
     try {
       // Validate API URL
       if (_apiUrl.isEmpty) {
+        print('DEBUG: API URL is empty. Environment variable not set.');
         return {
           'success': false,
           'error': 'API configuration error. Please contact support.',
         };
       }
+
+      print('DEBUG: Using API URL: $_apiUrl');
+      print('DEBUG: Auth keys - authkey: ${_authKey.isEmpty ? "EMPTY" : "SET"}, authkey2: ${_authKey2.isEmpty ? "EMPTY" : "SET"}');
 
       final headers = {
         'Content-Type': 'application/json',
@@ -47,8 +51,12 @@ class HisuHandler {
         ..headers.addAll(headers)
         ..body = jsonEncode({'message': message});
       
+      print('DEBUG: Sending request...');
       final streamedResponse = await client.send(request).timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
+      
+      print('DEBUG: Response status: ${response.statusCode}');
+      print('DEBUG: Response body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -72,16 +80,19 @@ class HisuHandler {
         };
       }
     } on TimeoutException {
+      print('DEBUG: Request timeout');
       return {
         'success': false,
         'error': 'Request timeout. Please check your internet connection.',
       };
-    } on FormatException {
+    } on FormatException catch (e) {
+      print('DEBUG: Format exception: $e');
       return {
         'success': false,
         'error': 'Invalid response from server. Please try again.',
       };
     } catch (e) {
+      print('DEBUG: Exception: $e');
       return {
         'success': false,
         'error': 'Connection failed. Please try again later.',
