@@ -357,6 +357,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                       _textController.text = message.text;
                     });
                   },
+                  onScrollToBottom: _scrollToBottom,
                 ),
               ),
               _ChatInputArea(
@@ -560,12 +561,14 @@ class _MessageList extends StatelessWidget {
   final List<ChatMessage> messages;
   final bool isAITyping;
   final Function(ChatMessage) onEdit;
+  final VoidCallback? onScrollToBottom;
 
   const _MessageList({
     required this.scrollController,
     required this.messages,
     required this.isAITyping,
     required this.onEdit,
+    this.onScrollToBottom,
   });
 
   @override
@@ -581,10 +584,14 @@ class _MessageList extends StatelessWidget {
           return const _TypingIndicator();
         }
         final message = messages[index];
+        final isLastMessage = index == messages.length - 1;
         return _ChatMessageBubble(
           key: ValueKey('${message.text}_$index'), // Unique key for each message
           message: message,
           onEdit: () => onEdit(message),
+          onWordAdded: (isLastMessage && message.sender == SenderType.ai && onScrollToBottom != null) 
+              ? onScrollToBottom 
+              : null,
         );
       },
     );
@@ -594,8 +601,14 @@ class _MessageList extends StatelessWidget {
 class _ChatMessageBubble extends StatefulWidget {
   final ChatMessage message;
   final VoidCallback onEdit;
+  final VoidCallback? onWordAdded;
 
-  const _ChatMessageBubble({super.key, required this.message, required this.onEdit});
+  const _ChatMessageBubble({
+    super.key, 
+    required this.message, 
+    required this.onEdit,
+    this.onWordAdded,
+  });
 
   @override
   State<_ChatMessageBubble> createState() => _ChatMessageBubbleState();
@@ -675,6 +688,10 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
               setState(() {
                 _wordOpacities[capturedIndex] = 1.0;
               });
+              // Trigger scroll after word is visible
+              if (widget.onWordAdded != null) {
+                widget.onWordAdded!();
+              }
             }
           });
           
