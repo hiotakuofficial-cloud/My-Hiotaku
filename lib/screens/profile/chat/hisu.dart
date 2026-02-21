@@ -226,6 +226,11 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       _messages.clear();
       _textController.clear();
     });
+    
+    // Notify parent to rebuild drawer
+    if (mounted) {
+      (context.findAncestorStateOfType<_HisuChatPageState>())?.setState(() {});
+    }
   }
 
   Future<void> _switchSession(ChatSession session) async {
@@ -279,6 +284,11 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     // If deleted current session, create new one
     if (_currentSession?.id == sessionId) {
       await _createNewChat();
+    }
+    
+    // Notify parent to rebuild drawer
+    if (mounted) {
+      (context.findAncestorStateOfType<_HisuChatPageState>())?.setState(() {});
     }
   }
 
