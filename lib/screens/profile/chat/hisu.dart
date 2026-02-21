@@ -574,10 +574,14 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isUser = widget.message.sender == SenderType.user;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
+        constraints: BoxConstraints(
+          maxWidth: isUser ? screenWidth * 0.7 : screenWidth * 0.85,
+        ),
         margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 8.0),
         padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
         decoration: BoxDecoration(
