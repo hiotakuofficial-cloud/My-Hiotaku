@@ -2,21 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:ui';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 import '../../../widgets/custom_drawer.dart';
-import '../../../config.dart';
 import 'hisu_handler.dart';
-
-// --- Hisu API Configuration ---
-class HisuConfig {
-  static String get apiUrl => '${AppConfig.animeApiBaseUrl}/hiotaku/api/v1/chat/';
-  static const String authKey = String.fromEnvironment('hisu_authkey');
-  static const String authKey2 = String.fromEnvironment('hisu_authkey2');
-  static const String babeer = String.fromEnvironment('hisu_babeer');
-  static const String apiKey = String.fromEnvironment('hisu_apikey');
-}
 
 // --- Main Entry Point ---
 class HisuChatPage extends StatefulWidget {
@@ -494,7 +482,6 @@ class HisuDrawerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
@@ -564,7 +551,6 @@ class _GlassPillContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final radius = isCircle ? 50.0 : 50.0;
     
     return Material(
