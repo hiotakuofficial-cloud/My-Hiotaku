@@ -281,6 +281,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
+      backgroundColor: const Color(0xFF111112),
       body: Stack(
         children: <Widget>[
           SafeArea(
@@ -392,9 +393,9 @@ class HisuDrawerScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFF17171a),
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: const Color(0xFF17171a),
         elevation: 0,
         title: Text('Hisu Ai', style: theme.textTheme.headlineSmall),
         automaticallyImplyLeading: false,
