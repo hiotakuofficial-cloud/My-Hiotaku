@@ -61,12 +61,14 @@ class ChatMessage {
   final SenderType sender;
   final List<AnimeCard> animeCards;
   final bool skipAnimation;
+  final bool isError;
 
   const ChatMessage({
     required this.text,
     required this.sender,
     this.animeCards = const [],
     this.skipAnimation = false,
+    this.isError = false,
   });
 }
 
@@ -160,7 +162,9 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
   }
 
   Future<void> _saveChatHistory() async {
-    final history = _messages.map((msg) => {
+    final history = _messages
+        .where((msg) => !msg.isError) // Exclude error messages
+        .map((msg) => {
       'text': msg.text,
       'sender': msg.sender == SenderType.user ? 'user' : 'ai',
       'animeCards': msg.animeCards.map((card) => {
@@ -189,12 +193,17 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
 
   String _buildConversationContext() {
     // Build context from last 5 messages (max 500 chars)
-    // Exclude the last message (current user message being sent)
+    // Exclude the last message (current user message being sent) and error messages
     final messagesToInclude = _messages.length > 1 ? _messages.length - 1 : 0;
     if (messagesToInclude == 0) return '';
     
     final startIndex = messagesToInclude > 5 ? messagesToInclude - 5 : 0;
-    final recentMessages = _messages.sublist(startIndex, messagesToInclude);
+    final recentMessages = _messages
+        .sublist(startIndex, messagesToInclude)
+        .where((msg) => !msg.isError) // Exclude error messages
+        .toList();
+    
+    if (recentMessages.isEmpty) return '';
     
     final context = recentMessages.map((msg) {
       final sender = msg.sender == SenderType.user ? 'User' : 'Hisu';
@@ -254,6 +263,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
           _messages.add(ChatMessage(
             text: result['error'] ?? 'Something went wrong',
             sender: SenderType.ai,
+            isError: true,
           ));
           _isAITyping = false;
         });
