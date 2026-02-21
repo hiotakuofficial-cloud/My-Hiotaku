@@ -47,10 +47,11 @@ class HisuHandler {
         final truncatedContext = conversationContext.length > 500 
             ? conversationContext.substring(conversationContext.length - 500)
             : conversationContext;
-        // Sanitize for HTTP header: remove all control characters and newlines
+        // Sanitize for HTTP header: remove all control characters, newlines, and non-ASCII
         final sanitizedContext = truncatedContext
-            .replaceAll(RegExp(r'[\r\n\t\x00-\x1F\x7F]'), ' ')
-            .replaceAll(RegExp(r'\s+'), ' ')
+            .replaceAll(RegExp(r'[\r\n\t\x00-\x1F\x7F]'), ' ') // Control characters
+            .replaceAll(RegExp(r'[^\x20-\x7E]'), '') // Remove non-ASCII (emojis, etc)
+            .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces to single
             .trim();
         if (sanitizedContext.isNotEmpty) {
           headers['user-memory'] = sanitizedContext;
