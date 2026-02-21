@@ -196,7 +196,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     final context = recentMessages.map((msg) {
       final sender = msg.sender == SenderType.user ? 'User' : 'Hisu';
       return '$sender: ${msg.text}';
-    }).join('\n');
+    }).join(' '); // Use space instead of newline for HTTP header compatibility
     
     return context.length > 500 ? context.substring(context.length - 500) : context;
   }
