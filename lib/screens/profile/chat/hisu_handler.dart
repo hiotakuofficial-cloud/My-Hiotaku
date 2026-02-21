@@ -8,7 +8,7 @@ class HisuHandler {
   static const int _maxHistorySize = 50;
   
   // API Configuration
-  static const String _apiUrl = 'https://hiotaku.in/hiotaku/api/v1/chat/';
+  static const String _apiUrl = String.fromEnvironment('hisu_api_url', defaultValue: 'https://hiotaku.in/hiotaku/api/v1/chat/');
   static const String _authKey = String.fromEnvironment('hisu_authkey');
   static const String _authKey2 = String.fromEnvironment('hisu_authkey2');
   static const String _babeer = String.fromEnvironment('hisu_babeer');

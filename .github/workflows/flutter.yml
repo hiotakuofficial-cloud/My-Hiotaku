@@ -72,6 +72,7 @@ jobs:
             --dart-define=hisu_authkey2=${{ secrets.HISU_AUTHKEY2 }} \
             --dart-define=hisu_babeer=${{ secrets.API_TOKEN }} \
             --dart-define=hisu_apikey=${{ secrets.HISU_APIKEY }} \
+            --dart-define=hisu_api_url=${{ secrets.HISU_API_URL }} \
             --dart-define=ENVIRONMENT=production
 
       - name: Upload Release APK
