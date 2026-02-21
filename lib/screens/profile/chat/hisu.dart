@@ -371,7 +371,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
             child: Text(
               'Hisu Ai',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
             ),
@@ -689,6 +689,7 @@ class _ChatInputArea extends StatelessWidget {
                         textInputAction: TextInputAction.newline,
                         decoration: InputDecoration(
                           hintText: 'Type a message...',
+                          hintStyle: const TextStyle(color: Colors.white54),
                           filled: true,
                           fillColor: Colors.grey.shade800.withOpacity(0.3),
                           border: OutlineInputBorder(
@@ -699,7 +700,7 @@ class _ChatInputArea extends StatelessWidget {
                               horizontal: 20.0, vertical: 12.0),
                         ),
                         onSubmitted: (_) => onSendMessage(),
-                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
