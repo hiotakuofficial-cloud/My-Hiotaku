@@ -310,6 +310,12 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
 
+    // Set transparent status bar
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ));
+
     return Scaffold(
       backgroundColor: const Color(0xFF111112),
       body: Stack(
