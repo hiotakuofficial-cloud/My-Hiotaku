@@ -7,6 +7,7 @@ import 'notifications/notification_of_user.dart';
 import 'notifications/handler/notification_of_user_handler.dart';
 import 'downloads/downloads.dart';
 import 'favourite/connected.dart';
+import 'chat/hisu.dart';
 import '../settings/settings.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -379,6 +380,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Handle specific options
                 if (title == 'Clear cache') {
                   _openAppSettings();
+                } else if (title == 'Chat') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HisuChatPage()),
+                  );
                 } else if (title == 'Requests') {
                   Navigator.push(
                     context,

@@ -68,6 +68,10 @@ jobs:
             --dart-define=FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }} \
             --dart-define=FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }} \
             --dart-define=IOS_BUNDLE_ID=${{ secrets.IOS_BUNDLE_ID }} \
+            --dart-define=hisu_authkey=${{ secrets.HISU_AUTHKEY }} \
+            --dart-define=hisu_authkey2=${{ secrets.HISU_AUTHKEY2 }} \
+            --dart-define=hisu_babeer=${{ secrets.API_TOKEN }} \
+            --dart-define=hisu_apikey=${{ secrets.HISU_APIKEY }} \
             --dart-define=ENVIRONMENT=production
 
       - name: Upload Release APK
