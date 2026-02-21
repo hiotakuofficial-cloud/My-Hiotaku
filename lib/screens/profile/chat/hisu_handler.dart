@@ -52,7 +52,9 @@ class HisuHandler {
         final truncatedContext = conversationContext.length > 500 
             ? conversationContext.substring(conversationContext.length - 500)
             : conversationContext;
-        headers['user-memory'] = truncatedContext;
+        // Replace newlines with spaces for HTTP header compatibility
+        final sanitizedContext = truncatedContext.replaceAll('\n', ' ').replaceAll('\r', ' ');
+        headers['user-memory'] = sanitizedContext;
       }
       
       final request = http.Request('POST', Uri.parse(_apiUrl))
