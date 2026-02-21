@@ -762,15 +762,6 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
     }
   }
 }
-                onClose();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // --- Widgets ---
 class _GlassPillContainer extends StatelessWidget {
