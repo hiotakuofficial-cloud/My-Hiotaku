@@ -749,10 +749,10 @@ class _ChatInputArea extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.transparent,
                 theme.scaffoldBackgroundColor.withOpacity(0.85),
+                Colors.transparent,
               ],
-              stops: const [0.0, 0.3],
+              stops: const [0.3, 1.0],
             ),
           ),
           child: Row(
