@@ -239,7 +239,6 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       backgroundColor: Colors.transparent,
       builder: (BuildContext sheetContext) {
         final ColorScheme colorScheme = Theme.of(sheetContext).colorScheme;
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
         
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
@@ -247,12 +246,10 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
             filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark 
-                    ? Colors.grey.shade900.withOpacity(0.95)
-                    : Colors.grey.shade100.withOpacity(0.95),
+                color: const Color(0xFF121212).withOpacity(0.95),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
                 border: Border.all(
-                  color: colorScheme.onSurface.withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.1),
                   width: 0.5,
                 ),
               ),
@@ -266,15 +263,15 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: colorScheme.onSurface.withOpacity(0.3),
+                        color: Colors.white.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
                   ListTile(
-                    leading: Icon(Icons.search, color: colorScheme.primary),
-                    title: Text('Search Anime',
-                        style: TextStyle(color: colorScheme.onSurface)),
+                    leading: const Icon(Icons.search, color: Colors.white),
+                    title: const Text('Search Anime',
+                        style: TextStyle(color: Colors.white)),
                     onTap: () {
                       Navigator.pop(sheetContext);
                       setState(() => _selectedOptionText = 'Search Anime');
@@ -282,9 +279,9 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                     },
                   ),
                   ListTile(
-                    leading: Icon(Icons.lightbulb_outline, color: colorScheme.tertiary),
-                    title: Text('Suggestions',
-                        style: TextStyle(color: colorScheme.onSurface)),
+                    leading: const Icon(Icons.lightbulb_outline, color: Colors.white),
+                    title: const Text('Suggestions',
+                        style: TextStyle(color: Colors.white)),
                     onTap: () {
                       Navigator.pop(sheetContext);
                       setState(() => _selectedOptionText = 'Suggestions');
