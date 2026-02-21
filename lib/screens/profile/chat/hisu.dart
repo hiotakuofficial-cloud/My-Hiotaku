@@ -412,19 +412,36 @@ class HisuDrawerScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
-        elevation: 0,
-        title: const Text('Hisu Ai', style: TextStyle(color: Colors.white)),
-        automaticallyImplyLeading: false,
-      ),
       body: RefreshIndicator(
         onRefresh: () => _handleRefresh(context),
         color: Colors.white,
         backgroundColor: const Color(0xFF121212),
         child: ListView(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(0),
           children: [
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Hisu Ai',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: onClose,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(color: Colors.white12, height: 1),
             ListTile(
               leading: const Icon(Icons.add_circle_outline, color: Colors.white),
               title: const Text('New Chat', style: TextStyle(color: Colors.white)),
