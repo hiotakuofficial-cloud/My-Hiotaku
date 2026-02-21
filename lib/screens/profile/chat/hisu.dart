@@ -504,7 +504,7 @@ class _GlassPillContainer extends StatelessWidget {
                 borderRadius: BorderRadius.circular(radius),
                 border: Border.all(
                   color: Colors.white.withOpacity(0.15),
-                  width: 1.0,
+                  width: 0.2,
                 ),
               ),
               child: child,
