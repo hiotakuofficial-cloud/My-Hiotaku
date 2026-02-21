@@ -680,7 +680,7 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_words.isNotEmpty && widget.message.sender == SenderType.ai && _animatedText.isEmpty)
+            if (_words.isNotEmpty && widget.message.sender == SenderType.ai)
               Wrap(
                 children: List.generate(_words.length, (index) {
                   return AnimatedOpacity(
@@ -695,9 +695,9 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
                   );
                 }),
               )
-            else
+            else if (_animatedText.isNotEmpty)
               Text(
-                _animatedText.isEmpty ? widget.message.text : _animatedText,
+                _animatedText,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: isUser ? Colors.white : Colors.white,
                 ),
