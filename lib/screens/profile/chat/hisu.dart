@@ -272,9 +272,14 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
           // Ignore anime cards parsing errors
         }
 
+        // Clean response text: normalize whitespace
+        final responseText = (result['response'] ?? 'No response')
+            .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces/newlines to single space
+            .trim();
+
         setState(() {
           _messages.add(ChatMessage(
-            text: result['response'] ?? 'No response',
+            text: responseText,
             sender: SenderType.ai,
             animeCards: animeCards,
           ));
