@@ -540,10 +540,12 @@ class _ChatMessageBubble extends StatefulWidget {
   State<_ChatMessageBubble> createState() => _ChatMessageBubbleState();
 }
 
-class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
+class _ChatMessageBubbleState extends State<_ChatMessageBubble> with SingleTickerProviderStateMixin {
   String _animatedText = '';
   Timer? _timer;
   bool _hasAnimated = false;
+  final List<String> _words = [];
+  final List<double> _wordOpacities = [];
 
   @override
   void initState() {
@@ -579,17 +581,44 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
   }
 
   void _animateText(String text) {
-    const typingSpeed = Duration(milliseconds: 30);
-    final words = text.split(' ');
-    _animatedText = '';
+    const typingSpeed = Duration(milliseconds: 100);
+    final allWords = text.split(' ');
+    _words.clear();
+    _wordOpacities.clear();
+    int currentIndex = 0;
 
     _timer = Timer.periodic(typingSpeed, (timer) {
-      if (words.isNotEmpty && mounted) {
+      if (currentIndex < allWords.length && mounted) {
         setState(() {
-          _animatedText += '${words.removeAt(0)} ';
+          _words.add(allWords[currentIndex]);
+          _wordOpacities.add(0.0);
+          
+          // Fade in current word
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (mounted && currentIndex < _wordOpacities.length) {
+              setState(() {
+                _wordOpacities[currentIndex] = 0.5;
+              });
+            }
+          });
+          
+          // Fully visible after delay
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (mounted && currentIndex < _wordOpacities.length) {
+              setState(() {
+                _wordOpacities[currentIndex] = 1.0;
+              });
+            }
+          });
+          
+          currentIndex++;
         });
       } else {
         timer.cancel();
+        // Fallback to full text
+        setState(() {
+          _animatedText = text;
+        });
       }
     });
   }
@@ -615,12 +644,28 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              _animatedText,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: isUser ? Colors.white : Colors.white,
+            if (_words.isNotEmpty && widget.message.sender == SenderType.ai && _animatedText.isEmpty)
+              Wrap(
+                children: List.generate(_words.length, (index) {
+                  return AnimatedOpacity(
+                    opacity: _wordOpacities[index],
+                    duration: const Duration(milliseconds: 150),
+                    child: Text(
+                      '${_words[index]} ',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                }),
+              )
+            else
+              Text(
+                _animatedText.isEmpty ? widget.message.text : _animatedText,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: isUser ? Colors.white : Colors.white,
+                ),
               ),
-            ),
             if (widget.message.animeCards.isNotEmpty)
               ...widget.message.animeCards.map((card) => _AnimeCardWidget(card: card)),
           ],
