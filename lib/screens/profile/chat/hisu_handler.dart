@@ -59,7 +59,7 @@ class HisuHandler {
         ..followRedirects = true
         ..maxRedirects = 5;
       
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 30));
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 45));
       final response = await http.Response.fromStream(streamedResponse);
 
       // Validate response body
