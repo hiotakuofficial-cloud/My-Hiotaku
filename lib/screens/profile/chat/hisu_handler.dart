@@ -59,7 +59,9 @@ class HisuHandler {
       
       final request = http.Request('POST', Uri.parse(_apiUrl))
         ..headers.addAll(headers)
-        ..body = jsonEncode({'message': message});
+        ..body = jsonEncode({'message': message})
+        ..followRedirects = true
+        ..maxRedirects = 5;
       
       final streamedResponse = await client.send(request).timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
