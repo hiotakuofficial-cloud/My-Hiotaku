@@ -666,33 +666,41 @@ class _ChatInputArea extends StatelessWidget {
             color: theme.scaffoldBackgroundColor.withOpacity(0.85),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
               IconButton(
                 icon: Icon(isEditing ? Icons.cancel : Icons.add_circle_outline),
                 onPressed: isEditing ? onCancelEdit : onPlusPressed,
                 color: Colors.white,
+                padding: const EdgeInsets.all(8.0),
               ),
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28.0),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                    child: TextField(
-                      controller: textController,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        hintText: 'Type a message...',
-                        filled: true,
-                        fillColor: Colors.grey.shade800.withOpacity(0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28.0),
-                          borderSide: BorderSide.none,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 120.0,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28.0),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                      child: TextField(
+                        controller: textController,
+                        maxLines: null,
+                        textInputAction: TextInputAction.newline,
+                        decoration: InputDecoration(
+                          hintText: 'Type a message...',
+                          filled: true,
+                          fillColor: Colors.grey.shade800.withOpacity(0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28.0),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20.0, vertical: 12.0),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20.0, vertical: 12.0),
+                        onSubmitted: (_) => onSendMessage(),
+                        style: TextStyle(color: theme.colorScheme.onSurface),
                       ),
-                      onSubmitted: (_) => onSendMessage(),
-                      style: TextStyle(color: theme.colorScheme.onSurface),
                     ),
                   ),
                 ),
@@ -701,6 +709,7 @@ class _ChatInputArea extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.arrow_upward_rounded),
                 onPressed: onSendMessage,
+                padding: const EdgeInsets.all(8.0),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black87,
