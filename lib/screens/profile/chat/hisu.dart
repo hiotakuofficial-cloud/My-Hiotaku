@@ -210,7 +210,20 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     );
     
     await SessionManager.updateSession(updatedSession);
-    _currentSession = updatedSession;
+    
+    // Update in local list
+    final index = _allSessions.indexWhere((s) => s.id == updatedSession.id);
+    if (index != -1) {
+      setState(() {
+        _allSessions[index] = updatedSession;
+        _currentSession = updatedSession;
+      });
+    }
+    
+    // Notify parent to rebuild drawer
+    if (mounted) {
+      (context.findAncestorStateOfType<_HisuChatPageState>())?.setState(() {});
+    }
   }
 
   Future<void> _createNewChat() async {
@@ -239,13 +252,17 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     // Save current session
     await _saveCurrentSession();
     
+    // Reload session from storage to get latest data
+    final latestSession = await SessionManager.getSession(session.id);
+    if (latestSession == null) return;
+    
     // Switch to new session
-    await SessionManager.setActiveSessionId(session.id);
+    await SessionManager.setActiveSessionId(latestSession.id);
     
     setState(() {
-      _currentSession = session;
+      _currentSession = latestSession;
       _messages.clear();
-      _messages.addAll(session.messages.map((msg) {
+      _messages.addAll(latestSession.messages.map((msg) {
         List<AnimeCard> animeCards = [];
         try {
           animeCards = (msg['animeCards'] as List?)
