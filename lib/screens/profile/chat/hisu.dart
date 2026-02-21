@@ -337,9 +337,11 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF111112),
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: <Widget>[
-          SafeArea(
+          Padding(
+            padding: EdgeInsets.only(top: topPadding),
             child: Column(
               children: <Widget>[
                 Expanded(
@@ -774,10 +776,10 @@ class _ChatInputArea extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                theme.scaffoldBackgroundColor.withOpacity(0.85),
                 Colors.transparent,
+                theme.scaffoldBackgroundColor.withOpacity(0.85),
               ],
-              stops: const [0.3, 1.0],
+              stops: const [0.7, 1.0],
             ),
           ),
           child: Row(
