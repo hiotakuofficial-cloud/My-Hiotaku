@@ -540,7 +540,7 @@ class _ChatMessageBubble extends StatefulWidget {
   final ChatMessage message;
   final VoidCallback onEdit;
 
-  const _ChatMessageBubble({required this.message, required this.onEdit});
+  const _ChatMessageBubble({super.key, required this.message, required this.onEdit});
 
   @override
   State<_ChatMessageBubble> createState() => _ChatMessageBubbleState();
