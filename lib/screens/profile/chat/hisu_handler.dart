@@ -41,9 +41,14 @@ class HisuHandler {
         final truncatedContext = conversationContext.length > 500 
             ? conversationContext.substring(conversationContext.length - 500)
             : conversationContext;
-        // Replace newlines with spaces for HTTP header compatibility
-        final sanitizedContext = truncatedContext.replaceAll('\n', ' ').replaceAll('\r', ' ');
-        headers['user-memory'] = sanitizedContext;
+        // Sanitize for HTTP header: remove all control characters and newlines
+        final sanitizedContext = truncatedContext
+            .replaceAll(RegExp(r'[\r\n\t\x00-\x1F\x7F]'), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+        if (sanitizedContext.isNotEmpty) {
+          headers['user-memory'] = sanitizedContext;
+        }
       }
       
       final request = http.Request('POST', Uri.parse(_apiUrl))
