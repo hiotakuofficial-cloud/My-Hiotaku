@@ -15,9 +15,11 @@ class HisuHandler {
   static const String _babeer = String.fromEnvironment('hisu_babeer');
   static const String _apiKey = String.fromEnvironment('hisu_apikey');
 
-  // Send message to Hisu API
-  static Future<Map<String, dynamic>> sendMessage(String message, {String? conversationContext}) async {
+  // Send message to Hisu API with retry logic
+  static Future<Map<String, dynamic>> sendMessage(String message, {String? conversationContext, int retryCount = 0}) async {
+    const maxRetries = 2;
     final client = http.Client();
+    
     try {
       // Validate API URL
       if (_apiUrl.isEmpty) {
@@ -26,7 +28,6 @@ class HisuHandler {
           'error': 'API configuration error. Please contact support.',
         };
       }
-
 
       final headers = {
         'Content-Type': 'application/json',
@@ -59,7 +60,6 @@ class HisuHandler {
       
       final streamedResponse = await client.send(request).timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
-      
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -77,22 +77,46 @@ class HisuHandler {
           };
         }
       } else {
+        // Retry on server errors
+        if (retryCount < maxRetries && (response.statusCode >= 500 || response.statusCode == 307)) {
+          client.close();
+          await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+          return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
+        }
         return {
           'success': false,
           'error': 'Server error (${response.statusCode}). Please try again.',
         };
       }
     } on TimeoutException {
+      // Retry on timeout
+      if (retryCount < maxRetries) {
+        client.close();
+        await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+        return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
+      }
       return {
         'success': false,
         'error': 'Request timeout. Please check your internet connection.',
       };
     } on FormatException catch (e) {
+      // Retry on format errors (malformed response)
+      if (retryCount < maxRetries) {
+        client.close();
+        await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+        return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
+      }
       return {
         'success': false,
         'error': 'Invalid response from server. Please try again.',
       };
     } catch (e) {
+      // Retry on any other error
+      if (retryCount < maxRetries) {
+        client.close();
+        await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+        return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
+      }
       return {
         'success': false,
         'error': 'Connection failed. Please try again later.',
