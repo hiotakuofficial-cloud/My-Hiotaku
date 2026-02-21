@@ -557,12 +557,16 @@ class _ChatMessageBubble extends StatefulWidget {
   State<_ChatMessageBubble> createState() => _ChatMessageBubbleState();
 }
 
-class _ChatMessageBubbleState extends State<_ChatMessageBubble> with SingleTickerProviderStateMixin {
+class _ChatMessageBubbleState extends State<_ChatMessageBubble> 
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   String _animatedText = '';
   Timer? _timer;
   bool _hasAnimated = false;
   final List<String> _words = [];
   final List<double> _wordOpacities = [];
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -578,9 +582,9 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> with SingleTicke
   @override
   void didUpdateWidget(covariant _ChatMessageBubble oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.message.text != oldWidget.message.text) {
+    if (widget.message.text != oldWidget.message.text && !_hasAnimated) {
       _timer?.cancel();
-      if (widget.message.sender == SenderType.ai && !_hasAnimated) {
+      if (widget.message.sender == SenderType.ai) {
         _animateText(widget.message.text);
         _hasAnimated = true;
       } else {
@@ -642,6 +646,7 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> with SingleTicke
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final isUser = widget.message.sender == SenderType.user;
     final screenWidth = MediaQuery.of(context).size.width;
