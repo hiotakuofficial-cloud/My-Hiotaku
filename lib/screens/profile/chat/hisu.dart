@@ -590,9 +590,7 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble> {
             Text(
               _animatedText,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: isUser 
-                    ? Colors.white 
-                    : theme.colorScheme.onSurface.withOpacity(0.7),
+                color: isUser ? Colors.white : Colors.white,
               ),
             ),
             if (widget.message.animeCards.isNotEmpty)
