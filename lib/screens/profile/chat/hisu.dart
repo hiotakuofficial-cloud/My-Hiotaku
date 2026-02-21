@@ -272,9 +272,10 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
           // Ignore anime cards parsing errors
         }
 
-        // Clean response text: normalize whitespace
+        // Clean response text: normalize excessive whitespace but preserve formatting
         final responseText = (result['response'] ?? 'No response')
-            .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces/newlines to single space
+            .replaceAll(RegExp(r'[ \t]+'), ' ') // Multiple spaces/tabs to single space
+            .replaceAll(RegExp(r'\n{3,}'), '\n\n') // Max 2 consecutive newlines
             .trim();
 
         setState(() {
