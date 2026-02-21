@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,7 +9,7 @@ class HisuHandler {
   static const int _maxHistorySize = 50;
   
   // API Configuration
-  static const String _apiUrl = String.fromEnvironment('hisu_api_url');
+  static const String _apiUrl = String.fromEnvironment('hisu_api_url', defaultValue: 'https://hiotaku.in/hiotaku/api/v1/chat/');
   static const String _authKey = String.fromEnvironment('hisu_authkey');
   static const String _authKey2 = String.fromEnvironment('hisu_authkey2');
   static const String _babeer = String.fromEnvironment('hisu_babeer');
@@ -17,6 +18,14 @@ class HisuHandler {
   // Send message to Hisu API
   static Future<Map<String, dynamic>> sendMessage(String message, {String? conversationContext}) async {
     try {
+      // Validate API URL
+      if (_apiUrl.isEmpty) {
+        return {
+          'success': false,
+          'error': 'API configuration error. Please contact support.',
+        };
+      }
+
       final headers = {
         'Content-Type': 'application/json',
         'authkey': _authKey,
@@ -51,15 +60,25 @@ class HisuHandler {
         } else {
           return {
             'success': false,
-            'error': 'API returned unsuccessful response',
+            'error': data['error'] ?? 'API returned unsuccessful response',
           };
         }
       } else {
         return {
           'success': false,
-          'error': 'Unable to connect. Please check your internet connection.',
+          'error': 'Server error (${response.statusCode}). Please try again.',
         };
       }
+    } on TimeoutException {
+      return {
+        'success': false,
+        'error': 'Request timeout. Please check your internet connection.',
+      };
+    } on FormatException {
+      return {
+        'success': false,
+        'error': 'Invalid response from server. Please try again.',
+      };
     } catch (e) {
       return {
         'success': false,
