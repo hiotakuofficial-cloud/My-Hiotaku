@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import '../../../config.dart';
 
 class HisuHandler {
@@ -22,22 +21,12 @@ class HisuHandler {
     try {
       // Validate API URL
       if (_apiUrl.isEmpty) {
-        Fluttertoast.showToast(
-          msg: "DEBUG: API URL is empty",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.CENTER,
-        );
         return {
           'success': false,
           'error': 'API configuration error. Please contact support.',
         };
       }
 
-      Fluttertoast.showToast(
-        msg: "DEBUG: URL: $_apiUrl",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
 
       final headers = {
         'Content-Type': 'application/json',
@@ -66,11 +55,6 @@ class HisuHandler {
       final streamedResponse = await client.send(request).timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
       
-      Fluttertoast.showToast(
-        msg: "DEBUG: Status ${response.statusCode}",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -94,31 +78,16 @@ class HisuHandler {
         };
       }
     } on TimeoutException {
-      Fluttertoast.showToast(
-        msg: "DEBUG: Request timeout",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.CENTER,
-      );
       return {
         'success': false,
         'error': 'Request timeout. Please check your internet connection.',
       };
     } on FormatException catch (e) {
-      Fluttertoast.showToast(
-        msg: "DEBUG: Format error - $e",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.CENTER,
-      );
       return {
         'success': false,
         'error': 'Invalid response from server. Please try again.',
       };
     } catch (e) {
-      Fluttertoast.showToast(
-        msg: "DEBUG: Error - $e",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.CENTER,
-      );
       return {
         'success': false,
         'error': 'Connection failed. Please try again later.',
