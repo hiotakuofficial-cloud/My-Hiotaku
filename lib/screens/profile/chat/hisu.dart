@@ -30,6 +30,16 @@ class _HisuChatPageState extends State<HisuChatPage> {
   final GlobalKey<CustomDrawerState> _drawerKey = GlobalKey<CustomDrawerState>();
 
   @override
+  void initState() {
+    super.initState();
+    // Set transparent status bar
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ));
+  }
+
+  @override
   Widget build(BuildContext context) {
     return CustomDrawer(
       key: _drawerKey,
@@ -329,23 +339,15 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
 
-    // Set transparent status bar
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
-
     return Scaffold(
       backgroundColor: const Color(0xFF111112),
       extendBodyBehindAppBar: true,
       body: Stack(
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.only(top: topPadding),
-            child: Column(
-              children: <Widget>[
-                Expanded(
-                  child: _MessageList(
+          Column(
+            children: <Widget>[
+              Expanded(
+                child: _MessageList(
                     scrollController: _scrollController,
                     messages: _messages,
                     isAITyping: _isAITyping,
