@@ -18,7 +18,7 @@ class HisuHandler {
   // Send message to Hisu API with retry logic
   static Future<Map<String, dynamic>> sendMessage(String message, {String? conversationContext, int retryCount = 0}) async {
     const maxRetries = 2;
-    final client = http.Client();
+    http.Client? client;
     
     try {
       // Validate API URL
@@ -29,6 +29,8 @@ class HisuHandler {
         };
       }
 
+      client = http.Client();
+      
       final headers = {
         'Content-Type': 'application/json',
         'authkey': _authKey,
@@ -64,7 +66,6 @@ class HisuHandler {
       // Validate response body
       if (response.body.isEmpty) {
         if (retryCount < maxRetries) {
-          client.close();
           await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
           return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
         }
@@ -92,7 +93,6 @@ class HisuHandler {
       } else {
         // Retry on server errors
         if (retryCount < maxRetries && (response.statusCode >= 500 || response.statusCode == 307)) {
-          client.close();
           await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
           return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
         }
@@ -104,7 +104,6 @@ class HisuHandler {
     } on TimeoutException {
       // Retry on timeout
       if (retryCount < maxRetries) {
-        client.close();
         await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
         return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
       }
@@ -112,10 +111,9 @@ class HisuHandler {
         'success': false,
         'error': 'Request timeout. Please check your internet connection.',
       };
-    } on FormatException catch (e) {
+    } on FormatException {
       // Retry on format errors (malformed response)
       if (retryCount < maxRetries) {
-        client.close();
         await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
         return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
       }
@@ -126,7 +124,6 @@ class HisuHandler {
     } catch (e) {
       // Retry on any other error
       if (retryCount < maxRetries) {
-        client.close();
         await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
         return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
       }
@@ -135,7 +132,7 @@ class HisuHandler {
         'error': 'Connection failed. Please try again later.',
       };
     } finally {
-      client.close();
+      client?.close();
     }
   }
 
