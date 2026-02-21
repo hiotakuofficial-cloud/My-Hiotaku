@@ -15,17 +15,27 @@ class HisuHandler {
   static const String _apiKey = String.fromEnvironment('hisu_apikey');
 
   // Send message to Hisu API
-  static Future<Map<String, dynamic>> sendMessage(String message) async {
+  static Future<Map<String, dynamic>> sendMessage(String message, {String? conversationContext}) async {
     try {
+      final headers = {
+        'Content-Type': 'application/json',
+        'authkey': _authKey,
+        'authkey2': _authKey2,
+        'babeer': _babeer,
+        'apikey': _apiKey,
+      };
+      
+      // Add conversation context if available (max 500 chars)
+      if (conversationContext != null && conversationContext.isNotEmpty) {
+        final truncatedContext = conversationContext.length > 500 
+            ? conversationContext.substring(conversationContext.length - 500)
+            : conversationContext;
+        headers['user-memory'] = truncatedContext;
+      }
+      
       final response = await http.post(
         Uri.parse(_apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'authkey': _authKey,
-          'authkey2': _authKey2,
-          'babeer': _babeer,
-          'apikey': _apiKey,
-        },
+        headers: headers,
         body: jsonEncode({'message': message}),
       ).timeout(const Duration(seconds: 30));
 

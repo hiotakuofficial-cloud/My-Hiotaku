@@ -177,6 +177,20 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     });
   }
 
+  String _buildConversationContext() {
+    // Build context from last 5 messages (max 500 chars)
+    final recentMessages = _messages.length > 5 
+        ? _messages.sublist(_messages.length - 5)
+        : _messages;
+    
+    final context = recentMessages.map((msg) {
+      final sender = msg.sender == SenderType.user ? 'User' : 'Hisu';
+      return '$sender: ${msg.text}';
+    }).join('\n');
+    
+    return context.length > 500 ? context.substring(context.length - 500) : context;
+  }
+
   Future<void> _handleSendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
@@ -205,7 +219,9 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       
       _scrollToBottom();
 
-      final result = await HisuHandler.sendMessage(text);
+      // Build conversation context from recent messages
+      final context = _buildConversationContext();
+      final result = await HisuHandler.sendMessage(text, conversationContext: context);
 
       if (result['success'] == true) {
         final animeCards = (result['anime_cards'] as List?)
