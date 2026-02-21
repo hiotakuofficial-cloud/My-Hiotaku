@@ -211,9 +211,15 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     
     final context = recentMessages.map((msg) {
       final sender = msg.sender == SenderType.user ? 'User' : 'Hisu';
-      return '$sender: ${msg.text}';
+      // Clean text: remove emojis and special characters for context
+      final cleanText = msg.text
+          .replaceAll(RegExp(r'[^\x20-\x7E]'), '') // Remove non-ASCII
+          .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces to single
+          .trim();
+      return '$sender: $cleanText';
     }).join(' '); // Use space instead of newline for HTTP header compatibility
     
+    // Truncate to 500 chars
     return context.length > 500 ? context.substring(context.length - 500) : context;
   }
 

@@ -44,20 +44,9 @@ class HisuHandler {
       
       // Add conversation context if available (max 500 chars)
       if (conversationContext != null && conversationContext.isNotEmpty) {
-        final truncatedContext = conversationContext.length > 500 
-            ? conversationContext.substring(conversationContext.length - 500)
-            : conversationContext;
-        // Sanitize: remove control characters, newlines, and emojis/special unicode
-        final sanitizedContext = truncatedContext
-            .replaceAll(RegExp(r'[\r\n\t\x00-\x1F\x7F]'), ' ') // Control chars
-            .replaceAll(RegExp(r'[^\x20-\x7E]'), '') // Remove non-ASCII (emojis, unicode)
-            .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces to single
-            .trim();
-        
-        if (sanitizedContext.isNotEmpty) {
-          headers['user-memory'] = sanitizedContext;
-          Fluttertoast.showToast(msg: "🧠 Context: ${sanitizedContext.length} chars", toastLength: Toast.LENGTH_SHORT);
-        }
+        // Context is already cleaned and truncated to 500 chars
+        headers['user-memory'] = conversationContext;
+        Fluttertoast.showToast(msg: "🧠 Context: ${conversationContext.length} chars", toastLength: Toast.LENGTH_SHORT);
       }
       
       final request = http.Request('POST', Uri.parse(_apiUrl))
