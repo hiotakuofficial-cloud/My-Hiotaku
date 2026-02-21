@@ -612,6 +612,31 @@ class _MessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Show empty state if no messages
+    if (messages.isEmpty && !isAITyping) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "I'm Hisu",
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "What can I help with?",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       controller: scrollController,
