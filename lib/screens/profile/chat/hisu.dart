@@ -97,19 +97,37 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
   bool _isAITyping = false;
   ChatMessage? _editingMessage;
   String? _selectedOptionText;
+  bool _autoScroll = true;
 
   @override
   void initState() {
     super.initState();
     _loadChatHistory();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _saveChatHistory();
+    _scrollController.removeListener(_onScroll);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    // If user scrolls up manually, disable auto scroll
+    if (_scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      
+      // If user is near bottom (within 100px), enable auto scroll
+      if (maxScroll - currentScroll < 100) {
+        _autoScroll = true;
+      } else {
+        _autoScroll = false;
+      }
+    }
   }
 
   Future<void> _loadChatHistory() async {
@@ -143,6 +161,8 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
   }
 
   void _scrollToBottom() {
+    if (!_autoScroll) return; // Don't force scroll if user scrolled up
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -168,13 +188,15 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
         _saveChatHistory();
       }
     } else {
+      // Enable auto scroll when sending message
+      _autoScroll = true;
+      
       setState(() {
         _messages.add(ChatMessage(text: text, sender: SenderType.user));
         _isAITyping = true;
       });
       
-      // Scroll after user message
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      _scrollToBottom();
 
       final result = await HisuHandler.sendMessage(text);
 
@@ -202,9 +224,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       }
       
       _saveChatHistory();
-      
-      // Scroll after AI response
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      _scrollToBottom();
     }
     _textController.clear();
   }
@@ -500,12 +520,14 @@ class _MessageList extends StatelessWidget {
       controller: scrollController,
       padding: const EdgeInsets.only(top: 100.0, left: 10.0, right: 10.0, bottom: 8.0),
       itemCount: messages.length + (isAITyping ? 1 : 0),
+      cacheExtent: 1000, // Pre-render items for smooth scrolling
       itemBuilder: (context, index) {
         if (index == messages.length && isAITyping) {
           return const _TypingIndicator();
         }
         final message = messages[index];
         return _ChatMessageBubble(
+          key: ValueKey('${message.text}_$index'), // Unique key for each message
           message: message,
           onEdit: () => onEdit(message),
         );
@@ -704,13 +726,13 @@ class _TypingIndicator extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 22.0),
         child: Shimmer.fromColors(
-          baseColor: Colors.grey[600]!,
-          highlightColor: Colors.grey[300]!,
+          baseColor: Colors.grey[800]!,
+          highlightColor: Colors.grey[400]!,
           period: const Duration(milliseconds: 1500),
           child: Text(
             'Thinking...',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white,
+              color: Colors.grey[800],
               fontWeight: FontWeight.w500,
             ),
           ),
