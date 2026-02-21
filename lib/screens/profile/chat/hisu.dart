@@ -348,35 +348,34 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
             children: <Widget>[
               Expanded(
                 child: _MessageList(
-                    scrollController: _scrollController,
-                    messages: _messages,
-                    isAITyping: _isAITyping,
-                    onEdit: (message) {
-                      setState(() {
-                        _editingMessage = message;
-                        _textController.text = message.text;
-                      });
-                    },
-                  ),
-                ),
-                _ChatInputArea(
-                  textController: _textController,
-                  onSendMessage: _handleSendMessage,
-                  onStopGeneration: _handleStopGeneration,
-                  onPlusPressed: _showOptionsBottomSheet,
-                  isEditing: _editingMessage != null,
+                  scrollController: _scrollController,
+                  messages: _messages,
                   isAITyping: _isAITyping,
-                  selectedOptionText: _selectedOptionText,
-                  onClearSelectedOption: _clearSelectedOption,
-                  onCancelEdit: () {
+                  onEdit: (message) {
                     setState(() {
-                      _editingMessage = null;
-                      _textController.clear();
+                      _editingMessage = message;
+                      _textController.text = message.text;
                     });
                   },
                 ),
-              ],
-            ),
+              ),
+              _ChatInputArea(
+                textController: _textController,
+                onSendMessage: _handleSendMessage,
+                onStopGeneration: _handleStopGeneration,
+                onPlusPressed: _showOptionsBottomSheet,
+                isEditing: _editingMessage != null,
+                isAITyping: _isAITyping,
+                selectedOptionText: _selectedOptionText,
+                onClearSelectedOption: _clearSelectedOption,
+                onCancelEdit: () {
+                  setState(() {
+                    _editingMessage = null;
+                    _textController.clear();
+                  });
+                },
+              ),
+            ],
           ),
           _buildTopBar(topPadding, context),
         ],
