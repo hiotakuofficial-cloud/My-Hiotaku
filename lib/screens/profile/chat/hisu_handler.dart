@@ -61,6 +61,19 @@ class HisuHandler {
       final streamedResponse = await client.send(request).timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
 
+      // Validate response body
+      if (response.body.isEmpty) {
+        if (retryCount < maxRetries) {
+          client.close();
+          await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+          return sendMessage(message, conversationContext: conversationContext, retryCount: retryCount + 1);
+        }
+        return {
+          'success': false,
+          'error': 'Empty response from server. Please try again.',
+        };
+      }
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
