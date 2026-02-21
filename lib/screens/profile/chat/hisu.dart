@@ -732,7 +732,15 @@ class _ChatInputArea extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0)
               .copyWith(bottom: MediaQuery.of(context).padding.bottom + 8.0),
           decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor.withOpacity(0.85),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                theme.scaffoldBackgroundColor.withOpacity(0.85),
+              ],
+              stops: const [0.0, 0.3],
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
