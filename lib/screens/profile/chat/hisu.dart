@@ -87,10 +87,10 @@ class AnimeCard {
 
   factory AnimeCard.fromJson(Map<String, dynamic> json) {
     return AnimeCard(
-      id: json['id'],
-      title: json['title'],
-      type: json['type'],
-      source: json['source'],
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      source: json['source']?.toString() ?? '',
     );
   }
 }
@@ -148,14 +148,30 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     final history = await HisuHandler.loadChatHistory();
     if (history.isNotEmpty) {
       setState(() {
-        _messages.addAll(history.map((msg) => ChatMessage(
-          text: msg['text'],
-          sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
-          animeCards: (msg['animeCards'] as List?)
-              ?.map((card) => AnimeCard.fromJson(card))
-              .toList() ?? [],
-          skipAnimation: true, // Skip animation for loaded history
-        )));
+        _messages.addAll(history.map((msg) {
+          List<AnimeCard> animeCards = [];
+          try {
+            animeCards = (msg['animeCards'] as List?)
+                ?.map((card) {
+                  try {
+                    return AnimeCard.fromJson(card as Map<String, dynamic>);
+                  } catch (e) {
+                    return null;
+                  }
+                })
+                .whereType<AnimeCard>()
+                .toList() ?? [];
+          } catch (e) {
+            // Ignore anime cards parsing errors
+          }
+          
+          return ChatMessage(
+            text: msg['text']?.toString() ?? '',
+            sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
+            animeCards: animeCards,
+            skipAnimation: true,
+          );
+        }));
       });
       _scrollToBottom();
     }
@@ -246,9 +262,21 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       final result = await HisuHandler.sendMessage(text, conversationContext: context);
 
       if (result['success'] == true) {
-        final animeCards = (result['anime_cards'] as List?)
-            ?.map((card) => AnimeCard.fromJson(card))
-            .toList() ?? [];
+        List<AnimeCard> animeCards = [];
+        try {
+          animeCards = (result['anime_cards'] as List?)
+              ?.map((card) {
+                try {
+                  return AnimeCard.fromJson(card as Map<String, dynamic>);
+                } catch (e) {
+                  return null;
+                }
+              })
+              .whereType<AnimeCard>()
+              .toList() ?? [];
+        } catch (e) {
+          // Ignore anime cards parsing errors
+        }
 
         setState(() {
           _messages.add(ChatMessage(
