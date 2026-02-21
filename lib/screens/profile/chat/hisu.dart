@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:shimmer/shimmer.dart';
 import '../../../widgets/custom_drawer.dart';
 import 'hisu_handler.dart';
+import 'chat_session.dart';
+import 'session_manager.dart';
 
 // --- Main Entry Point ---
 class HisuChatPage extends StatefulWidget {
@@ -100,21 +102,177 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
   ChatMessage? _editingMessage;
   String? _selectedOptionText;
   bool _autoScroll = true;
+  
+  // Session management
+  ChatSession? _currentSession;
+  List<ChatSession> _allSessions = [];
 
   @override
   void initState() {
     super.initState();
-    _loadChatHistory();
+    _initializeSession();
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _saveChatHistory();
+    _saveCurrentSession();
     _scrollController.removeListener(_onScroll);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeSession() async {
+    // Load all sessions
+    _allSessions = await SessionManager.getSessions();
+    
+    // Get active session or create new one
+    final activeId = await SessionManager.getActiveSessionId();
+    if (activeId != null) {
+      _currentSession = await SessionManager.getSession(activeId);
+    }
+    
+    // If no active session, create new one
+    if (_currentSession == null) {
+      _currentSession = await SessionManager.createNewSession();
+      _allSessions.insert(0, _currentSession!);
+    }
+    
+    // Load messages from current session
+    setState(() {
+      _messages.addAll(_currentSession!.messages.map((msg) {
+        List<AnimeCard> animeCards = [];
+        try {
+          animeCards = (msg['animeCards'] as List?)
+              ?.map((card) {
+                try {
+                  return AnimeCard.fromJson(card as Map<String, dynamic>);
+                } catch (e) {
+                  return null;
+                }
+              })
+              .whereType<AnimeCard>()
+              .toList() ?? [];
+        } catch (e) {
+          // Ignore anime cards parsing errors
+        }
+        
+        return ChatMessage(
+          text: msg['text']?.toString() ?? '',
+          sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
+          animeCards: animeCards,
+          skipAnimation: true,
+        );
+      }));
+    });
+    
+    _scrollToBottom();
+  }
+
+  Future<void> _saveCurrentSession() async {
+    if (_currentSession == null) return;
+    
+    final history = _messages
+        .where((msg) => !msg.isError)
+        .map((msg) => {
+      'text': msg.text,
+      'sender': msg.sender == SenderType.user ? 'user' : 'ai',
+      'animeCards': msg.animeCards.map((card) => {
+        'id': card.id,
+        'title': card.title,
+        'type': card.type,
+        'source': card.source,
+      }).toList(),
+    }).toList();
+    
+    // Update title from first user message if still "New Chat"
+    String title = _currentSession!.title;
+    if (title == 'New Chat' && history.isNotEmpty) {
+      final firstUserMsg = history.firstWhere(
+        (m) => m['sender'] == 'user',
+        orElse: () => {'text': 'New Chat'},
+      );
+      title = SessionManager.generateTitle(firstUserMsg['text'] as String);
+    }
+    
+    final updatedSession = _currentSession!.copyWith(
+      title: title,
+      updatedAt: DateTime.now(),
+      messages: history,
+    );
+    
+    await SessionManager.updateSession(updatedSession);
+    _currentSession = updatedSession;
+  }
+
+  Future<void> _createNewChat() async {
+    // Save current session
+    await _saveCurrentSession();
+    
+    // Create new session
+    final newSession = await SessionManager.createNewSession();
+    
+    setState(() {
+      _currentSession = newSession;
+      _allSessions.insert(0, newSession);
+      _messages.clear();
+      _textController.clear();
+    });
+  }
+
+  Future<void> _switchSession(ChatSession session) async {
+    if (_currentSession?.id == session.id) return;
+    
+    // Save current session
+    await _saveCurrentSession();
+    
+    // Switch to new session
+    await SessionManager.setActiveSessionId(session.id);
+    
+    setState(() {
+      _currentSession = session;
+      _messages.clear();
+      _messages.addAll(session.messages.map((msg) {
+        List<AnimeCard> animeCards = [];
+        try {
+          animeCards = (msg['animeCards'] as List?)
+              ?.map((card) {
+                try {
+                  return AnimeCard.fromJson(card as Map<String, dynamic>);
+                } catch (e) {
+                  return null;
+                }
+              })
+              .whereType<AnimeCard>()
+              .toList() ?? [];
+        } catch (e) {
+          // Ignore
+        }
+        
+        return ChatMessage(
+          text: msg['text']?.toString() ?? '',
+          sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
+          animeCards: animeCards,
+          skipAnimation: true,
+        );
+      }));
+    });
+    
+    _scrollToBottom();
+  }
+
+  Future<void> _deleteSession(String sessionId) async {
+    await SessionManager.deleteSession(sessionId);
+    
+    setState(() {
+      _allSessions.removeWhere((s) => s.id == sessionId);
+    });
+    
+    // If deleted current session, create new one
+    if (_currentSession?.id == sessionId) {
+      await _createNewChat();
+    }
   }
 
   void _onScroll() {
@@ -130,55 +288,6 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
         _autoScroll = false;
       }
     }
-  }
-
-  Future<void> _loadChatHistory() async {
-    final history = await HisuHandler.loadChatHistory();
-    if (history.isNotEmpty) {
-      setState(() {
-        _messages.addAll(history.map((msg) {
-          List<AnimeCard> animeCards = [];
-          try {
-            animeCards = (msg['animeCards'] as List?)
-                ?.map((card) {
-                  try {
-                    return AnimeCard.fromJson(card as Map<String, dynamic>);
-                  } catch (e) {
-                    return null;
-                  }
-                })
-                .whereType<AnimeCard>()
-                .toList() ?? [];
-          } catch (e) {
-            // Ignore anime cards parsing errors
-          }
-          
-          return ChatMessage(
-            text: msg['text']?.toString() ?? '',
-            sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
-            animeCards: animeCards,
-            skipAnimation: true,
-          );
-        }));
-      });
-      _scrollToBottom();
-    }
-  }
-
-  Future<void> _saveChatHistory() async {
-    final history = _messages
-        .where((msg) => !msg.isError) // Exclude error messages
-        .map((msg) => {
-      'text': msg.text,
-      'sender': msg.sender == SenderType.user ? 'user' : 'ai',
-      'animeCards': msg.animeCards.map((card) => {
-        'id': card.id,
-        'title': card.title,
-        'type': card.type,
-        'source': card.source,
-      }).toList(),
-    }).toList();
-    await HisuHandler.saveChatHistory(history);
   }
 
   void _scrollToBottom() {
@@ -234,7 +343,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
           _messages[index] = ChatMessage(text: text, sender: _editingMessage!.sender);
           _editingMessage = null;
         });
-        _saveChatHistory();
+        _saveCurrentSession();
       }
       _textController.clear();
     } else {
@@ -297,7 +406,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
         });
       }
       
-      _saveChatHistory();
+      _saveCurrentSession();
       _scrollToBottom();
     }
   }
