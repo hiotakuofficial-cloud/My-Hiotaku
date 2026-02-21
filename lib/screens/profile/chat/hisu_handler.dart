@@ -47,15 +47,16 @@ class HisuHandler {
         final truncatedContext = conversationContext.length > 500 
             ? conversationContext.substring(conversationContext.length - 500)
             : conversationContext;
-        // Sanitize for HTTP header: remove all control characters, newlines, and non-ASCII
+        // Sanitize: remove only control characters and newlines
         final sanitizedContext = truncatedContext
-            .replaceAll(RegExp(r'[\r\n\t\x00-\x1F\x7F]'), ' ') // Control characters
-            .replaceAll(RegExp(r'[^\x20-\x7E]'), '') // Remove non-ASCII (emojis, etc)
-            .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces to single
+            .replaceAll(RegExp(r'[\r\n\t\x00-\x1F\x7F]'), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
             .trim();
         if (sanitizedContext.isNotEmpty) {
-          headers['user-memory'] = sanitizedContext;
-          Fluttertoast.showToast(msg: "🧠 Context: ${sanitizedContext.length} chars", toastLength: Toast.LENGTH_SHORT);
+          // URL encode to safely pass emojis and special characters in HTTP header
+          final encodedContext = Uri.encodeComponent(sanitizedContext);
+          headers['user-memory'] = encodedContext;
+          Fluttertoast.showToast(msg: "🧠 Context: ${sanitizedContext.length} chars (encoded)", toastLength: Toast.LENGTH_SHORT);
         }
       }
       
