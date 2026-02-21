@@ -187,7 +187,11 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
         });
         _saveChatHistory();
       }
+      _textController.clear();
     } else {
+      // Clear input immediately
+      _textController.clear();
+      
       // Enable auto scroll when sending message
       _autoScroll = true;
       
@@ -226,7 +230,12 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       _saveChatHistory();
       _scrollToBottom();
     }
-    _textController.clear();
+  }
+
+  void _handleStopGeneration() {
+    setState(() {
+      _isAITyping = false;
+    });
   }
 
   void _clearSelectedOption() {
@@ -321,11 +330,13 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                     },
                   ),
                 ),
-                _ChatInputArea(
+                ChatInputArea(
                   textController: _textController,
                   onSendMessage: _handleSendMessage,
+                  onStopGeneration: _handleStopGeneration,
                   onPlusPressed: _showOptionsBottomSheet,
                   isEditing: _editingMessage != null,
+                  isAITyping: _isAITyping,
                   selectedOptionText: _selectedOptionText,
                   onClearSelectedOption: _clearSelectedOption,
                   onCancelEdit: () {
@@ -703,8 +714,10 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
 class _ChatInputArea extends StatelessWidget {
   final TextEditingController textController;
   final VoidCallback onSendMessage;
+  final VoidCallback onStopGeneration;
   final VoidCallback onPlusPressed;
   final bool isEditing;
+  final bool isAITyping;
   final String? selectedOptionText;
   final VoidCallback? onClearSelectedOption;
   final VoidCallback onCancelEdit;
@@ -712,8 +725,10 @@ class _ChatInputArea extends StatelessWidget {
   const _ChatInputArea({
     required this.textController,
     required this.onSendMessage,
+    required this.onStopGeneration,
     required this.onPlusPressed,
     required this.isEditing,
+    required this.isAITyping,
     this.selectedOptionText,
     this.onClearSelectedOption,
     required this.onCancelEdit,
@@ -789,8 +804,8 @@ class _ChatInputArea extends StatelessWidget {
               ),
               const SizedBox(width: 8.0),
               IconButton(
-                icon: const Icon(Icons.arrow_upward_rounded),
-                onPressed: onSendMessage,
+                icon: Icon(isAITyping ? Icons.stop_rounded : Icons.arrow_upward_rounded),
+                onPressed: isAITyping ? onStopGeneration : onSendMessage,
                 padding: const EdgeInsets.all(8.0),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white,
