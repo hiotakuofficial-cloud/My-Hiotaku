@@ -489,17 +489,17 @@ class _GlassPillContainer extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(radius),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+            filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
             child: Container(
               padding: isCircle 
                   ? const EdgeInsets.all(10.0)
                   : const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               decoration: BoxDecoration(
-                color: const Color(0xFF212121).withOpacity(0.4),
+                color: const Color(0xFF212121).withOpacity(0.6),
                 borderRadius: BorderRadius.circular(radius),
                 border: Border.all(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.2),
-                  width: 0.5,
+                  color: Colors.white.withOpacity(0.15),
+                  width: 1.0,
                 ),
               ),
               child: child,
