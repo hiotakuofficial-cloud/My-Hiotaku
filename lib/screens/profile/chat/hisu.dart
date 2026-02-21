@@ -773,21 +773,21 @@ class _ChatInputArea extends StatelessWidget {
                             borderRadius: BorderRadius.circular(28.0),
                             borderSide: BorderSide(
                               color: Colors.white.withOpacity(0.15),
-                              width: 1.0,
+                              width: 0.2,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(28.0),
                             borderSide: BorderSide(
                               color: Colors.white.withOpacity(0.15),
-                              width: 1.0,
+                              width: 0.2,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(28.0),
                             borderSide: BorderSide(
                               color: Colors.white.withOpacity(0.25),
-                              width: 1.0,
+                              width: 0.2,
                             ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
