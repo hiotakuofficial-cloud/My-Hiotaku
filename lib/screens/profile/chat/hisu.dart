@@ -352,23 +352,28 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          _GlassPillContainer(
-            onTap: widget.onMenuPressed,
-            isCircle: true,
-            child: const Icon(
-              Icons.menu,
-              color: Colors.white,
-              size: 24.0,
-            ),
-          ),
-          _GlassPillContainer(
-            child: Text(
-              'Hisu Ai',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
+          Row(
+            children: [
+              _GlassPillContainer(
+                onTap: widget.onMenuPressed,
+                isCircle: true,
+                child: const Icon(
+                  Icons.menu,
+                  color: Colors.white,
+                  size: 24.0,
+                ),
+              ),
+              const SizedBox(width: 12),
+              _GlassPillContainer(
+                child: Text(
+                  'Hisu Ai',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+            ],
           ),
           _GlassPillContainer(
             child: const Row(
