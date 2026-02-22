@@ -11,6 +11,7 @@ import 'hisu_handler.dart';
 import 'chat_session.dart';
 import 'session_manager.dart';
 import 'components/context_menu.dart';
+import 'components/hisu_alert.dart';
 
 // --- Main Entry Point ---
 class HisuChatPage extends StatefulWidget {
@@ -761,6 +762,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
               ),
               const SizedBox(width: 12),
               _GlassPillContainer(
+                onTap: () => HisuAlert.showPrivacyNotice(context),
                 child: Text(
                   'Hisu Ai',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
