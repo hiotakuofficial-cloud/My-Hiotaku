@@ -51,9 +51,10 @@ class ResponseSanitizer {
         .replaceAll(RegExp(r'```[^`]*```'), '') // ```code```
         .replaceAll(RegExp(r'`([^`]+)`'), r'$1') // `code`
         
-        // Fix line breaks - remove random mid-sentence breaks
-        .replaceAll(RegExp(r'([a-z,])\s*\n\s*([a-z])'), r'$1 $2') // Join broken sentences
+        // Fix line breaks - aggressive joining
+        .replaceAll(RegExp(r'([a-zA-Z,!?])\s*\n\s*([a-zA-Z])'), r'$1 $2') // Join broken sentences
         .replaceAll(RegExp(r'\n\s+'), '\n') // Remove leading spaces after newline
+        .replaceAll(RegExp(r'\s+\n'), '\n') // Remove trailing spaces before newline
         
         // Clean excessive whitespace
         .replaceAll(RegExp(r'[ \t]+'), ' ') // Multiple spaces/tabs to single space
