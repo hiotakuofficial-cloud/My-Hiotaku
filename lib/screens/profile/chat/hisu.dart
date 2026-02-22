@@ -9,6 +9,7 @@ import '../../../widgets/custom_drawer.dart';
 import 'hisu_handler.dart';
 import 'chat_session.dart';
 import 'session_manager.dart';
+import 'components/context_menu.dart';
 
 // --- Main Entry Point ---
 class HisuChatPage extends StatefulWidget {
@@ -138,12 +139,13 @@ class HisuChatScreen extends StatefulWidget {
   State<HisuChatScreen> createState() => _HisuChatScreenState();
 }
 
-class _HisuChatScreenState extends State<HisuChatScreen> {
+class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProviderStateMixin, ContextMenuMixin {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isAITyping = false;
   ChatMessage? _editingMessage;
+  int? _editingMessageIndex;
   String? _selectedOptionText;
   bool _autoScroll = true;
   
@@ -401,20 +403,117 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     return context.length > 500 ? context.substring(context.length - 500) : context;
   }
 
+  Future<void> _showMessageContextMenu(BuildContext context, Offset position, ChatMessage message, int index) async {
+    if (message.sender != SenderType.user) return; // Only for user messages
+    
+    final menuItems = [
+      MenuItemData(
+        icon: Icons.copy_outlined,
+        text: 'Copy',
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: message.text));
+        },
+      ),
+      MenuItemData(
+        icon: Icons.edit_outlined,
+        text: 'Edit',
+        onPressed: () {
+          setState(() {
+            _editingMessage = message;
+            _editingMessageIndex = index;
+            _textController.text = message.text;
+          });
+        },
+      ),
+      MenuItemData(
+        icon: Icons.delete_outline,
+        text: 'Delete',
+        iconColor: Colors.red,
+        onPressed: () {
+          setState(() {
+            _messages.removeAt(index);
+          });
+          _saveCurrentSession();
+        },
+      ),
+    ];
+
+    await showAnimatedContextMenu(context, position, menuItems);
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _editingMessage = null;
+      _editingMessageIndex = null;
+      _textController.clear();
+    });
+  }
+
   Future<void> _handleSendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    if (_editingMessage != null) {
-      final index = _messages.indexOf(_editingMessage!);
-      if (index != -1) {
-        setState(() {
-          _messages[index] = ChatMessage(text: text, sender: _editingMessage!.sender);
-          _editingMessage = null;
-        });
-        _saveCurrentSession();
-      }
+    if (_editingMessage != null && _editingMessageIndex != null) {
+      // Remove all messages after the edited message
+      setState(() {
+        _messages.removeRange(_editingMessageIndex! + 1, _messages.length);
+        _messages[_editingMessageIndex!] = ChatMessage(text: text, sender: SenderType.user);
+        _editingMessage = null;
+        _editingMessageIndex = null;
+      });
       _textController.clear();
+      _saveCurrentSession();
+      
+      // Send new message to AI with truncated history
+      setState(() {
+        _isAITyping = true;
+      });
+      
+      final context = _buildConversationContext();
+      final result = await HisuHandler.sendMessage(text, conversationContext: context);
+
+      if (result['success'] == true) {
+        List<AnimeCard> animeCards = [];
+        try {
+          animeCards = (result['anime_cards'] as List?)
+              ?.map((card) {
+                try {
+                  return AnimeCard.fromJson(card as Map<String, dynamic>);
+                } catch (e) {
+                  return null;
+                }
+              })
+              .whereType<AnimeCard>()
+              .toList() ?? [];
+        } catch (e) {
+          // Ignore
+        }
+
+        final responseText = (result['response'] ?? 'No response')
+            .replaceAll(RegExp(r'[ \t]+'), ' ')
+            .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+            .trim();
+
+        setState(() {
+          _messages.add(ChatMessage(
+            text: responseText,
+            sender: SenderType.ai,
+            animeCards: animeCards,
+          ));
+          _isAITyping = false;
+        });
+      } else {
+        setState(() {
+          _messages.add(ChatMessage(
+            text: result['error'] ?? 'Something went wrong',
+            sender: SenderType.ai,
+            isError: true,
+          ));
+          _isAITyping = false;
+        });
+      }
+      
+      _saveCurrentSession();
     } else {
       // Clear input immediately
       _textController.clear();
@@ -576,9 +675,38 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                       _textController.text = message.text;
                     });
                   },
+                  onLongPress: _showMessageContextMenu,
                   onScrollToBottom: _scrollToBottom,
                 ),
               ),
+              if (_editingMessage != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: const Color(0xFF2b2b2b),
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icons/edit.svg',
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Editing message',
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                        onPressed: _cancelEdit,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
               _ChatInputArea(
                 textController: _textController,
                 onSendMessage: _handleSendMessage,
@@ -588,12 +716,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
                 isAITyping: _isAITyping,
                 selectedOptionText: _selectedOptionText,
                 onClearSelectedOption: _clearSelectedOption,
-                onCancelEdit: () {
-                  setState(() {
-                    _editingMessage = null;
-                    _textController.clear();
-                  });
-                },
+                onCancelEdit: _cancelEdit,
               ),
             ],
           ),
@@ -958,6 +1081,7 @@ class _MessageList extends StatelessWidget {
   final List<ChatMessage> messages;
   final bool isAITyping;
   final Function(ChatMessage) onEdit;
+  final Function(BuildContext, Offset, ChatMessage, int)? onLongPress;
   final VoidCallback? onScrollToBottom;
 
   const _MessageList({
@@ -965,6 +1089,7 @@ class _MessageList extends StatelessWidget {
     required this.messages,
     required this.isAITyping,
     required this.onEdit,
+    this.onLongPress,
     this.onScrollToBottom,
   });
 
@@ -1011,6 +1136,9 @@ class _MessageList extends StatelessWidget {
           key: ValueKey('${message.text}_$index'), // Unique key for each message
           message: message,
           onEdit: () => onEdit(message),
+          onLongPress: message.sender == SenderType.user && onLongPress != null
+              ? (details) => onLongPress!(context, details.globalPosition, message, index)
+              : null,
           onWordAdded: (isLastMessage && message.sender == SenderType.ai && onScrollToBottom != null) 
               ? onScrollToBottom 
               : null,
@@ -1023,12 +1151,14 @@ class _MessageList extends StatelessWidget {
 class _ChatMessageBubble extends StatefulWidget {
   final ChatMessage message;
   final VoidCallback onEdit;
+  final Function(LongPressStartDetails)? onLongPress;
   final VoidCallback? onWordAdded;
 
   const _ChatMessageBubble({
-    super.key, 
+    super.key,
     required this.message, 
     required this.onEdit,
+    this.onLongPress,
     this.onWordAdded,
   });
 
@@ -1134,17 +1264,19 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: isUser ? screenWidth * 0.7 : screenWidth * 0.85,
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 8.0),
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
-        decoration: BoxDecoration(
-          color: isUser ? const Color(0xFF2b2b2b) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
+      child: GestureDetector(
+        onLongPressStart: widget.onLongPress,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isUser ? screenWidth * 0.7 : screenWidth * 0.85,
+          ),
+          margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 8.0),
+          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
+          decoration: BoxDecoration(
+            color: isUser ? const Color(0xFF2b2b2b) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_words.isNotEmpty && widget.message.sender == SenderType.ai)
@@ -1172,6 +1304,7 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
             if (widget.message.animeCards.isNotEmpty)
               ...widget.message.animeCards.map((card) => _AnimeCardWidget(card: card)),
           ],
+        ),
         ),
       ),
     );
