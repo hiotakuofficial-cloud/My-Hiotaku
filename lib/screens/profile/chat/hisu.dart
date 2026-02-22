@@ -897,6 +897,21 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> with SingleTickerPr
               if (newTitle.isNotEmpty) {
                 final updated = session.copyWith(title: newTitle);
                 await SessionManager.updateSession(updated);
+                
+                // Update in parent's session list
+                final chatState = context.findAncestorStateOfType<_HisuChatScreenState>();
+                if (chatState != null) {
+                  final index = chatState._allSessions.indexWhere((s) => s.id == session.id);
+                  if (index != -1) {
+                    chatState.setState(() {
+                      chatState._allSessions[index] = updated;
+                      if (chatState._currentSession?.id == session.id) {
+                        chatState._currentSession = updated;
+                      }
+                    });
+                  }
+                }
+                
                 Navigator.pop(context);
                 setState(() {});
               }

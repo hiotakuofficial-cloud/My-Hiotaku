@@ -119,12 +119,29 @@ mixin ContextMenuMixin<T extends StatefulWidget> on State<T>, SingleTickerProvid
     Offset globalPosition,
     List<MenuItemData> menuItems,
   ) async {
-    if (overlayEntry != null) {
-      dismissOverlay(null);
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
+    // Dismiss any existing menu immediately
+    dismissOverlayImmediately();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
 
     menuCompleter = Completer<String?>();
+
+    // Get screen size to constrain menu position
+    final screenSize = MediaQuery.of(context).size;
+    final menuWidth = 200.0; // Approximate menu width
+    final menuHeight = menuItems.length * 48.0; // Approximate height
+
+    // Adjust position to keep menu on screen
+    double left = globalPosition.dx;
+    double top = globalPosition.dy;
+
+    if (left + menuWidth > screenSize.width) {
+      left = screenSize.width - menuWidth - 16;
+    }
+    if (top + menuHeight > screenSize.height) {
+      top = screenSize.height - menuHeight - 16;
+    }
+    if (left < 16) left = 16;
+    if (top < 16) top = 16;
 
     overlayEntry = OverlayEntry(
       builder: (BuildContext overlayContext) {
@@ -137,8 +154,8 @@ mixin ContextMenuMixin<T extends StatefulWidget> on State<T>, SingleTickerProvid
               ),
             ),
             Positioned(
-              left: globalPosition.dx,
-              top: globalPosition.dy,
+              left: left,
+              top: top,
               child: FadeTransition(
                 opacity: fadeAnimation,
                 child: AnimatedBuilder(
@@ -214,5 +231,18 @@ mixin ContextMenuMixin<T extends StatefulWidget> on State<T>, SingleTickerProvid
         menuCompleter = null;
       }
     });
+  }
+
+  /// Dismiss any existing overlay immediately
+  void dismissOverlayImmediately() {
+    if (overlayEntry != null) {
+      overlayEntry?.remove();
+      overlayEntry = null;
+    }
+    if (menuCompleter != null && !menuCompleter!.isCompleted) {
+      menuCompleter!.complete(null);
+      menuCompleter = null;
+    }
+    animationController.reset();
   }
 }
