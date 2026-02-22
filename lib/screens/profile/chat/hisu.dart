@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../widgets/custom_drawer.dart';
 import 'hisu_handler.dart';
 import 'chat_session.dart';
@@ -404,9 +405,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
   }
 
   Future<void> _showMessageContextMenu(BuildContext context, Offset position, ChatMessage message, int index) async {
-    if (message.sender != SenderType.user) return; // Only for user messages
-    
-    final menuItems = [
+    final menuItems = <MenuItemData>[
       MenuItemData(
         icon: Icons.copy_outlined,
         text: 'Copy',
@@ -414,28 +413,42 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
           Clipboard.setData(ClipboardData(text: message.text));
         },
       ),
-      MenuItemData(
-        icon: Icons.edit_outlined,
-        text: 'Edit',
-        onPressed: () {
-          setState(() {
-            _editingMessage = message;
-            _editingMessageIndex = index;
-            _textController.text = message.text;
-          });
-        },
-      ),
-      MenuItemData(
-        icon: Icons.delete_outline,
-        text: 'Delete',
-        iconColor: Colors.red,
-        onPressed: () {
-          setState(() {
-            _messages.removeAt(index);
-          });
-          _saveCurrentSession();
-        },
-      ),
+      if (message.sender == SenderType.user)
+        MenuItemData(
+          icon: Icons.edit_outlined,
+          text: 'Edit',
+          onPressed: () {
+            setState(() {
+              _editingMessage = message;
+              _editingMessageIndex = index;
+              _textController.text = message.text;
+            });
+          },
+        ),
+      if (message.sender == SenderType.ai)
+        MenuItemData(
+          icon: Icons.share_outlined,
+          text: 'Share',
+          onPressed: () async {
+            final box = context.findRenderObject() as RenderBox?;
+            await Share.share(
+              message.text,
+              sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
+            );
+          },
+        ),
+      if (message.sender == SenderType.user)
+        MenuItemData(
+          icon: Icons.delete_outline,
+          text: 'Delete',
+          iconColor: Colors.red,
+          onPressed: () {
+            setState(() {
+              _messages.removeAt(index);
+            });
+            _saveCurrentSession();
+          },
+        ),
     ];
 
     await showAnimatedContextMenu(context, position, menuItems);
@@ -805,7 +818,7 @@ class HisuDrawerScreen extends StatefulWidget {
   State<HisuDrawerScreen> createState() => _HisuDrawerScreenState();
 }
 
-class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
+class _HisuDrawerScreenState extends State<HisuDrawerScreen> with SingleTickerProviderStateMixin, ContextMenuMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isLoading = true;
@@ -827,6 +840,72 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showSessionContextMenu(BuildContext context, Offset position, ChatSession session) async {
+    final menuItems = <MenuItemData>[
+      MenuItemData(
+        icon: Icons.edit_outlined,
+        text: 'Rename',
+        onPressed: () {
+          _showRenameDialog(session);
+        },
+      ),
+      MenuItemData(
+        icon: Icons.delete_outline,
+        text: 'Delete',
+        iconColor: Colors.red,
+        onPressed: () {
+          widget.onSessionDelete(session.id);
+        },
+      ),
+    ];
+
+    await showAnimatedContextMenu(context, position, menuItems);
+  }
+
+  void _showRenameDialog(ChatSession session) {
+    final controller = TextEditingController(text: session.title);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1e1e1e),
+        title: const Text('Rename Chat', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Enter new name',
+            hintStyle: TextStyle(color: Colors.white54),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white54),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+            ),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newTitle = controller.text.trim();
+              if (newTitle.isNotEmpty) {
+                final updated = session.copyWith(title: newTitle);
+                await SessionManager.updateSession(updated);
+                Navigator.pop(context);
+                setState(() {});
+              }
+            },
+            child: const Text('Rename', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -991,6 +1070,15 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
                             widget.onSessionSelect(session);
                             widget.onClose();
                           },
+                          onLongPress: () {
+                            final RenderBox box = context.findRenderObject() as RenderBox;
+                            final position = box.localToGlobal(Offset.zero);
+                            _showSessionContextMenu(
+                              context,
+                              Offset(position.dx + 100, position.dy + (index * 50) + 200),
+                              session,
+                            );
+                          },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                             child: Text(
@@ -1136,7 +1224,7 @@ class _MessageList extends StatelessWidget {
           key: ValueKey('${message.text}_$index'), // Unique key for each message
           message: message,
           onEdit: () => onEdit(message),
-          onLongPress: message.sender == SenderType.user && onLongPress != null
+          onLongPress: onLongPress != null
               ? (details) => onLongPress!(context, details.globalPosition, message, index)
               : null,
           onWordAdded: (isLastMessage && message.sender == SenderType.ai && onScrollToBottom != null) 

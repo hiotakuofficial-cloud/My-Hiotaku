@@ -40,6 +40,8 @@ class CustomContextMenuItem extends PopupMenuEntry<String> {
 }
 
 class _CustomContextMenuItemState extends State<CustomContextMenuItem> {
+  bool _isHovered = false;
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -47,15 +49,26 @@ class _CustomContextMenuItemState extends State<CustomContextMenuItem> {
         widget.itemData.onPressed?.call();
         widget.onSelected(widget.itemData.text);
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      onTapDown: (_) => setState(() => _isHovered = true),
+      onTapUp: (_) => setState(() => _isHovered = false),
+      onTapCancel: () => setState(() => _isHovered = false),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        decoration: BoxDecoration(
+          color: _isHovered ? Colors.white.withOpacity(0.1) : Colors.transparent,
+        ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(widget.itemData.icon, color: widget.itemData.iconColor),
+            Icon(widget.itemData.icon, color: widget.itemData.iconColor, size: 20),
             const SizedBox(width: 16.0),
             Text(
               widget.itemData.text,
-              style: TextStyle(color: widget.itemData.textColor, fontSize: 16.0),
+              style: TextStyle(
+                color: widget.itemData.textColor,
+                fontSize: 15.0,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ],
         ),
@@ -145,17 +158,20 @@ mixin ContextMenuMixin<T extends StatefulWidget> on State<T>, SingleTickerProvid
                   child: Material(
                     color: const Color(0xFF121212),
                     elevation: 8.0,
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: menuItems
-                          .map(
-                            (item) => CustomContextMenuItem(
-                              itemData: item,
-                              onSelected: (value) => dismissOverlay(value),
-                            ),
-                          )
-                          .toList(),
+                    borderRadius: BorderRadius.circular(12.0),
+                    clipBehavior: Clip.antiAlias,
+                    child: IntrinsicWidth(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: menuItems
+                            .map(
+                              (item) => CustomContextMenuItem(
+                                itemData: item,
+                                onSelected: (value) => dismissOverlay(value),
+                              ),
+                            )
+                            .toList(),
+                      ),
                     ),
                   ),
                 ),
