@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:shimmer/shimmer.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lottie/lottie.dart';
 import '../../../widgets/custom_drawer.dart';
 import 'hisu_handler.dart';
 import 'chat_session.dart';
@@ -19,6 +21,7 @@ class HisuChatPage extends StatefulWidget {
 class _HisuChatPageState extends State<HisuChatPage> {
   final GlobalKey<CustomDrawerState> _drawerKey = GlobalKey<CustomDrawerState>();
   final GlobalKey<_HisuChatScreenState> _chatScreenKey = GlobalKey<_HisuChatScreenState>();
+  final ValueNotifier<int> _drawerRebuildNotifier = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -31,21 +34,49 @@ class _HisuChatPageState extends State<HisuChatPage> {
   }
 
   @override
+  void dispose() {
+    _drawerRebuildNotifier.dispose();
+    super.dispose();
+  }
+
+  void _rebuildDrawer() {
+    _drawerRebuildNotifier.value++;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return CustomDrawer(
-      key: _drawerKey,
-      drawerScreen: HisuDrawerScreen(
-        onClose: () => _drawerKey.currentState?.toggle(),
-        onNewChat: () => _chatScreenKey.currentState?._createNewChat(),
-        sessions: _chatScreenKey.currentState?._allSessions ?? [],
-        currentSession: _chatScreenKey.currentState?._currentSession,
-        onSessionSelect: (session) => _chatScreenKey.currentState?._switchSession(session),
-        onSessionDelete: (id) => _chatScreenKey.currentState?._deleteSession(id),
-      ),
-      mainScreen: HisuChatScreen(
-        key: _chatScreenKey,
-        onMenuPressed: () => _drawerKey.currentState?.toggle(),
-      ),
+    return ValueListenableBuilder<int>(
+      valueListenable: _drawerRebuildNotifier,
+      builder: (context, _, __) {
+        return CustomDrawer(
+          key: _drawerKey,
+          drawerScreen: HisuDrawerScreen(
+            onClose: () => _drawerKey.currentState?.toggle(),
+            onNewChat: () {
+              _chatScreenKey.currentState?.createNewChat();
+              _rebuildDrawer();
+            },
+            sessions: _chatScreenKey.currentState?._allSessions ?? [],
+            currentSession: _chatScreenKey.currentState?._currentSession,
+            onSessionSelect: (session) {
+              _chatScreenKey.currentState?.switchSession(session);
+              _rebuildDrawer();
+            },
+            onSessionDelete: (id) {
+              _chatScreenKey.currentState?.deleteSession(id);
+              _rebuildDrawer();
+            },
+          ),
+          mainScreen: HisuChatScreen(
+            key: _chatScreenKey,
+            onMenuPressed: () {
+              _rebuildDrawer();
+              _drawerKey.currentState?.toggle();
+            },
+            onSessionUpdate: _rebuildDrawer,
+          ),
+        );
+      },
     );
   }
 }
@@ -95,7 +126,13 @@ class AnimeCard {
 // --- Chat Screen ---
 class HisuChatScreen extends StatefulWidget {
   final VoidCallback onMenuPressed;
-  const HisuChatScreen({super.key, required this.onMenuPressed});
+  final VoidCallback? onSessionUpdate;
+  
+  const HisuChatScreen({
+    super.key,
+    required this.onMenuPressed,
+    this.onSessionUpdate,
+  });
 
   @override
   State<HisuChatScreen> createState() => _HisuChatScreenState();
@@ -221,12 +258,10 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     }
     
     // Notify parent to rebuild drawer
-    if (mounted) {
-      (context.findAncestorStateOfType<_HisuChatPageState>())?.setState(() {});
-    }
+    widget.onSessionUpdate?.call();
   }
 
-  Future<void> _createNewChat() async {
+  Future<void> createNewChat() async {
     // Save current session
     await _saveCurrentSession();
     
@@ -246,7 +281,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     }
   }
 
-  Future<void> _switchSession(ChatSession session) async {
+  Future<void> switchSession(ChatSession session) async {
     if (_currentSession?.id == session.id) return;
     
     // Save current session
@@ -291,7 +326,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     _scrollToBottom();
   }
 
-  Future<void> _deleteSession(String sessionId) async {
+  Future<void> deleteSession(String sessionId) async {
     await SessionManager.deleteSession(sessionId);
     
     setState(() {
@@ -300,7 +335,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
     
     // If deleted current session, create new one
     if (_currentSession?.id == sessionId) {
-      await _createNewChat();
+      await createNewChat();
     }
     
     // Notify parent to rebuild drawer
@@ -581,10 +616,11 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
               _GlassPillContainer(
                 onTap: widget.onMenuPressed,
                 isCircle: true,
-                child: const Icon(
-                  Icons.menu,
-                  color: Colors.white,
-                  size: 24.0,
+                child: SvgPicture.asset(
+                  'assets/icons/menu.svg',
+                  width: 24.0,
+                  height: 24.0,
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
               ),
               const SizedBox(width: 12),
@@ -600,18 +636,19 @@ class _HisuChatScreenState extends State<HisuChatScreen> {
             ],
           ),
           _GlassPillContainer(
-            child: const Row(
+            child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.search_rounded,
                   color: Colors.white,
                   size: 24.0,
                 ),
-                SizedBox(width: 12),
-                Icon(
-                  Icons.more_vert_rounded,
-                  color: Colors.white,
-                  size: 24.0,
+                const SizedBox(width: 12),
+                SvgPicture.asset(
+                  'assets/icons/temp_chat.svg',
+                  width: 24.0,
+                  height: 24.0,
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
               ],
             ),
@@ -648,6 +685,20 @@ class HisuDrawerScreen extends StatefulWidget {
 class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Simulate loading to show animation briefly
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -719,7 +770,12 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
                       ),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
+                      icon: SvgPicture.asset(
+                        'assets/icons/new_chat.svg',
+                        width: 20.0,
+                        height: 20.0,
+                        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                      ),
                       onPressed: () {
                         widget.onNewChat();
                         widget.onClose();
@@ -743,10 +799,14 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.add_circle_outline,
-                        color: Colors.white.withOpacity(0.9),
-                        size: 24,
+                      SvgPicture.asset(
+                        'assets/icons/new_chat.svg',
+                        width: 24.0,
+                        height: 24.0,
+                        colorFilter: ColorFilter.mode(
+                          Colors.white.withOpacity(0.9),
+                          BlendMode.srcIn,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -782,16 +842,24 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
             
             // Sessions list
             Expanded(
-              child: filteredSessions.isEmpty
+              child: _isLoading
                   ? Center(
-                      child: Text(
-                        _searchQuery.isEmpty ? 'No chats yet' : 'No results found',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      child: Lottie.asset(
+                        'assets/animations/loading.json',
+                        width: 100,
+                        height: 100,
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: filteredSessions.length,
-                      itemBuilder: (context, index) {
+                  : filteredSessions.isEmpty
+                      ? Center(
+                          child: Text(
+                            _searchQuery.isEmpty ? 'No chats yet' : 'No results found',
+                            style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: filteredSessions.length,
+                          itemBuilder: (context, index) {
                         final session = filteredSessions[index];
                         final isActive = widget.currentSession?.id == session.id;
                         
