@@ -23,6 +23,9 @@ class ResponseSanitizer {
   /// Step 2: Remove HTML tags
   static String _removeHtmlTags(String text) {
     return text
+        // Fix escaped newlines first
+        .replaceAll(r'\n', '\n') // Convert \\n to actual newline
+        .replaceAll(r'\t', ' ') // Convert \\t to space
         .replaceAll(RegExp(r'<[^>]*>'), '') // Remove all HTML tags
         .replaceAll(RegExp(r'&nbsp;'), ' ') // Replace &nbsp;
         .replaceAll(RegExp(r'&amp;'), '&') // Replace &amp;
