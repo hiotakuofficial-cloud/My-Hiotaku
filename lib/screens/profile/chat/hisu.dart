@@ -661,6 +661,13 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
       if (_searchQuery.isEmpty) return true;
       return session.title.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
+    
+    // Sort: active session first, then by updated time
+    filteredSessions.sort((a, b) {
+      if (widget.currentSession?.id == a.id) return -1;
+      if (widget.currentSession?.id == b.id) return 1;
+      return b.updatedAt.compareTo(a.updatedAt);
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
@@ -759,13 +766,16 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
             // "Your chats" section header
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-              child: Text(
-                'Your chats',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Your chats',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ),
