@@ -150,6 +150,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
   int? _editingMessageIndex;
   String? _selectedOptionText;
   bool _autoScroll = true;
+  bool _isTempMode = false; // Temp chat mode flag
   
   // Session management
   ChatSession? _currentSession;
@@ -219,7 +220,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
   }
 
   Future<void> _saveCurrentSession() async {
-    if (_currentSession == null) return;
+    if (_currentSession == null || _isTempMode) return; // Skip save in temp mode
     
     final history = _messages
         .where((msg) => !msg.isError)
@@ -463,6 +464,46 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
     });
   }
 
+  void _toggleTempMode() {
+    setState(() {
+      _isTempMode = !_isTempMode;
+    });
+    
+    if (_isTempMode) {
+      // Entering temp mode - clear messages but keep context for AI
+      // Don't save current session
+    } else {
+      // Exiting temp mode - discard temp messages, reload last saved session
+      _messages.clear();
+      if (_currentSession != null && _currentSession!.messages.isNotEmpty) {
+        _messages.addAll(_currentSession!.messages.map((msg) {
+          List<AnimeCard> animeCards = [];
+          try {
+            animeCards = (msg['animeCards'] as List?)
+                ?.map((card) {
+                  try {
+                    return AnimeCard.fromJson(card as Map<String, dynamic>);
+                  } catch (e) {
+                    return null;
+                  }
+                })
+                .whereType<AnimeCard>()
+                .toList() ?? [];
+          } catch (e) {
+            // Ignore
+          }
+          
+          return ChatMessage(
+            text: msg['text']?.toString() ?? '',
+            sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
+            animeCards: animeCards,
+            skipAnimation: true,
+          );
+        }));
+      }
+    }
+  }
+
   Future<void> _handleSendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
@@ -693,6 +734,33 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
                   onScrollToBottom: _scrollToBottom,
                 ),
               ),
+              if (_isTempMode)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.orange.withOpacity(0.3), Colors.deepOrange.withOpacity(0.3)],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icons/temp_chat.svg',
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(Colors.orange, BlendMode.srcIn),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Temp Chat - Messages won\'t be saved',
+                          style: TextStyle(color: Colors.orange, fontSize: 14, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      Icon(Icons.info_outline, color: Colors.orange.shade300, size: 20),
+                    ],
+                  ),
+                ),
               if (_editingMessage != null)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -782,11 +850,17 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
                   size: 24.0,
                 ),
                 const SizedBox(width: 12),
-                SvgPicture.asset(
-                  'assets/icons/temp_chat.svg',
-                  width: 24.0,
-                  height: 24.0,
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                GestureDetector(
+                  onTap: _toggleTempMode,
+                  child: SvgPicture.asset(
+                    'assets/icons/temp_chat.svg',
+                    width: 24.0,
+                    height: 24.0,
+                    colorFilter: ColorFilter.mode(
+                      _isTempMode ? Colors.orange : Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
                 ),
               ],
             ),
