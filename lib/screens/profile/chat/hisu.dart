@@ -13,6 +13,7 @@ import 'session_manager.dart';
 import 'components/context_menu.dart';
 import 'components/hisu_alert.dart';
 import 'components/sanitizer.dart';
+import 'components/suggestions_card.dart';
 
 // --- Main Entry Point ---
 class HisuChatPage extends StatefulWidget {
@@ -1486,7 +1487,25 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
                 ),
               ),
             if (widget.message.animeCards.isNotEmpty)
-              ...widget.message.animeCards.map((card) => _AnimeCardWidget(card: card)),
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: SizedBox(
+                  height: 180,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.message.animeCards.length,
+                    itemBuilder: (context, index) {
+                      final card = widget.message.animeCards[index];
+                      return AnimeSuggestionCard(
+                        animeId: card.id,
+                        onTap: () {
+                          // TODO: Navigate to anime details
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
           ],
         ),
         ),
@@ -1632,30 +1651,3 @@ class _TypingIndicator extends StatelessWidget {
   }
 }
 
-class _AnimeCardWidget extends StatelessWidget {
-  final AnimeCard card;
-
-  const _AnimeCardWidget({required this.card});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.only(top: 10.0),
-      padding: const EdgeInsets.all(10.0),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(card.title, style: theme.textTheme.titleMedium),
-          const SizedBox(height: 5.0),
-          Text('Type: ${card.type}', style: theme.textTheme.bodySmall),
-          Text('Source: ${card.source}', style: theme.textTheme.bodySmall),
-        ],
-      ),
-    );
-  }
-}
