@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'components/sanitizer.dart';
 
 class HisuHandler {
   static const String _historyKey = 'hisu_chat_history';

@@ -12,6 +12,7 @@ import 'chat_session.dart';
 import 'session_manager.dart';
 import 'components/context_menu.dart';
 import 'components/hisu_alert.dart';
+import 'components/sanitizer.dart';
 
 // --- Main Entry Point ---
 class HisuChatPage extends StatefulWidget {
@@ -555,10 +556,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
           // Ignore
         }
 
-        final responseText = (result['response'] ?? 'No response')
-            .replaceAll(RegExp(r'[ \t]+'), ' ')
-            .replaceAll(RegExp(r'\n{3,}'), '\n\n')
-            .trim();
+        final responseText = ResponseSanitizer.sanitize(result['response'] ?? 'No response');
 
         setState(() {
           _messages.add(ChatMessage(
@@ -615,11 +613,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
           // Ignore anime cards parsing errors
         }
 
-        // Clean response text: normalize excessive whitespace but preserve formatting
-        final responseText = (result['response'] ?? 'No response')
-            .replaceAll(RegExp(r'[ \t]+'), ' ') // Multiple spaces/tabs to single space
-            .replaceAll(RegExp(r'\n{3,}'), '\n\n') // Max 2 consecutive newlines
-            .trim();
+        final responseText = ResponseSanitizer.sanitize(result['response'] ?? 'No response');
 
         setState(() {
           _messages.add(ChatMessage(
