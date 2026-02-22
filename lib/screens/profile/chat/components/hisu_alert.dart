@@ -22,58 +22,41 @@ class _HisuPrivacyDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: const Color(0xFF121212),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon with gradient background
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.blue.withOpacity(0.2),
-                    Colors.blue.withOpacity(0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.lock_outline_rounded,
-                size: 56,
-                color: Colors.blue,
-              ),
+            const Icon(
+              Icons.lock_outline,
+              size: 48,
+              color: Colors.blue,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             const Text(
               'Privacy & Security',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Text(
               'Hisu AI does not save any personal or sensitive data. '
               'We do not use your conversations to train our models.\n\n'
               'Your privacy is our priority - feel free to talk about anything with Hisu.\n\n'
               '⚠️ Reminder: Your chats will be deleted if you uninstall Hiotaku or clear app data.',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.85),
-                fontSize: 15,
-                height: 1.6,
-                letterSpacing: 0.2,
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -81,19 +64,17 @@ class _HisuPrivacyDialog extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 0,
-                  shadowColor: Colors.transparent,
                 ),
                 child: const Text(
                   'Got it',
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
                   ),
                 ),
               ),

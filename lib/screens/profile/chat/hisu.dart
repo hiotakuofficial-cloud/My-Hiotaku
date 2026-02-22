@@ -53,6 +53,7 @@ class _HisuChatPageState extends State<HisuChatPage> {
       builder: (context, _, __) {
         return CustomDrawer(
           key: _drawerKey,
+          onDrawerOpened: _rebuildDrawer,
           drawerScreen: HisuDrawerScreen(
             onClose: () => _drawerKey.currentState?.toggle(),
             onNewChat: () {

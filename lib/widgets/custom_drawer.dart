@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class CustomDrawer extends StatefulWidget {
   final Widget mainScreen;
   final Widget drawerScreen;
+  final VoidCallback? onDrawerOpened;
 
   const CustomDrawer({
     super.key,
     required this.mainScreen,
     required this.drawerScreen,
+    this.onDrawerOpened,
   });
 
   @override
@@ -31,6 +33,9 @@ class CustomDrawerState extends State<CustomDrawer>
       setState(() {
         _isDrawerOpen = status == AnimationStatus.completed;
       });
+      if (status == AnimationStatus.completed) {
+        widget.onDrawerOpened?.call();
+      }
     });
   }
 
