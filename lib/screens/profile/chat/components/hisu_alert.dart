@@ -1,11 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-/// iOS-style smooth alert dialog for Hisu AI privacy notice
+/// Premium dark dialog for Hisu AI privacy notice
 class HisuAlert {
   /// Show privacy notice dialog
   static Future<void> showPrivacyNotice(BuildContext context) async {
-    return showCupertinoDialog(
+    return showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -20,114 +19,89 @@ class _HisuPrivacyDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoAlertDialog(
-      title: const Column(
-        children: [
-          Icon(
-            CupertinoIcons.lock_shield,
-            size: 48,
-            color: CupertinoColors.systemBlue,
-          ),
-          SizedBox(height: 12),
-          Text(
-            'Privacy & Security',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+    return Dialog(
+      backgroundColor: const Color(0xFF121212),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
       ),
-      content: const Padding(
-        padding: EdgeInsets.only(top: 12),
-        child: Text(
-          'Hisu AI does not save any personal or sensitive data. '
-          'We do not use your conversations to train our models.\n\n'
-          'Your privacy is our priority - feel free to talk about anything with Hisu.\n\n'
-          '⚠️ Reminder: Your chats will be deleted if you uninstall Hiotaku or clear app data.',
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.4,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-      actions: [
-        CupertinoDialogAction(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
-            'Got it',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 17,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Material Design version (fallback for Android)
-class HisuAlertMaterial {
-  static Future<void> showPrivacyNotice(BuildContext context) async {
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1e1e1e),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Column(
-            children: [
-              Icon(
-                Icons.lock_outline,
-                size: 48,
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon with gradient background
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.withOpacity(0.2),
+                    Colors.blue.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.lock_outline_rounded,
+                size: 56,
                 color: Colors.blue,
               ),
-              SizedBox(height: 12),
-              Text(
-                'Privacy & Security',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          content: const Text(
-            'Hisu AI does not save any personal or sensitive data. '
-            'We do not use your conversations to train our models.\n\n'
-            'Your privacy is our priority - feel free to talk about anything with Hisu.\n\n'
-            '⚠️ Reminder: Your chats will be deleted if you uninstall Hiotaku or clear app data.',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              height: 1.4,
             ),
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            const SizedBox(height: 24),
+            const Text(
+              'Privacy & Security',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
               ),
-              child: const Text(
-                'Got it',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Hisu AI does not save any personal or sensitive data. '
+              'We do not use your conversations to train our models.\n\n'
+              'Your privacy is our priority - feel free to talk about anything with Hisu.\n\n'
+              '⚠️ Reminder: Your chats will be deleted if you uninstall Hiotaku or clear app data.',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 15,
+                height: 1.6,
+                letterSpacing: 0.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                ),
+                child: const Text(
+                  'Got it',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
+

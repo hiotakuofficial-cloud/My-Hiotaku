@@ -189,34 +189,44 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
     }
     
     // Load messages from current session
-    setState(() {
-      _messages.addAll(_currentSession!.messages.map((msg) {
-        List<AnimeCard> animeCards = [];
-        try {
-          animeCards = (msg['animeCards'] as List?)
-              ?.map((card) {
-                try {
-                  return AnimeCard.fromJson(card as Map<String, dynamic>);
-                } catch (e) {
-                  return null;
-                }
-              })
-              .whereType<AnimeCard>()
-              .toList() ?? [];
-        } catch (e) {
-          // Ignore anime cards parsing errors
+    if (mounted) {
+      setState(() {
+        _messages.clear();
+        if (_currentSession!.messages.isNotEmpty) {
+          _messages.addAll(_currentSession!.messages.map((msg) {
+            List<AnimeCard> animeCards = [];
+            try {
+              animeCards = (msg['animeCards'] as List?)
+                  ?.map((card) {
+                    try {
+                      return AnimeCard.fromJson(card as Map<String, dynamic>);
+                    } catch (e) {
+                      return null;
+                    }
+                  })
+                  .whereType<AnimeCard>()
+                  .toList() ?? [];
+            } catch (e) {
+              // Ignore
+            }
+            
+            return ChatMessage(
+              text: msg['text']?.toString() ?? '',
+              sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
+              animeCards: animeCards,
+              skipAnimation: true,
+            );
+          }));
         }
-        
-        return ChatMessage(
-          text: msg['text']?.toString() ?? '',
-          sender: msg['sender'] == 'user' ? SenderType.user : SenderType.ai,
-          animeCards: animeCards,
-          skipAnimation: true,
-        );
-      }));
-    });
-    
-    _scrollToBottom();
+      });
+      
+      // Scroll to bottom after frame is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_messages.isNotEmpty && _scrollController.hasClients) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
+      });
+    }
   }
 
   Future<void> _saveCurrentSession() async {
