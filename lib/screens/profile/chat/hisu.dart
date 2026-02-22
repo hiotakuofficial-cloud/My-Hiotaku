@@ -723,7 +723,52 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
               ),
             ),
             
-            const Divider(color: Colors.white12, height: 1),
+            // New Chat button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+              child: InkWell(
+                onTap: () {
+                  widget.onNewChat();
+                  widget.onClose();
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.white.withOpacity(0.9),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'New chat',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            
+            // "Your chats" section header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              child: Text(
+                'Your chats',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
             
             // Sessions list
             Expanded(
@@ -740,30 +785,24 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> {
                         final session = filteredSessions[index];
                         final isActive = widget.currentSession?.id == session.id;
                         
-                        return ListTile(
-                          selected: isActive,
-                          selectedTileColor: Colors.white.withOpacity(0.1),
-                          leading: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
-                          title: Text(
-                            session.title,
-                            style: const TextStyle(color: Colors.white),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            _formatDate(session.updatedAt),
-                            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.white54, size: 20),
-                            onPressed: () {
-                              widget.onSessionDelete(session.id);
-                            },
-                          ),
+                        return InkWell(
                           onTap: () {
                             widget.onSessionSelect(session);
                             widget.onClose();
                           },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            child: Text(
+                              session.title,
+                              style: TextStyle(
+                                color: isActive ? Colors.white : Colors.white.withOpacity(0.8),
+                                fontSize: 15,
+                                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         );
                       },
                     ),
