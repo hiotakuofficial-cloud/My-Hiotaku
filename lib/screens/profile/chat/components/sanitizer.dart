@@ -50,13 +50,11 @@ class ResponseSanitizer {
         // Remove code blocks first (multiline safe)
         .replaceAll(RegExp(r'```[\s\S]*?```'), '')
         
-        // Remove markdown bold (must be before italic)
-        .replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1')
-        .replaceAll(RegExp(r'__([^_]+)__'), r'$1')
-        
-        // Remove markdown italic (safe pattern)
-        .replaceAll(RegExp(r'(?<!\*)\*([^*\n]+)\*(?!\*)'), r'$1')
-        .replaceAll(RegExp(r'(?<!_)_([^_\n]+)_(?!_)'), r'$1')
+        // Keep markdown formatting (commented out removal)
+        // .replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1')
+        // .replaceAll(RegExp(r'__([^_]+)__'), r'$1')
+        // .replaceAll(RegExp(r'(?<!\*)\*([^*\n]+)\*(?!\*)'), r'$1')
+        // .replaceAll(RegExp(r'(?<!_)_([^_\n]+)_(?!_)'), r'$1')
         
         // Remove inline code
         .replaceAll(RegExp(r'`([^`]+)`'), r'$1')
