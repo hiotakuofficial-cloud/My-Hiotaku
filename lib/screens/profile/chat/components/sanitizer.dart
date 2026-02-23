@@ -38,7 +38,7 @@ class ResponseSanitizer {
   /// Step 3: Deep clean response
   static String _deepClean(String text) {
     return text
-        // Remove markdown bold/italic
+        // Remove markdown bold/italic but keep text
         .replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1') // **bold**
         .replaceAll(RegExp(r'\*([^*]+)\*'), r'$1') // *italic*
         .replaceAll(RegExp(r'__([^_]+)__'), r'$1') // __bold__
@@ -51,16 +51,17 @@ class ResponseSanitizer {
         .replaceAll(RegExp(r'```[^`]*```'), '') // ```code```
         .replaceAll(RegExp(r'`([^`]+)`'), r'$1') // `code`
         
-        // Fix line breaks - aggressive joining
-        .replaceAll(RegExp(r'([a-zA-Z,!?])\s*\n\s*([a-zA-Z])'), r'$1 $2') // Join broken sentences
+        // AGGRESSIVE line break fixing
+        .replaceAll(RegExp(r'([a-zA-Z,!?।])\s*\n+\s*([a-zA-Z])'), r'$1 $2') // Join ALL broken sentences
         .replaceAll(RegExp(r'\n\s+'), '\n') // Remove leading spaces after newline
         .replaceAll(RegExp(r'\s+\n'), '\n') // Remove trailing spaces before newline
+        .replaceAll(RegExp(r'([.!?])\n([A-Z])'), r'$1\n\n$2') // Proper paragraph breaks only after punctuation
         
         // Clean excessive whitespace
         .replaceAll(RegExp(r'[ \t]+'), ' ') // Multiple spaces/tabs to single space
         .replaceAll(RegExp(r'\n{3,}'), '\n\n') // Max 2 consecutive newlines
         
-        // Remove leading/trailing whitespace per line
+        // Remove leading/trailing whitespace per line and empty lines
         .split('\n')
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
