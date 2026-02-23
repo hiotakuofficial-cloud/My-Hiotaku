@@ -557,7 +557,10 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
           // Ignore
         }
 
-        final responseText = ResponseSanitizer.sanitize(result['response'] ?? 'No response');
+        final rawResponse = result['response'] ?? 'No response';
+        final responseText = ResponseSanitizer.sanitize(rawResponse);
+        print('🔍 RAW: $rawResponse');
+        print('✅ CLEAN: $responseText');
 
         setState(() {
           _messages.add(ChatMessage(
@@ -614,7 +617,10 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
           // Ignore anime cards parsing errors
         }
 
-        final responseText = ResponseSanitizer.sanitize(result['response'] ?? 'No response');
+        final rawResponse = result['response'] ?? 'No response';
+        final responseText = ResponseSanitizer.sanitize(rawResponse);
+        print('🔍 RAW: $rawResponse');
+        print('✅ CLEAN: $responseText');
 
         setState(() {
           _messages.add(ChatMessage(
