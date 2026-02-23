@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../../../../services/api_service.dart';
+import '../hisu_handler.dart';
 
 /// Fast async anime suggestion card with auto-sizing based on image
 class AnimeSuggestionCard extends StatefulWidget {
@@ -41,12 +41,12 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
     });
 
     try {
-      // Fetch anime details using ApiService
-      final data = await ApiService.getAnimeDetails(widget.animeId);
+      // Use HisuHandler to fetch anime details
+      final data = await HisuHandler.fetchAnimeDetails(widget.animeId);
 
       if (!mounted) return;
 
-      final imageUrl = data['image'] ?? data['poster'] ?? data['cover'];
+      final imageUrl = data['thumbnail'] ?? data['image'] ?? data['poster'] ?? data['cover'];
       final title = data['title'] ?? data['name'] ?? 'Unknown';
 
       if (imageUrl != null) {

@@ -14,6 +14,45 @@ class HisuHandler {
   static const String _authKey2 = String.fromEnvironment('hisu_authkey2');
   static const String _babeer = String.fromEnvironment('hisu_babeer');
   static const String _apiKey = String.fromEnvironment('hisu_apikey');
+  
+  // Anime API token (from environment)
+  static const String _animeApiToken = String.fromEnvironment('API_TOKEN');
+  
+  // Fetch anime details (Hindi or English API based on ID)
+  static Future<Map<String, dynamic>> fetchAnimeDetails(String animeId) async {
+    try {
+      // Check if ID is purely numeric (Hindi API)
+      final isNumeric = RegExp(r'^\d+$').hasMatch(animeId);
+      
+      if (isNumeric) {
+        // Hindi API
+        final url = 'https://www.hiotaku.in/hindiv2.php?action=info&id=$animeId&token=$_animeApiToken';
+        final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+        
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (data['error'] == null) {
+            return data;
+          }
+        }
+      }
+      
+      // English API (alphanumeric or letters only)
+      final url = 'https://www.hiotaku.in/api.php?action=details&id=$animeId&token=$_animeApiToken';
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true || data['error'] == null) {
+          return data;
+        }
+      }
+      
+      throw Exception('Failed to fetch anime details');
+    } catch (e) {
+      throw Exception('Anime fetch failed: $e');
+    }
+  }
 
   // Send message to Hisu API with retry logic
   static Future<Map<String, dynamic>> sendMessage(String message, {String? conversationContext, int retryCount = 0}) async {
