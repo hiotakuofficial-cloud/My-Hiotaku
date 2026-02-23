@@ -46,7 +46,7 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
 
       if (!mounted) return;
 
-      final imageUrl = data['thumbnail'] ?? data['image'] ?? data['poster'] ?? data['cover'];
+      final imageUrl = data['thumbnail'] ?? data['poster'] ?? data['image'] ?? data['cover'];
       final title = data['title'] ?? data['name'] ?? 'Unknown';
 
       if (imageUrl != null) {

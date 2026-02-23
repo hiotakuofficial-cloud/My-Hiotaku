@@ -42,9 +42,10 @@ class HisuHandler {
       final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
       
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true || data['error'] == null) {
-          return data;
+        final result = json.decode(response.body);
+        if (result['success'] == true && result['data'] != null) {
+          // Return nested data object for English API
+          return result['data'];
         }
       }
       
