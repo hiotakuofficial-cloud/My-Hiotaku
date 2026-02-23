@@ -76,6 +76,8 @@ class ResponseSanitizer {
     return text
         // Remove control characters
         .replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'), '')
+        // Remove regex placeholders (AI bug)
+        .replaceAll(RegExp(r'\$\d+'), '')
         // Proper sentence spacing
         .replaceAll(RegExp(r'([.!?])\s*([A-Z])'), r'$1 $2')
         .replaceAll(RegExp(r'([.!?])\s{2,}'), r'$1 ')
