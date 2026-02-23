@@ -1464,6 +1464,28 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
           child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Anime cards first (above text)
+            if (widget.message.animeCards.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: SizedBox(
+                  height: 180,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.message.animeCards.length,
+                    itemBuilder: (context, index) {
+                      final card = widget.message.animeCards[index];
+                      return AnimeSuggestionCard(
+                        animeId: card.id,
+                        onTap: () {
+                          // TODO: Navigate to anime details
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            // Then text
             if (_words.isNotEmpty && widget.message.sender == SenderType.ai)
               Wrap(
                 children: List.generate(_words.length, (index) {
@@ -1484,26 +1506,6 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
                 _animatedText,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: isUser ? Colors.white : Colors.white,
-                ),
-              ),
-            if (widget.message.animeCards.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: SizedBox(
-                  height: 180,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.message.animeCards.length,
-                    itemBuilder: (context, index) {
-                      final card = widget.message.animeCards[index];
-                      return AnimeSuggestionCard(
-                        animeId: card.id,
-                        onTap: () {
-                          // TODO: Navigate to anime details
-                        },
-                      );
-                    },
-                  ),
                 ),
               ),
           ],

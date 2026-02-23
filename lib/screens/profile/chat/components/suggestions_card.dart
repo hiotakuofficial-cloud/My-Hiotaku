@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../hisu_handler.dart';
+import '../../../details/details.dart';
 
 /// Fast async anime suggestion card with auto-sizing based on image
 class AnimeSuggestionCard extends StatefulWidget {
@@ -22,6 +23,8 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
   bool _hasError = false;
   String? _imageUrl;
   String? _title;
+  String? _description;
+  String? _type;
   double _aspectRatio = 0.7; // Default anime poster ratio
   int _retryCount = 0;
   static const int _maxRetries = 2;
@@ -48,6 +51,8 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
 
       final imageUrl = data['thumbnail'] ?? data['poster'] ?? data['image'] ?? data['cover'];
       final title = data['title'] ?? data['name'] ?? 'Unknown';
+      final description = data['description'] ?? data['synopsis'] ?? data['genre'] ?? 'No description available';
+      final type = data['type'] ?? data['status'] ?? 'Unknown';
 
       if (imageUrl != null) {
         // Preload image to get dimensions
@@ -57,6 +62,8 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
           setState(() {
             _imageUrl = imageUrl;
             _title = title;
+            _description = description;
+            _type = type;
             _isLoading = false;
           });
         }
@@ -186,7 +193,26 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
     final clampedHeight = cardHeight.clamp(140.0, 200.0);
 
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: () {
+        if (_imageUrl != null && _title != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AnimeDetailsPage(
+                title: _title!,
+                poster: _imageUrl!,
+                description: _description ?? 'No description available',
+                genres: _type != null ? [_type!] : ['Unknown'],
+                rating: 0.0,
+                year: 'Unknown',
+                animeId: widget.animeId,
+                animeType: _type ?? 'Unknown',
+              ),
+            ),
+          );
+        }
+        widget.onTap?.call();
+      },
       child: Container(
         width: cardWidth,
         height: clampedHeight,
