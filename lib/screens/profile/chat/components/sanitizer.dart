@@ -38,18 +38,8 @@ class ResponseSanitizer {
   /// Step 3: Deep clean response
   static String _deepClean(String text) {
     return text
-        // Remove markdown bold/italic but keep text
-        .replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1') // **bold**
-        .replaceAll(RegExp(r'\*([^*]+)\*'), r'$1') // *italic*
-        .replaceAll(RegExp(r'__([^_]+)__'), r'$1') // __bold__
-        .replaceAll(RegExp(r'_([^_]+)_'), r'$1') // _italic_
-        
-        // Remove markdown links
-        .replaceAll(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), r'$1') // [text](url)
-        
-        // Remove markdown code blocks
-        .replaceAll(RegExp(r'```[^`]*```'), '') // ```code```
-        .replaceAll(RegExp(r'`([^`]+)`'), r'$1') // `code`
+        // Keep markdown, don't remove it
+        // Just fix line breaks and whitespace
         
         // AGGRESSIVE line break fixing
         .replaceAll(RegExp(r'([a-zA-Z,!?।])\s*\n+\s*([a-zA-Z])'), r'$1 $2') // Join ALL broken sentences

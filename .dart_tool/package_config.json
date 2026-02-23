@@ -248,6 +248,12 @@
       "languageVersion": "2.17"
     },
     {
+      "name": "flutter_markdown",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_markdown-0.6.23",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "flutter_svg",
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_svg-2.2.3",
       "packageUri": "lib/",
@@ -384,6 +390,12 @@
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/lottie-3.3.2",
       "packageUri": "lib/",
       "languageVersion": "3.9"
+    },
+    {
+      "name": "markdown",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/markdown-7.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
     },
     {
       "name": "matcher",
