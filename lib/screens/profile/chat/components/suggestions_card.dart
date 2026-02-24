@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../hisu_handler.dart';
 import '../../../details/details.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 /// Fast async anime suggestion card with auto-sizing based on image
 class AnimeSuggestionCard extends StatefulWidget {
@@ -90,6 +91,17 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
         await Future.delayed(Duration(milliseconds: 500 * _retryCount));
         _fetchAnimeData();
       } else {
+        // Show toast on final failure
+        if (mounted) {
+          Fluttertoast.showToast(
+            msg: "Card load failed: ${widget.animeId}",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red.shade900,
+            textColor: Colors.white,
+            fontSize: 14.0,
+          );
+        }
         setState(() {
           _hasError = true;
           _isLoading = false;
