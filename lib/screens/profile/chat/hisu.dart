@@ -553,8 +553,12 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
               })
               .whereType<AnimeCard>()
               .toList() ?? [];
+          print('🎴 CARDS: ${animeCards.length} cards received');
+          if (animeCards.isNotEmpty) {
+            print('   First card: ${animeCards[0].id} - ${animeCards[0].title}');
+          }
         } catch (e) {
-          // Ignore
+          print('❌ CARDS ERROR: $e');
         }
 
         final rawResponse = result['response'] ?? 'No response';

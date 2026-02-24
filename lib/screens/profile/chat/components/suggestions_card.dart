@@ -49,26 +49,37 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
 
       if (!mounted) return;
 
-      final imageUrl = data['thumbnail'] ?? data['poster'] ?? data['image'] ?? data['cover'];
+      // Try multiple image field names
+      final imageUrl = data['thumbnail'] ?? 
+                       data['poster'] ?? 
+                       data['image'] ?? 
+                       data['cover'] ?? 
+                       data['img'];
+      
       final title = data['title'] ?? data['name'] ?? 'Unknown';
-      final description = data['description'] ?? data['synopsis'] ?? data['genre'] ?? 'No description available';
+      final description = data['description'] ?? 
+                         data['synopsis'] ?? 
+                         data['genre'] ?? 
+                         data['summary'] ?? 
+                         'No description';
+      
       final type = data['type'] ?? data['status'] ?? 'Unknown';
 
-      if (imageUrl != null) {
+      if (imageUrl != null && imageUrl.toString().isNotEmpty) {
         // Preload image to get dimensions
-        await _preloadImage(imageUrl);
+        await _preloadImage(imageUrl.toString());
         
         if (mounted) {
           setState(() {
-            _imageUrl = imageUrl;
-            _title = title;
-            _description = description;
-            _type = type;
+            _imageUrl = imageUrl.toString();
+            _title = title.toString();
+            _description = description.toString();
+            _type = type.toString();
             _isLoading = false;
           });
         }
       } else {
-        throw Exception('No image found');
+        throw Exception('No image URL found');
       }
     } catch (e) {
       if (!mounted) return;
