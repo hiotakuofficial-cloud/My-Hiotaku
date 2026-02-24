@@ -27,7 +27,7 @@ class HisuHandler {
       if (isNumeric) {
         // Hindi API
         final url = 'https://www.hiotaku.in/hindiv2.php?action=info&id=$animeId&token=$_animeApiToken';
-        final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+        final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
         
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
@@ -39,17 +39,18 @@ class HisuHandler {
       
       // English API (alphanumeric or letters only)
       final url = 'https://www.hiotaku.in/api.php?action=details&id=$animeId&token=$_animeApiToken';
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
       
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
-        if (result['success'] == true && result['data'] != null) {
+        // Check if response has data
+        if (result['data'] != null && result['data'] is Map) {
           // Return nested data object for English API
-          return result['data'];
+          return result['data'] as Map<String, dynamic>;
         }
       }
       
-      throw Exception('Failed to fetch anime details');
+      throw Exception('Failed to fetch anime details for ID: $animeId');
     } catch (e) {
       throw Exception('Anime fetch failed: $e');
     }
