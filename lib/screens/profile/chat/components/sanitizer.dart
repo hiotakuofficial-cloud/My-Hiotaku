@@ -46,28 +46,24 @@ class ResponseSanitizer {
 
   /// Step 3: Deep clean response
   static String _deepClean(String text) {
+    // Remove code blocks first
+    text = text.replaceAll(RegExp(r'```[\s\S]*?```'), '');
+    
+    // Remove markdown using callbacks (prevents $1 literal issues)
+    text = text.replaceAllMapped(RegExp(r'\*\*([^*]+)\*\*'), (m) => m.group(1)!);
+    text = text.replaceAllMapped(RegExp(r'__([^_]+)__'), (m) => m.group(1)!);
+    text = text.replaceAllMapped(RegExp(r'(?<!\*)\*([^*\n]+)\*(?!\*)'), (m) => m.group(1)!);
+    text = text.replaceAllMapped(RegExp(r'(?<!_)_([^_\n]+)_(?!_)'), (m) => m.group(1)!);
+    text = text.replaceAllMapped(RegExp(r'`([^`]+)`'), (m) => m.group(1)!);
+    
+    // Links: keep URL info
+    text = text.replaceAllMapped(RegExp(r'\[([^\]]+)\]\(([^\)]+)\)'), (m) => '${m.group(1)} (${m.group(2)})');
+    
+    // Fix line breaks using callback
+    text = text.replaceAllMapped(RegExp(r'(\S)\s*\n+\s*(\S)'), (m) => '${m.group(1)} ${m.group(2)}');
+    
+    // Clean whitespace
     return text
-        // Remove code blocks first (multiline safe)
-        .replaceAll(RegExp(r'```[\s\S]*?```'), '')
-        
-        // Remove markdown bold (must be before italic)
-        .replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1')
-        .replaceAll(RegExp(r'__([^_]+)__'), r'$1')
-        
-        // Remove markdown italic (safe pattern)
-        .replaceAll(RegExp(r'(?<!\*)\*([^*\n]+)\*(?!\*)'), r'$1')
-        .replaceAll(RegExp(r'(?<!_)_([^_\n]+)_(?!_)'), r'$1')
-        
-        // Remove inline code
-        .replaceAll(RegExp(r'`([^`]+)`'), r'$1')
-        
-        // Links: keep URL info
-        .replaceAll(RegExp(r'\[([^\]]+)\]\(([^\)]+)\)'), r'$1 ($2)')
-        
-        // AGGRESSIVE line break fixing (Unicode-safe)
-        .replaceAll(RegExp(r'(\S)\s*\n+\s*(\S)'), r'$1 $2')
-        
-        // Clean whitespace efficiently
         .replaceAll(RegExp(r'[ \t]+'), ' ')
         .replaceAll(RegExp(r'\n{3,}'), '\n\n')
         .replaceAll(RegExp(r'^[ \t]+|[ \t]+$', multiLine: true), '');
@@ -75,15 +71,18 @@ class ResponseSanitizer {
 
   /// Step 4: Verify and finalize
   static String _verifyAndFinalize(String text) {
+    // Remove control characters
+    text = text.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'), '');
+    
+    // Remove regex placeholders with optional spaces (AI bug)
+    text = text.replaceAll(RegExp(r'\$\d+\s*'), '');
+    
+    // Proper sentence spacing using callback
+    text = text.replaceAllMapped(RegExp(r'([.!?])\s*([A-Z])'), (m) => '${m.group(1)} ${m.group(2)}');
+    text = text.replaceAllMapped(RegExp(r'([.!?])\s{2,}'), (m) => '${m.group(1)} ');
+    
+    // Remove empty lines
     return text
-        // Remove control characters
-        .replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'), '')
-        // Remove regex placeholders with optional spaces (AI bug)
-        .replaceAll(RegExp(r'\$\d+\s*'), '')
-        // Proper sentence spacing
-        .replaceAll(RegExp(r'([.!?])\s*([A-Z])'), r'$1 $2')
-        .replaceAll(RegExp(r'([.!?])\s{2,}'), r'$1 ')
-        // Remove empty lines
         .split('\n')
         .where((line) => line.trim().isNotEmpty)
         .join('\n');
