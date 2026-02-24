@@ -74,8 +74,11 @@ class ResponseSanitizer {
     // Remove control characters
     text = text.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'), '');
     
-    // Remove regex placeholders with optional spaces (AI bug)
-    text = text.replaceAll(RegExp(r'\$\d+\s*'), '');
+    // Remove regex placeholders - replace with space to preserve word boundaries
+    text = text.replaceAll(RegExp(r'\$\d+'), ' ');
+    
+    // Clean multiple spaces
+    text = text.replaceAll(RegExp(r'\s+'), ' ');
     
     // Proper sentence spacing using callback
     text = text.replaceAllMapped(RegExp(r'([.!?])\s*([A-Z])'), (m) => '${m.group(1)} ${m.group(2)}');
