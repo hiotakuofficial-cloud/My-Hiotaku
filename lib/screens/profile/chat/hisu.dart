@@ -1403,15 +1403,27 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
 
   void _animateText(String text) {
     const typingSpeed = Duration(milliseconds: 100);
-    final allWords = text.split(' ');
+    
+    // Split into segments preserving line breaks
+    final lines = text.split('\n');
+    final segments = <String>[];
+    
+    for (var line in lines) {
+      final words = line.split(RegExp(r'\s+'));
+      for (var word in words) {
+        if (word.isNotEmpty) segments.add(word);
+      }
+      segments.add('\n'); // Line break marker
+    }
+    
     _words.clear();
     _wordOpacities.clear();
     int currentIndex = 0;
 
     _timer = Timer.periodic(typingSpeed, (timer) {
-      if (currentIndex < allWords.length && mounted) {
+      if (currentIndex < segments.length && mounted) {
         setState(() {
-          _words.add(allWords[currentIndex]);
+          _words.add(segments[currentIndex]);
           _wordOpacities.add(0.0);
           
           final capturedIndex = currentIndex;
@@ -1495,11 +1507,18 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
             if (_words.isNotEmpty && widget.message.sender == SenderType.ai)
               Wrap(
                 children: List.generate(_words.length, (index) {
+                  final word = _words[index];
+                  
+                  // Handle line break marker
+                  if (word == '\n') {
+                    return const SizedBox(width: double.infinity, height: 0);
+                  }
+                  
                   return AnimatedOpacity(
                     opacity: _wordOpacities[index],
                     duration: const Duration(milliseconds: 150),
                     child: Text(
-                      '${_words[index]} ',
+                      '$word ',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: Colors.white,
                       ),
