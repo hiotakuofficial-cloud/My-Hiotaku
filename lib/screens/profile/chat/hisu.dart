@@ -521,15 +521,28 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    // Prepare message based on selected option
+    String messageToSend = text;
+    String displayMessage = text;
+    
+    if (_selectedOptionText == 'Search Anime') {
+      messageToSend = 'Is this anime available: $text';
+      displayMessage = text;
+    } else if (_selectedOptionText == 'Suggestions') {
+      messageToSend = 'Suggest me anime like: $text';
+      displayMessage = text;
+    }
+
     if (_editingMessage != null && _editingMessageIndex != null) {
       // Remove all messages after the edited message
       setState(() {
         _messages.removeRange(_editingMessageIndex! + 1, _messages.length);
-        _messages[_editingMessageIndex!] = ChatMessage(text: text, sender: SenderType.user);
+        _messages[_editingMessageIndex!] = ChatMessage(text: displayMessage, sender: SenderType.user);
         _editingMessage = null;
         _editingMessageIndex = null;
       });
       _textController.clear();
+      _selectedOptionText = null;
       _saveCurrentSession();
       
       // Send new message to AI with truncated history
@@ -538,7 +551,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
       });
       
       final context = _buildConversationContext();
-      final result = await HisuHandler.sendMessage(text, conversationContext: context);
+      final result = await HisuHandler.sendMessage(messageToSend, conversationContext: context);
 
       if (result['success'] == true) {
         List<AnimeCard> animeCards = [];
@@ -587,14 +600,18 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
       
       _saveCurrentSession();
     } else {
-      // Clear input immediately
+      // Clear input and selected option immediately
       _textController.clear();
+      final selectedOption = _selectedOptionText;
+      setState(() {
+        _selectedOptionText = null;
+      });
       
       // Enable auto scroll when sending message
       _autoScroll = true;
       
       setState(() {
-        _messages.add(ChatMessage(text: text, sender: SenderType.user));
+        _messages.add(ChatMessage(text: displayMessage, sender: SenderType.user));
         _isAITyping = true;
       });
       
@@ -602,7 +619,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
 
       // Build conversation context from recent messages
       final context = _buildConversationContext();
-      final result = await HisuHandler.sendMessage(text, conversationContext: context);
+      final result = await HisuHandler.sendMessage(messageToSend, conversationContext: context);
 
       if (result['success'] == true) {
         List<AnimeCard> animeCards = [];
@@ -1631,20 +1648,71 @@ class _ChatInputArea extends StatelessWidget {
                             width: 0.2,
                           ),
                         ),
-                        child: TextField(
-                          controller: textController,
-                          maxLines: null,
-                          textInputAction: TextInputAction.newline,
-                          decoration: const InputDecoration(
-                            hintText: 'Type a message...',
-                            hintStyle: TextStyle(color: Colors.white54),
-                            filled: false,
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 20.0, vertical: 12.0),
-                          ),
-                          onSubmitted: (_) => onSendMessage(),
-                          style: const TextStyle(color: Colors.white),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Pill indicator for selected option
+                            if (selectedOptionText != null)
+                              Container(
+                                margin: const EdgeInsets.only(left: 16, top: 8, right: 16),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.orange.withOpacity(0.5),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      selectedOptionText == 'Search Anime' 
+                                          ? Icons.search 
+                                          : Icons.lightbulb_outline,
+                                      size: 14,
+                                      color: Colors.orange,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      selectedOptionText!,
+                                      style: const TextStyle(
+                                        color: Colors.orange,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    GestureDetector(
+                                      onTap: onClearSelectedOption,
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            // Text field
+                            TextField(
+                              controller: textController,
+                              maxLines: null,
+                              textInputAction: TextInputAction.newline,
+                              decoration: const InputDecoration(
+                                hintText: 'Type a message...',
+                                hintStyle: TextStyle(color: Colors.white54),
+                                filled: false,
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 20.0, vertical: 12.0),
+                              ),
+                              onSubmitted: (_) => onSendMessage(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
                         ),
                       ),
                     ),
