@@ -78,6 +78,16 @@ class _AnimeSuggestionCardState extends State<AnimeSuggestionCard> {
             _type = type.toString();
             _isLoading = false;
           });
+          
+          // Success toast
+          Fluttertoast.showToast(
+            msg: "✓ ${title.toString()}",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green.shade900,
+            textColor: Colors.white,
+            fontSize: 12.0,
+          );
         }
       } else {
         throw Exception('No image URL found');
