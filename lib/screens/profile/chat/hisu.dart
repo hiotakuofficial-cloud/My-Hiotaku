@@ -14,6 +14,7 @@ import 'components/context_menu.dart';
 import 'components/hisu_alert.dart';
 import 'components/sanitizer.dart';
 import 'components/suggestions_card.dart';
+import 'components/coming.dart';
 
 // --- Main Entry Point ---
 class HisuChatPage extends StatefulWidget {
@@ -728,8 +729,7 @@ class _HisuChatScreenState extends State<HisuChatScreen> with SingleTickerProvid
                         style: TextStyle(color: Colors.white)),
                     onTap: () {
                       Navigator.pop(sheetContext);
-                      setState(() => _selectedOptionText = 'Suggestions');
-                      _textController.clear();
+                      showComingSoonDialog(context);
                     },
                   ),
                 ],
@@ -1668,12 +1668,24 @@ class _ChatInputArea extends StatelessWidget {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      selectedOptionText == 'Search Anime' 
-                                          ? Icons.search 
-                                          : Icons.lightbulb_outline,
-                                      size: 14,
-                                      color: Colors.orange,
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Show dialog when search icon clicked
+                                        showComingSoonDialog(
+                                          context,
+                                          title: 'Search Anime',
+                                          content: 'Advanced anime search feature is coming soon! '
+                                              'Currently, you can search by typing anime names directly.',
+                                          buttonText: 'Got it',
+                                        );
+                                      },
+                                      child: Icon(
+                                        selectedOptionText == 'Search Anime' 
+                                            ? Icons.search 
+                                            : Icons.lightbulb_outline,
+                                        size: 14,
+                                        color: Colors.orange,
+                                      ),
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
