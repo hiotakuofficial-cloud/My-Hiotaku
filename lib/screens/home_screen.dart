@@ -65,10 +65,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _checkNetworkAndLoad() async {
     try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(Duration(seconds: 3));
+      // Try multiple hosts for better reliability
+      bool hasInternet = false;
       
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+      try {
+        final result = await InternetAddress.lookup('google.com')
+            .timeout(Duration(seconds: 5));
+        hasInternet = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      } catch (_) {
+        // Try alternative host
+        try {
+          final result = await InternetAddress.lookup('cloudflare.com')
+              .timeout(Duration(seconds: 5));
+          hasInternet = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+        } catch (_) {
+          hasInternet = false;
+        }
+      }
+      
+      if (hasInternet) {
         // Has internet - load data
         await Future.wait([
           _loadHomeData(),
@@ -80,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           UpdateChecker.checkForUpdates(context);
         }
       } else {
-        // No internet
+        // No internet - show error screen
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -92,9 +107,60 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      // Network error
+      // Network error - try to load anyway (might be DNS issue)
+      try {
+        await Future.wait([
+          _loadHomeData(),
+          _loadUserData(),
+        ]);
+        
+        if (mounted) {
+          UpdateChecker.checkForUpdates(context);
+        }
+      } catch (loadError) {
+        // Actually can't load - show error
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => NoInternetScreen(
+                onRetry: () => _retryConnection(),
+              ),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _retryConnection() async {
+    // Pop the error screen first
+    Navigator.of(context).pop();
+    
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8C00)),
+        ),
+      ),
+    );
+    
+    // Wait a bit for network to stabilize
+    await Future.delayed(Duration(seconds: 1));
+    
+    // Try to reload
+    try {
+      await _checkNetworkAndLoad();
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      // Show error again
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => NoInternetScreen(
               onRetry: () => _retryConnection(),
@@ -103,12 +169,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
       }
     }
-  }
-
-  void _retryConnection() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => HomeScreen()),
-    );
   }
 
   // Initialize WebSocket for logged in users (optimized)
