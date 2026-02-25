@@ -954,6 +954,19 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> with SingleTickerPr
   Future<void> _showSessionContextMenu(BuildContext context, Offset position, ChatSession session) async {
     final menuItems = <MenuItemData>[
       MenuItemData(
+        icon: Icons.share_outlined,
+        text: 'Share',
+        onPressed: () {
+          showComingSoonDialog(
+            context,
+            title: 'Share Chat',
+            content: 'Chat sharing feature is coming soon! '
+                'You will be able to share your conversations with friends.',
+            buttonText: 'Got it',
+          );
+        },
+      ),
+      MenuItemData(
         icon: Icons.edit_outlined,
         text: 'Rename',
         onPressed: () {
