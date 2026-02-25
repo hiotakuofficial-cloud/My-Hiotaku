@@ -1488,24 +1488,39 @@ class _ChatMessageBubbleState extends State<_ChatMessageBubble>
           children: [
             // Anime cards first (above text)
             if (widget.message.animeCards.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: SizedBox(
-                  height: 180,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.message.animeCards.length,
-                    itemBuilder: (context, index) {
-                      final card = widget.message.animeCards[index];
-                      return AnimeSuggestionCard(
-                        animeId: card.id,
-                        onTap: () {
-                          // TODO: Navigate to anime details
-                        },
-                      );
-                    },
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Card count indicator
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${widget.message.animeCards.length} suggestions',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
+                  // Cards
+                  SizedBox(
+                    height: 180,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: widget.message.animeCards.length,
+                      itemBuilder: (context, index) {
+                        final card = widget.message.animeCards[index];
+                        return AnimeSuggestionCard(
+                          animeId: card.id,
+                          onTap: () {
+                            // TODO: Navigate to anime details
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             // Then text
             if (_words.isNotEmpty && widget.message.sender == SenderType.ai)
