@@ -1208,13 +1208,17 @@ class _HisuDrawerScreenState extends State<HisuDrawerScreen> with SingleTickerPr
                             widget.onClose();
                           },
                           onLongPress: () {
-                            final RenderBox box = context.findRenderObject() as RenderBox;
-                            final position = box.localToGlobal(Offset.zero);
-                            _showSessionContextMenu(
-                              context,
-                              Offset(position.dx + 100, position.dy + (index * 50) + 200),
-                              session,
-                            );
+                            final RenderBox? box = context.findRenderObject() as RenderBox?;
+                            if (box != null) {
+                              final position = box.localToGlobal(Offset.zero);
+                              final screenWidth = MediaQuery.of(context).size.width;
+                              // Position menu in center of screen, vertically at tap position
+                              _showSessionContextMenu(
+                                context,
+                                Offset(screenWidth / 2, position.dy + 30),
+                                session,
+                              );
+                            }
                           },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
