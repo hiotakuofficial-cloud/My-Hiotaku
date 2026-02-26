@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/permission_service.dart';
+import '../../services/statistics.dart';
 import '../../main.dart';
 import 'onboarding.dart';
 
@@ -29,8 +30,9 @@ class _SplashScreenState extends State<SplashScreen> {
     final prefsFuture = SharedPreferences.getInstance();
     final gifTimer = Future.delayed(Duration(milliseconds: 3000)); // Match GIF duration
     
-    // Request permissions in background (non-blocking)
+    // Request permissions and track app open in background (non-blocking)
     _requestPermissions();
+    _trackAppOpen();
     
     // Wait for GIF completion
     await gifTimer;
@@ -66,6 +68,14 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await PermissionService.requestNotificationPermission();
     } catch (e) {
+    }
+  }
+
+  void _trackAppOpen() async {
+    try {
+      await StatisticsService.trackAppOpen();
+    } catch (e) {
+      // Silent fail
     }
   }
 
