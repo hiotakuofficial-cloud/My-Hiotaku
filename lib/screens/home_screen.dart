@@ -23,6 +23,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../notifications/handler/firebase_messaging_handler.dart';
 import '../services/websocket_service.dart';
 import '../widgets/update.dart';
+import '../widgets/announcement.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -90,9 +91,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _loadUserData(),
         ]);
         
-        // Check for updates after home screen loads
+        // Check for updates and announcements after home screen loads
         if (mounted) {
           UpdateChecker.checkForUpdates(context);
+          AnnouncementChecker.checkForAnnouncements(context);
         }
       } else {
         // No internet - show error screen

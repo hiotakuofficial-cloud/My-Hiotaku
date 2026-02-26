@@ -1,4 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Announcement checker - fetches from Supabase using server time
+class AnnouncementChecker {
+  static Future<void> checkForAnnouncements(BuildContext context) async {
+    try {
+      // Fetch active announcements using server-side view (server time check)
+      final response = await Supabase.instance.client
+          .from('active_announcements')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return;
+
+      if (context.mounted) {
+        _showAnnouncementDialog(context, response);
+      }
+    } catch (e) {
+      debugPrint('Announcement check failed: $e');
+    }
+  }
+
+  static void _showAnnouncementDialog(BuildContext context, Map<String, dynamic> data) {
+    // Delay to ensure screen is fully rendered
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!context.mounted) return;
+      
+      showAnnouncementDialog(
+        context,
+        title: data['title'] ?? 'Announcement',
+        description: data['description'] ?? '',
+        buttonText: 'Got it',
+      );
+    });
+  }
+}
 
 /// Show announcement dialog with dark theme
 void showAnnouncementDialog(BuildContext context, {
