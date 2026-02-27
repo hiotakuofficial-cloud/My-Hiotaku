@@ -28,14 +28,14 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeApp() async {
     // Start all tasks in parallel
     final prefsFuture = SharedPreferences.getInstance();
+    final trackingFuture = _trackAppOpen();
     final gifTimer = Future.delayed(Duration(milliseconds: 3000)); // Match GIF duration
     
-    // Request permissions and track app open in background (non-blocking)
+    // Request permissions in background (non-blocking)
     _requestPermissions();
-    _trackAppOpen();
     
-    // Wait for GIF completion
-    await gifTimer;
+    // Wait for GIF completion AND tracking to finish
+    await Future.wait([gifTimer, trackingFuture]);
     
     // Get SharedPreferences
     SharedPreferences prefs = await prefsFuture;
@@ -71,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  void _trackAppOpen() async {
+  Future<void> _trackAppOpen() async {
     try {
       await StatisticsService.trackAppOpen();
     } catch (e) {

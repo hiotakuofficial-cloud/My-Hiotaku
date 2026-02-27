@@ -8,14 +8,19 @@ class StatisticsService {
   /// Track app open - call this on splash screen
   static Future<void> trackAppOpen() async {
     try {
+      print('📊 Starting app open tracking...');
+      
       // Get current user
       final firebaseUser = FirebaseAuth.instance.currentUser;
       
       if (firebaseUser == null) {
+        print('📊 No Firebase user - tracking guest');
         // Guest user - use device ID or generate temp UUID
         await _trackGuestOpen();
         return;
       }
+
+      print('📊 Firebase user found: ${firebaseUser.uid}');
 
       // Get user UUID from Supabase users table
       final userResponse = await _supabase
@@ -25,6 +30,7 @@ class StatisticsService {
           .maybeSingle();
 
       if (userResponse == null) {
+        print('📊 User not found in Supabase database');
         // User not in database yet
         return;
       }
@@ -34,15 +40,19 @@ class StatisticsService {
                        firebaseUser.displayName ?? 
                        'User';
 
+      print('📊 Calling increment_today_opens for: $userName ($userUuid)');
+
       // Call database function to increment today's opens
       await _supabase.rpc('increment_today_opens', params: {
         'p_user_uuid': userUuid,
         'p_user_name': userName,
       });
 
+      print('📊 ✅ Tracking successful!');
+
     } catch (e) {
       // Silent fail - don't block app if tracking fails
-      print('Statistics tracking failed: $e');
+      print('📊 ❌ Statistics tracking failed: $e');
     }
   }
 
