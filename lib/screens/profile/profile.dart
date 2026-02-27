@@ -425,26 +425,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return;
                   }
                   
-                  // Check if chat is enabled for user
-                  if (userData != null) {
-                    final isChatEnabledForUser = userData!['is_chat_enabled'] ?? false;
-                    if (!isChatEnabledForUser) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('This feature isn\'t available to everyone'),
-                          backgroundColor: Colors.red,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      return;
-                    }
-                  }
-                  
-                  // Check if chat is under maintenance
+                  // Check system settings only
                   if (!isChatEnabled) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Chat is currently under maintenance'),
+                        content: Text('This feature isn\'t available right now'),
                         backgroundColor: Colors.red,
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -452,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return;
                   }
                   
-                  // Check if chat lock is enabled
+                  // Check chat lock
                   final isLocked = await ChatLockService.isLockEnabled();
                   if (isLocked) {
                     final result = await Navigator.push(
