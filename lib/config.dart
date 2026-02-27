@@ -9,7 +9,7 @@ class AppConfig {
   
   // App Configuration
   static const String appName = 'Hiotaku';
-  static const String appVersion = '1.0.1+2';
+  static const String appVersion = '2.0.3+6';
   
   // Cache Configuration
   static const Duration cacheExpiry = Duration(hours: 24);
