@@ -18,6 +18,7 @@ import 'pages/recently_added.dart';
 import 'auth/login.dart';
 import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
+import 'errors/banned.dart';
 import 'settings/settings.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../notifications/handler/firebase_messaging_handler.dart';
@@ -265,6 +266,42 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final data = await ProfileHandler.getCurrentUserData();
       
       if (mounted) {
+        // Check if user is banned
+        if (data != null) {
+          final isActive = data['is_active'] as bool? ?? true;
+          final bannedUntil = data['banned_until'] != null 
+              ? DateTime.parse(data['banned_until']) 
+              : null;
+          final banReason = data['ban_reason'] as String?;
+          
+          // Check permanent ban
+          if (!isActive) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => BannedScreen(
+                  reason: banReason ?? 'Your account has been permanently suspended.',
+                  isPermanent: true,
+                ),
+              ),
+            );
+            return;
+          }
+          
+          // Check temporary ban (server time comparison)
+          if (bannedUntil != null && bannedUntil.isAfter(DateTime.now().toUtc())) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => BannedScreen(
+                  reason: banReason,
+                  bannedUntil: bannedUntil,
+                  isPermanent: false,
+                ),
+              ),
+            );
+            return;
+          }
+        }
+        
         setState(() {
           userData = data;
           isUserLoading = false;
