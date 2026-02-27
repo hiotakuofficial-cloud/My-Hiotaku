@@ -9,6 +9,7 @@ import 'downloads/downloads.dart';
 import 'favourite/connected.dart';
 import 'chat/hisu.dart';
 import '../settings/settings.dart';
+import '../../services/system_settings.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -24,11 +25,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _selectedGender = 'male';
   int _unreadCount = 0;
   
+  // System settings
+  bool isChatEnabled = true;
+  bool isDownloadEnabled = true;
+  bool isSettingsLoading = true;
+  
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadUnreadCount();
+    _loadSystemSettings();
   }
   
   @override
@@ -104,6 +111,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       // Silent fail
+    }
+  }
+
+  Future<void> _loadSystemSettings() async {
+    try {
+      final settings = await SystemSettingsService.getSettings();
+      if (mounted) {
+        setState(() {
+          isChatEnabled = settings['is_chat_enabled'] ?? true;
+          isDownloadEnabled = settings['is_download_enabled'] ?? true;
+          isSettingsLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isChatEnabled = true;
+          isDownloadEnabled = true;
+          isSettingsLoading = false;
+        });
+      }
     }
   }
 
@@ -340,7 +368,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileOption(IconData icon, String title, {bool isLogout = false}) {
-    return Container(
+    bool isDisabled = false;
+    
+    if (title == 'Chat' && !isChatEnabled && !isSettingsLoading) {
+      isDisabled = true;
+    } else if (title == 'Downloads' && !isDownloadEnabled && !isSettingsLoading) {
+      isDisabled = true;
+    }
+    
+    return Opacity(
+      opacity: isDisabled ? 0.5 : 1.0,
+      child: Container(
       margin: EdgeInsets.only(bottom: 8),
       child: Material(
         color: Colors.transparent,
@@ -381,6 +419,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (title == 'Clear cache') {
                   _openAppSettings();
                 } else if (title == 'Chat') {
+                  if (isSettingsLoading) {
+                    return;
+                  }
+                  if (!isChatEnabled) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Chat is currently under maintenance'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const HisuChatPage()),
@@ -396,6 +447,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     MaterialPageRoute(builder: (context) => ConnectedFavoritesPage()),
                   );
                 } else if (title == 'Downloads') {
+                  if (isSettingsLoading) {
+                    return;
+                  }
+                  if (!isDownloadEnabled) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Downloads are currently under maintenance'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => DownloadsScreen()),
@@ -445,6 +509,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
