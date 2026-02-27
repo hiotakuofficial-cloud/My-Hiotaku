@@ -10,6 +10,8 @@ import 'favourite/connected.dart';
 import 'chat/hisu.dart';
 import '../settings/settings.dart';
 import '../../services/system_settings.dart';
+import '../../services/chat_lock_service.dart';
+import '../settings/screens/chat_lock.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -386,7 +388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
-          onTap: () {
+          onTap: () async {
             if (isLogout) {
               if (userData == null) {
                 // User not logged in, redirect to login
@@ -422,6 +424,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (isSettingsLoading) {
                     return;
                   }
+                  
+                  // Check if chat is enabled for user
+                  if (userData != null) {
+                    final isChatEnabledForUser = userData!['is_chat_enabled'] ?? false;
+                    if (!isChatEnabledForUser) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('This feature isn\'t available to everyone'),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+                  }
+                  
+                  // Check if chat is under maintenance
                   if (!isChatEnabled) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -432,10 +451,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                     return;
                   }
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HisuChatPage()),
-                  );
+                  
+                  // Check if chat lock is enabled
+                  final isLocked = await ChatLockService.isLockEnabled();
+                  if (isLocked) {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatLockPage(directToPasswordEntry: true),
+                      ),
+                    );
+                    
+                    if (result == true) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const HisuChatPage()),
+                      );
+                    }
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HisuChatPage()),
+                    );
+                  }
                 } else if (title == 'Requests') {
                   Navigator.push(
                     context,
