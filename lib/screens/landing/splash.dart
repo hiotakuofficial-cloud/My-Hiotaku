@@ -34,6 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
     
     try {
       await _controller.initialize();
+      await _controller.setVolume(0.0); // Mute audio
       setState(() {
         _isVideoInitialized = true;
       });
@@ -115,14 +116,10 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: _isVideoInitialized
-          ? SizedBox.expand(
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: _controller.value.size.width,
-                  height: _controller.value.size.height,
-                  child: VideoPlayer(_controller),
-                ),
+          ? Center(
+              child: AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
               ),
             )
           : Container(
