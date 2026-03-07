@@ -60,12 +60,16 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
   Timer? _titleTimer;
 
   bool                   _isLoading      = true;
+  bool                   _isLoadingMore  = false;
   Map<String, dynamic>?  _trendingData;
+  List<dynamic>          _allMovies      = [];
   String?                _error;
   int                    _currentPage    = 0;
+  int                    _apiPage        = 0;
   int                    _currentNavIdx  = 0;
   int                    _currentTitleIdx = 0;
   double                 _scrollOffset   = 0;
+  bool                   _hasMore        = true;
 
   static const _titles = ['Streaming', 'Watch Together', 'Live Chatting', 'Friends Mode'];
 
@@ -81,6 +85,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
     _pageCtrl = PageController(viewportFraction: 1.0);
     _scrollCtrl = ScrollController()..addListener(() {
       setState(() => _scrollOffset = _scrollCtrl.offset);
+      _onScroll();
     });
 
     // Hero background slow zoom
@@ -145,15 +150,44 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
 
   // ── Data ───────────────────────────────────────────────────────────────────
   Future<void> _loadData() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() { _isLoading = true; _error = null; _apiPage = 0; _allMovies = []; });
     try {
-      final trending = await MovieBoxService.getTrending(perPage: 20);
-      setState(() { _trendingData = trending; _isLoading = false; });
+      final trending = await MovieBoxService.getTrending(page: 0, perPage: 20);
       final list = trending['data']?['subjectList'] as List? ?? [];
+      setState(() { 
+        _trendingData = trending;
+        _allMovies = list;
+        _isLoading = false;
+        _hasMore = list.length >= 20;
+      });
       if (list.length > 1) _startAutoScroll(list.take(5).length);
       _heroTextCtrl.forward();
     } catch (e) {
       setState(() { _error = e.toString(); _isLoading = false; });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final nextPage = _apiPage + 1;
+      final trending = await MovieBoxService.getTrending(page: nextPage, perPage: 20);
+      final list = trending['data']?['subjectList'] as List? ?? [];
+      setState(() {
+        _apiPage = nextPage;
+        _allMovies.addAll(list);
+        _isLoadingMore = false;
+        _hasMore = list.length >= 20;
+      });
+    } catch (e) {
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200) {
+      _loadMore();
     }
   }
 
@@ -309,8 +343,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
 
   // ── Main Content ───────────────────────────────────────────────────────────
   Widget _buildContent() {
-    final trending = _trendingData?['data']?['subjectList'] as List? ?? [];
-    final hero = trending.take(5).toList();
+    final hero = _allMovies.take(5).toList();
 
     return CustomScrollView(
       controller: _scrollCtrl,
@@ -357,7 +390,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                final m = trending[index];
+                final m = _allMovies[index];
                 return _MovieCard(
                   imageUrl:  m['cover']?['url'] ?? '',
                   title:     m['title'] ?? '',
@@ -368,7 +401,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
                   ))),
                 );
               },
-              childCount: trending.length > 9 ? 9 : trending.length,
+              childCount: _allMovies.length,
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
@@ -378,6 +411,24 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
             ),
           ),
         ),
+
+        // Loading more indicator
+        if (_isLoadingMore)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: _T.accent,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
 
         // Bottom nav padding
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
