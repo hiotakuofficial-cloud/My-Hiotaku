@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../services/moviebox_service.dart';
 import 'components/bottom_nav.dart';
+import 'moviebox_detail.dart';
 import 'moviebox_search.dart';
 
 class MovieBoxHome extends StatefulWidget {
@@ -248,7 +249,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _buildTrendingSection(trendingList),
                   const SizedBox(height: 30), // Space for bottom nav
                 ],
@@ -545,7 +546,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         GridView.builder(
           shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
@@ -567,7 +568,17 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
               imageUrl: imageUrl,
               title: title,
               rating: rating,
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MovieBoxDetail(
+                      subjectId: movie['subjectId'] ?? '',
+                      detailPath: movie['detailPath'],
+                    ),
+                  ),
+                );
+              },
             );
           },
         ),

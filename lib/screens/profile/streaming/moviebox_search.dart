@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/moviebox_service.dart';
+import 'moviebox_detail.dart';
 
 class MovieBoxSearch extends StatefulWidget {
   const MovieBoxSearch({Key? key}) : super(key: key);
@@ -379,7 +380,19 @@ class _MovieBoxSearchState extends State<MovieBoxSearch> {
     final rating = movie['imdbRatingValue'] ?? '0.0';
     final year = movie['releaseDate']?.toString().split('-')[0] ?? '';
 
-    return AspectRatio(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MovieBoxDetail(
+              subjectId: movie['subjectId'] ?? '',
+              detailPath: movie['detailPath'],
+            ),
+          ),
+        );
+      },
+      child: AspectRatio(
       aspectRatio: 2 / 3,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.0),
@@ -454,6 +467,7 @@ class _MovieBoxSearchState extends State<MovieBoxSearch> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
