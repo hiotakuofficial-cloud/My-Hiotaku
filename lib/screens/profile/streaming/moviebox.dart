@@ -263,7 +263,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
 
   Widget _buildHeroCarousel(List<dynamic> movies) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final heroHeight = screenHeight * 0.40;
+    final heroHeight = screenHeight * 0.60;
 
     return SizedBox(
       height: heroHeight,
@@ -285,7 +285,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
 
   Widget _buildHeroSection(Map<String, dynamic> movie) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final heroHeight = screenHeight * 0.40;
+    final heroHeight = screenHeight * 0.60;
     final cover = movie['cover'] ?? {};
     final imageUrl = cover['url'] ?? '';
     final title = movie['title'] ?? '';
