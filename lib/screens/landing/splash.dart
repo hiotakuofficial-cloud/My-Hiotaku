@@ -42,9 +42,16 @@ class _SplashScreenState extends State<SplashScreen> {
       // Play video
       await _controller.play();
       
-      // Wait for video to complete
+      // Wait for video to complete OR 5 seconds max
       _controller.addListener(() {
         if (_controller.value.position >= _controller.value.duration) {
+          _navigateToNext();
+        }
+      });
+      
+      // Fallback: Navigate after 5 seconds regardless
+      Future.delayed(Duration(seconds: 5), () {
+        if (mounted) {
           _navigateToNext();
         }
       });
