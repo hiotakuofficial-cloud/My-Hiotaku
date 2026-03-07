@@ -170,12 +170,15 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: const Color(0xFF1a1a1a),
-            child: const Icon(Icons.movie, color: Colors.white24, size: 64),
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: const Color(0xFF1a1a1a),
+              child: const Icon(Icons.movie, color: Colors.white24, size: 64),
+            ),
           ),
         ),
         Container(
