@@ -54,6 +54,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
   late AnimationController _titleCtrl;
   late Animation<double>   _titleFade;
   late PageController      _pageCtrl;
+  late ScrollController    _scrollCtrl;
 
   Timer? _autoScrollTimer;
   Timer? _titleTimer;
@@ -64,6 +65,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
   int                    _currentPage    = 0;
   int                    _currentNavIdx  = 0;
   int                    _currentTitleIdx = 0;
+  double                 _scrollOffset   = 0;
 
   static const _titles = ['Streaming', 'Watch Together', 'Live Chatting', 'Friends Mode'];
 
@@ -77,6 +79,9 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
     ));
 
     _pageCtrl = PageController(viewportFraction: 1.0);
+    _scrollCtrl = ScrollController()..addListener(() {
+      setState(() => _scrollOffset = _scrollCtrl.offset);
+    });
 
     // Hero background slow zoom
     _heroZoomCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 18))
@@ -131,6 +136,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
     _autoScrollTimer?.cancel();
     _titleTimer?.cancel();
     _pageCtrl.dispose();
+    _scrollCtrl.dispose();
     _heroZoomCtrl.dispose();
     _heroTextCtrl.dispose();
     _titleCtrl.dispose();
@@ -157,6 +163,58 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
     return Scaffold(
       backgroundColor: _T.bg,
       extendBody: true,
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: _scrollOffset > 10 ? ImageFilter.blur(sigmaX: 20, sigmaY: 20) : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+              child: Container(
+                color: _scrollOffset > 10 ? _T.bg.withOpacity(0.55) : Colors.transparent,
+                child: SafeArea(
+                  child: SizedBox(
+                    height: kToolbarHeight,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 16),
+                        Image.asset('assets/images/logo.png', width: 20, height: 20,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.movie_filter_rounded, color: _T.white, size: 20),
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: FadeTransition(
+                              opacity: _titleFade,
+                              child: Text(
+                                _titles[_currentTitleIdx],
+                                style: const TextStyle(
+                                  color: _T.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: _T.font,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.search_rounded, color: _T.white, size: 24),
+                          onPressed: () => Navigator.push(context, _fadeRoute(const MovieBoxSearch())),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         child: _isLoading
@@ -178,60 +236,10 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
   }
 
   // ── AppBar ─────────────────────────────────────────────────────────────────
-  Widget _buildAppBar() {
-    return Container(
-      height: kToolbarHeight + MediaQuery.of(context).padding.top,
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            color: _T.bg.withOpacity(0.55),
-            child: Row(
-              children: [
-                const SizedBox(width: 16),
-                Image.asset('assets/images/logo.png', width: 20, height: 20,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.movie_filter_rounded, color: _T.white, size: 20);
-                  },
-                ),
-                Expanded(
-                  child: Center(
-                    child: FadeTransition(
-                      opacity: _titleFade,
-                      child: Text(
-                        _titles[_currentTitleIdx],
-                        style: const TextStyle(
-                          color: _T.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: _T.font,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.search_rounded, color: _T.white, size: 24),
-                  onPressed: () => Navigator.push(context, _fadeRoute(const MovieBoxSearch())),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 16),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   // ── States ─────────────────────────────────────────────────────────────────
   Widget _buildLoading() => CustomScrollView(
     physics: const BouncingScrollPhysics(),
     slivers: [
-      SliverToBoxAdapter(child: _buildAppBar()),
       SliverToBoxAdapter(
         child: Shimmer.fromColors(
           baseColor: _T.card,
@@ -305,11 +313,9 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
     final hero = trending.take(5).toList();
 
     return CustomScrollView(
+      controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),
       slivers: [
-        // ── AppBar
-        SliverToBoxAdapter(child: _buildAppBar()),
-        
         // ── Hero Carousel
         if (hero.isNotEmpty)
           SliverToBoxAdapter(child: _HeroCarousel(
