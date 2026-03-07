@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../services/moviebox_service.dart';
@@ -12,15 +13,19 @@ class MovieBoxHome extends StatefulWidget {
 class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMixin {
   late AnimationController _heroZoomController;
   late Animation<double> _heroZoomAnimation;
+  late PageController _pageController;
+  Timer? _autoScrollTimer;
   
   bool _isLoading = true;
   Map<String, dynamic>? _homeData;
   Map<String, dynamic>? _trendingData;
   String? _error;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _heroZoomController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
@@ -31,8 +36,24 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     _loadData();
   }
 
+  void _startAutoScroll(int itemCount) {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_pageController.hasClients && itemCount > 0) {
+        final nextPage = (_currentPage + 1) % itemCount;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
     _heroZoomController.dispose();
     super.dispose();
   }
@@ -52,6 +73,11 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
         _trendingData = trending;
         _isLoading = false;
       });
+      
+      final trendingList = trending['data']?['subjectList'] as List? ?? [];
+      if (trendingList.length > 1) {
+        _startAutoScroll(trendingList.take(5).length);
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -63,8 +89,11 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: const Padding(
           padding: EdgeInsets.only(left: 10.0),
           child: Icon(Icons.movie, color: Colors.white, size: 30),
@@ -87,24 +116,26 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF3B5C)))
           : _error != null
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const Icon(Icons.error_outline, size: 48, color: Color(0xFFFF3B5C)),
                       const SizedBox(height: 16),
-                      Text(_error!, textAlign: TextAlign.center),
+                      Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3B5C)),
                         child: const Text('Retry'),
                       ),
                     ],
                   ),
                 )
               : RefreshIndicator(
+                  color: const Color(0xFFFF3B5C),
                   onRefresh: _loadData,
                   child: _buildContent(),
                 ),
@@ -113,24 +144,46 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
 
   Widget _buildContent() {
     final trendingList = _trendingData?['data']?['subjectList'] as List? ?? [];
-    final heroMovie = trendingList.isNotEmpty ? trendingList[0] : null;
+    final heroMovies = trendingList.take(5).toList();
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          if (heroMovie != null) _buildHeroSection(heroMovie),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-                _buildTrendingSection(trendingList),
-                const SizedBox(height: 20),
-              ],
+    return Container(
+      color: const Color(0xFF121212),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            if (heroMovies.isNotEmpty) _buildHeroCarousel(heroMovies),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  _buildTrendingSection(trendingList),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroCarousel(List<dynamic> movies) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final heroHeight = screenHeight * 0.60;
+
+    return SizedBox(
+      height: heroHeight,
+      child: PageView.builder(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() => _currentPage = index);
+        },
+        itemCount: movies.length,
+        itemBuilder: (context, index) {
+          return _buildHeroSection(movies[index]);
+        },
       ),
     );
   }
@@ -187,7 +240,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                     Colors.transparent,
                     Colors.black.withOpacity(0.1),
                     Colors.black.withOpacity(0.5),
-                    const Color(0xFF0B0B0B).withOpacity(1.0),
+                    const Color(0xFF121212).withOpacity(1.0),
                   ],
                   stops: const [0.0, 0.4, 0.7, 1.0],
                 ),
@@ -211,17 +264,24 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
           ),
           Positioned(
             bottom: 20,
+            left: 0,
+            right: 0,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Row(
