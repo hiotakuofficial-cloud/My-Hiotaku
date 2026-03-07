@@ -34,11 +34,18 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
 
   Future<void> _loadDetail() async {
     try {
+      print('Loading detail for: ${widget.subjectId}');
+      
       final detail = await MovieBoxService.getDetail(
         id: widget.subjectId,
         path: widget.detailPath,
       );
+      
+      print('Detail loaded: ${detail['subject']?['title']}');
+      
       final recs = await MovieBoxService.getRecommendations(id: widget.subjectId);
+      
+      print('Recommendations loaded: ${recs['data']?['subjectList']?.length ?? 0}');
       
       setState(() {
         _detailData = detail;
@@ -46,42 +53,58 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      print('Error loading detail: $e');
+      setState(() {
+        _isLoading = false;
+        _detailData = null;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF121212),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFFFF3B5C))),
+      return Scaffold(
+        backgroundColor: const Color(0xFF121212),
+        body: SafeArea(
+          child: Center(child: CircularProgressIndicator(color: Color(0xFFFF3B5C))),
+        ),
       );
     }
 
     if (_detailData == null) {
       return Scaffold(
         backgroundColor: const Color(0xFF121212),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.white54),
-              const SizedBox(height: 16),
-              const Text('Failed to load details', style: TextStyle(color: Colors.white54)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadDetail,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3B5C)),
-                child: const Text('Retry'),
-              ),
-            ],
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.white54),
+                const SizedBox(height: 16),
+                const Text('Failed to load details', style: TextStyle(color: Colors.white54, fontFamily: 'MazzardH')),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadDetail,
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3B5C)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    final subject = _detailData!['subject'] ?? {};
+    final subject = (_detailData!['subject'] ?? {}) as Map<String, dynamic>;
     final cover = subject['cover'] ?? {};
     final stills = subject['stills'] ?? {};
     
@@ -127,20 +150,24 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
             left: 0,
             right: 0,
             height: 350,
-            child: _buildHeroBanner(stills['url'] ?? cover['url'] ?? ''),
+            child: _buildHeroBanner(stills['url']?.toString() ?? cover['url']?.toString() ?? ''),
           ),
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 16,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              },
             ),
           ),
           Positioned(
             top: 350 - 180 + 60,
             left: 16,
-            child: _buildPosterCard(cover['url'] ?? ''),
+            child: _buildPosterCard(cover['url']?.toString() ?? ''),
           ),
         ],
       ),
@@ -148,6 +175,10 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
   }
 
   Widget _buildHeroBanner(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return Container(color: const Color(0xFF1a1a1a));
+    }
+    
     return Stack(
       children: [
         Positioned.fill(
@@ -156,7 +187,10 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
             child: Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(color: const Color(0xFF1a1a1a)),
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: const Color(0xFF1a1a1a),
+                child: const Icon(Icons.movie, color: Colors.white24, size: 64),
+              ),
             ),
           ),
         ),
@@ -193,18 +227,26 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Container(color: const Color(0xFF1a1a1a)),
-        ),
+        child: imageUrl.isNotEmpty
+            ? Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: const Color(0xFF1a1a1a),
+                  child: const Icon(Icons.movie, color: Colors.white24, size: 48),
+                ),
+              )
+            : Container(
+                color: const Color(0xFF1a1a1a),
+                child: const Icon(Icons.movie, color: Colors.white24, size: 48),
+              ),
       ),
     );
   }
 
   Widget _buildTitle(Map<String, dynamic> subject) {
     return Text(
-      subject['title'] ?? '',
+      subject['title']?.toString() ?? 'Unknown Title',
       style: const TextStyle(
         fontSize: 30,
         fontWeight: FontWeight.bold,
@@ -215,8 +257,8 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
   }
 
   Widget _buildRating(Map<String, dynamic> subject) {
-    final rating = subject['imdbRatingValue'] ?? '0.0';
-    final votes = subject['imdbRatingCount'] ?? 0;
+    final rating = subject['imdbRatingValue']?.toString() ?? '0.0';
+    final votes = int.tryParse(subject['imdbRatingCount']?.toString() ?? '0') ?? 0;
     
     return Row(
       children: [
@@ -252,8 +294,9 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
   }
 
   Widget _buildMetadata(Map<String, dynamic> subject) {
-    final year = subject['releaseDate']?.toString().split('-')[0] ?? '';
-    final country = subject['countryName'] ?? '';
+    final releaseDate = subject['releaseDate']?.toString() ?? '';
+    final year = releaseDate.isNotEmpty ? releaseDate.split('-')[0] : 'N/A';
+    final country = subject['countryName']?.toString() ?? 'Unknown';
     
     return Row(
       children: [
@@ -281,8 +324,10 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
   }
 
   Widget _buildGenres(Map<String, dynamic> subject) {
-    final genreString = subject['genre'] ?? '';
-    final genres = genreString.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    final genreString = subject['genre']?.toString() ?? '';
+    final genres = genreString.isNotEmpty 
+        ? genreString.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+        : <String>[];
     
     return Wrap(
       spacing: 8,
@@ -342,7 +387,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
   }
 
   Widget _buildOverview(Map<String, dynamic> subject) {
-    final description = subject['description'] ?? 'No description available.';
+    final description = subject['description']?.toString() ?? 'No description available.';
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,8 +452,10 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
             itemCount: _recommendations.length,
             separatorBuilder: (context, index) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
-              final rec = _recommendations[index];
+              final rec = _recommendations[index] ?? {};
               final cover = rec['cover'] ?? {};
+              final imageUrl = cover['url']?.toString() ?? '';
+              
               return Container(
                 width: 120,
                 decoration: BoxDecoration(
@@ -424,11 +471,19 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    cover['url'] ?? '',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(color: const Color(0xFF1a1a1a)),
-                  ),
+                  child: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: const Color(0xFF1a1a1a),
+                            child: const Icon(Icons.movie, color: Colors.white24, size: 48),
+                          ),
+                        )
+                      : Container(
+                          color: const Color(0xFF1a1a1a),
+                          child: const Icon(Icons.movie, color: Colors.white24, size: 48),
+                        ),
                 ),
               );
             },
