@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-class StreamingBottomNav extends StatefulWidget {
+class StreamingBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
@@ -10,43 +10,6 @@ class StreamingBottomNav extends StatefulWidget {
     required this.currentIndex,
     required this.onTap,
   }) : super(key: key);
-
-  @override
-  State<StreamingBottomNav> createState() => _StreamingBottomNavState();
-}
-
-class _StreamingBottomNavState extends State<StreamingBottomNav> with SingleTickerProviderStateMixin {
-  late AnimationController _dotController;
-  late Animation<double> _dotAnimation;
-  int _previousIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _previousIndex = widget.currentIndex;
-    _dotController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _dotAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _dotController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void didUpdateWidget(StreamingBottomNav oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentIndex != widget.currentIndex) {
-      _previousIndex = oldWidget.currentIndex;
-      _dotController.forward(from: 0.0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _dotController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,62 +46,32 @@ class _StreamingBottomNavState extends State<StreamingBottomNav> with SingleTick
                 width: 1.5,
               ),
             ),
-            child: Stack(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Animated dot indicator
-                AnimatedBuilder(
-                  animation: _dotAnimation,
-                  builder: (context, child) {
-                    final screenWidth = MediaQuery.of(context).size.width;
-                    final navWidth = screenWidth - 40; // minus margins (20 + 20)
-                    final itemWidth = navWidth / 4;
-                    final startPos = _previousIndex * itemWidth + itemWidth / 2;
-                    final endPos = widget.currentIndex * itemWidth + itemWidth / 2;
-                    final currentPos = startPos + (endPos - startPos) * _dotAnimation.value;
-                    
-                    return Positioned(
-                      bottom: 8,
-                      left: currentPos - 2,
-                      child: Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFF3B5C),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    );
-                  },
+                _NavItem(
+                  icon: Icons.home_rounded,
+                  label: 'Home',
+                  isActive: currentIndex == 0,
+                  onTap: () => onTap(0),
                 ),
-                // Nav items
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _NavItem(
-                      icon: Icons.home_rounded,
-                      label: 'Home',
-                      isActive: widget.currentIndex == 0,
-                      onTap: () => widget.onTap(0),
-                    ),
-                    _NavItem(
-                      icon: Icons.play_circle_rounded,
-                      label: 'Streaming',
-                      isActive: widget.currentIndex == 1,
-                      onTap: () => widget.onTap(1),
-                    ),
-                    _NavItem(
-                      icon: Icons.download_rounded,
-                      label: 'Downloads',
-                      isActive: widget.currentIndex == 2,
-                      onTap: () => widget.onTap(2),
-                    ),
-                    _NavItem(
-                      icon: Icons.history_rounded,
-                      label: 'History',
-                      isActive: widget.currentIndex == 3,
-                      onTap: () => widget.onTap(3),
-                    ),
-                  ],
+                _NavItem(
+                  icon: Icons.play_circle_rounded,
+                  label: 'Streaming',
+                  isActive: currentIndex == 1,
+                  onTap: () => onTap(1),
+                ),
+                _NavItem(
+                  icon: Icons.download_rounded,
+                  label: 'Downloads',
+                  isActive: currentIndex == 2,
+                  onTap: () => onTap(2),
+                ),
+                _NavItem(
+                  icon: Icons.history_rounded,
+                  label: 'History',
+                  isActive: currentIndex == 3,
+                  onTap: () => onTap(3),
                 ),
               ],
             ),

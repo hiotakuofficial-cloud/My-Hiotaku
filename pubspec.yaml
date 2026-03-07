@@ -49,6 +49,7 @@ flutter:
     - assets/profile/female/
     - assets/fallback/
     - assets/icons/
+    - assets/player/
     - assets/manifest.json
   
   fonts:

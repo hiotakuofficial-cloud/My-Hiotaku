@@ -537,7 +537,6 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
             ),
           ],
         ),
-        const SizedBox(height: 3),
         GridView.builder(
           shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
