@@ -155,9 +155,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _T.bg,
-      extendBodyBehindAppBar: true,
       extendBody: true,
-      appBar: _buildAppBar(),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         child: _isLoading
@@ -179,47 +177,49 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
   }
 
   // ── AppBar ─────────────────────────────────────────────────────────────────
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
+  Widget _buildAppBar() {
+    return Container(
+      height: kToolbarHeight + MediaQuery.of(context).padding.top,
+      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
       child: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: AppBar(
-            backgroundColor: _T.bg.withOpacity(0.55),
-            elevation: 0,
-            centerTitle: true,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Image.asset('assets/images/logo.png', width: 20, height: 20,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.movie_filter_rounded, color: _T.white, size: 20);
-                },
-              ),
-            ),
-            title: FadeTransition(
-              opacity: _titleFade,
-              child: Text(
-                _titles[_currentTitleIdx],
-                style: const TextStyle(
-                  color: _T.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: _T.font,
-                  letterSpacing: 0.4,
+          child: Container(
+            color: _T.bg.withOpacity(0.55),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                Image.asset('assets/images/logo.png', width: 20, height: 20,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.movie_filter_rounded, color: _T.white, size: 20);
+                  },
                 ),
-              ),
-            ),
-            actions: [
-              _IconBtn(
-                icon: Icons.search_rounded,
-                onTap: () => Navigator.push(
-                  context,
-                  _fadeRoute(const MovieBoxSearch()),
+                Expanded(
+                  child: Center(
+                    child: FadeTransition(
+                      opacity: _titleFade,
+                      child: Text(
+                        _titles[_currentTitleIdx],
+                        style: const TextStyle(
+                          color: _T.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: _T.font,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-            ],
+                IconButton(
+                  icon: Icon(Icons.search_rounded, color: _T.white, size: 24),
+                  onPressed: () => Navigator.push(context, _fadeRoute(const MovieBoxSearch())),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -276,6 +276,9 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
+        // ── AppBar
+        SliverToBoxAdapter(child: _buildAppBar()),
+        
         // ── Hero Carousel
         if (hero.isNotEmpty)
           SliverToBoxAdapter(child: _HeroCarousel(
