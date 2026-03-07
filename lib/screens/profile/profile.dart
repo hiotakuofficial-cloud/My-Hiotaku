@@ -8,6 +8,7 @@ import 'notifications/handler/notification_of_user_handler.dart';
 import 'downloads/downloads.dart';
 import 'favourite/connected.dart';
 import 'chat/hisu.dart';
+import 'streaming/moviebox.dart';
 import '../settings/settings.dart';
 import '../../services/system_settings.dart';
 import '../../services/chat_lock_service.dart';
@@ -327,6 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildProfileOption(Icons.chat_outlined, 'Chat'),
                       _buildProfileOption(Icons.person_add_outlined, 'Requests'),
+                      _buildProfileOption(Icons.movie_outlined, 'Streaming'),
                       _buildProfileOption(Icons.favorite_outline, 'Favourites'),
                       _buildProfileOption(Icons.download_outlined, 'Downloads'),
                       _buildProfileOption(Icons.clear_all_outlined, 'Clear cache'),
@@ -486,6 +488,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => DownloadsScreen()),
+                  );
+                } else if (title == 'Streaming') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MovieBoxHome()),
                   );
                 } else {
                   // Other options - show coming soon

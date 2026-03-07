@@ -3,6 +3,7 @@ class AppConfig {
   static const String animeApiBaseUrl = String.fromEnvironment('API_URL');
   static const String animeApiEndpoint = '/api.php';
   static const String hindiApiEndpoint = '/hindiv2.php';
+  static const String movieBoxEndpoint = '/moviebox/api.php';
   
   // App signature hash - Environment Variable
   static const String app_hash_base256 = String.fromEnvironment('API_TOKEN');
@@ -42,6 +43,7 @@ class AppConfig {
   static String get searchEndpoint => '$animeApiBaseUrl$animeApiEndpoint';
   static String get detailsEndpoint => '$animeApiBaseUrl$animeApiEndpoint';
   static String get hindiApiUrl => '$animeApiBaseUrl$hindiApiEndpoint';
+  static String get movieBoxApiUrl => '$animeApiBaseUrl$movieBoxEndpoint';
   static String get notificationEndpoint => '$animeApiBaseUrl/notification/api/send.php?token=$app_hash_base256';
   
   // Build URL with parameters and token
@@ -69,6 +71,28 @@ class AppConfig {
     
     return '$animeApiBaseUrl$hindiApiEndpoint?$queryParams';
   }
+  
+  // Build MovieBox API URL
+  static String buildMovieBoxUrl(String action, Map<String, dynamic> params) {
+    final allParams = Map<String, dynamic>.from(params);
+    allParams['action'] = action;
+    allParams['token'] = app_hash_base256;
+    
+    final queryParams = allParams.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}')
+        .join('&');
+    
+    return '$animeApiBaseUrl$movieBoxEndpoint?$queryParams';
+  }
+  
+  // MovieBox specific headers
+  static Map<String, String> get movieBoxHeaders => {
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+    'Accept': 'application/json',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Referer': 'https://themoviebox.org/',
+    'Authorization': 'Bearer $app_hash_base256',
+  };
   
   // Notification API Headers
   static Map<String, String> get notificationHeaders => {
