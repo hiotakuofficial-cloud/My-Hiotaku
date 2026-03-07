@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -343,7 +344,11 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
 
   // ── Main Content ───────────────────────────────────────────────────────────
   Widget _buildContent() {
-    final hero = _allMovies.take(5).toList();
+    // Select 5 random movies for hero carousel
+    final random = Random();
+    final hero = _allMovies.length > 5
+        ? (_allMovies.toList()..shuffle(random)).take(5).toList()
+        : _allMovies.toList();
 
     return CustomScrollView(
       controller: _scrollCtrl,
