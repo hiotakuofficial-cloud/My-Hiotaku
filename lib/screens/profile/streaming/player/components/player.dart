@@ -82,73 +82,78 @@ class _VideoPlayerState extends State<VideoPlayer> {
   Widget build(BuildContext context) {
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: Container(
-        color: Colors.black,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Video Surface
-            if (_isInitialized)
-              Video(
-                controller: _controller,
-                controls: NoVideoControls,
-              )
-            else if (widget.posterUrl != null)
-              Image.network(
-                widget.posterUrl!,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              )
-            else
-              const Center(
-                child: CircularProgressIndicator(color: Color(0xFFE5003C)),
-              ),
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _showControls = !_showControls);
+        },
+        child: Container(
+          color: Colors.black,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Video Surface
+              if (_isInitialized)
+                Video(
+                  controller: _controller,
+                  controls: NoVideoControls,
+                )
+              else if (widget.posterUrl != null)
+                Image.network(
+                  widget.posterUrl!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                )
+              else
+                const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFE5003C)),
+                ),
 
-            // Overlay
-            if (_showControls && _isInitialized)
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.7),
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.7),
-                    ],
+              // Overlay
+              if (_showControls && _isInitialized)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.7),
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.7),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-            // Controls
-            if (_showControls && _isInitialized)
-              StreamBuilder<bool>(
-                stream: _player.stream.playing,
-                builder: (context, snapshot) {
-                  final isPlaying = snapshot.data ?? false;
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Top Controls
-                      _TopControls(),
+              // Controls
+              if (_showControls && _isInitialized)
+                StreamBuilder<bool>(
+                  stream: _player.stream.playing,
+                  builder: (context, snapshot) {
+                    final isPlaying = snapshot.data ?? false;
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Top Controls
+                        _TopControls(),
 
-                      // Center Play/Pause
-                      _CenterControls(
-                        isPlaying: isPlaying,
-                        onPlayPause: _togglePlayPause,
-                      ),
+                        // Center Play/Pause
+                        _CenterControls(
+                          isPlaying: isPlaying,
+                          onPlayPause: _togglePlayPause,
+                        ),
 
-                      // Bottom Controls
-                      _BottomControls(
-                        player: _player,
-                        onPlayPause: _togglePlayPause,
-                      ),
-                    ],
-                  );
-                },
-              ),
-          ],
+                        // Bottom Controls
+                        _BottomControls(
+                          player: _player,
+                          onPlayPause: _togglePlayPause,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -358,30 +363,23 @@ class _ControlButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: iconPath != null
-            ? Image.asset(
-                iconPath!,
-                width: 24,
-                height: 24,
-                color: Colors.white,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.settings,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              )
-            : Icon(
-                icon ?? Icons.play_arrow,
+      child: iconPath != null
+          ? Image.asset(
+              iconPath!,
+              width: 24,
+              height: 24,
+              color: Colors.white,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.settings,
                 color: Colors.white,
                 size: 24,
               ),
-      ),
+            )
+          : Icon(
+              icon ?? Icons.play_arrow,
+              color: Colors.white,
+              size: 24,
+            ),
     );
   }
 }
