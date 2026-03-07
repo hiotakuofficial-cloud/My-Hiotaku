@@ -921,17 +921,11 @@ class _IconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 38, height: 38,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withOpacity(0.10)),
-        ),
-        child: Icon(icon, color: _T.white, size: 20),
-      ),
+    return IconButton(
+      icon: Icon(icon, color: _T.white, size: 24),
+      onPressed: onTap,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
     );
   }
 }
