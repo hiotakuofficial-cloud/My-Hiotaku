@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../../services/moviebox_service.dart';
 
@@ -60,8 +61,53 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFF121212),
-        body: SafeArea(
-          child: Center(child: CircularProgressIndicator(color: Color(0xFFFF3B5C))),
+        body: Shimmer.fromColors(
+          baseColor: const Color(0xFF1C1C27),
+          highlightColor: const Color(0xFF13131A),
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 400,
+                pinned: false,
+                backgroundColor: const Color(0xFF121212),
+                flexibleSpace: Container(color: const Color(0xFF1C1C27)),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(width: 200, height: 24, color: const Color(0xFF1C1C27)),
+                      const SizedBox(height: 12),
+                      Container(width: 150, height: 20, color: const Color(0xFF1C1C27)),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: List.generate(3, (_) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Container(width: 80, height: 32, decoration: BoxDecoration(color: const Color(0xFF1C1C27), borderRadius: BorderRadius.circular(16))),
+                        )),
+                      ),
+                      const SizedBox(height: 24),
+                      Container(width: double.infinity, height: 100, color: const Color(0xFF1C1C27)),
+                      const SizedBox(height: 24),
+                      Container(width: 150, height: 20, color: const Color(0xFF1C1C27)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 216,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: 5,
+                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          itemBuilder: (_, __) => Container(width: 120, decoration: BoxDecoration(color: const Color(0xFF1C1C27), borderRadius: BorderRadius.circular(16))),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../services/moviebox_service.dart';
 import 'components/bottom_nav.dart';
 import 'moviebox_detail.dart';
@@ -227,20 +228,50 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
   }
 
   // ── States ─────────────────────────────────────────────────────────────────
-  Widget _buildLoading() => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 40, height: 40,
-          child: CircularProgressIndicator(
-            color: _T.accent, strokeWidth: 2,
+  Widget _buildLoading() => CustomScrollView(
+    physics: const BouncingScrollPhysics(),
+    slivers: [
+      SliverToBoxAdapter(child: _buildAppBar()),
+      SliverToBoxAdapter(
+        child: Shimmer.fromColors(
+          baseColor: _T.card,
+          highlightColor: _T.surface,
+          child: Column(
+            children: [
+              Container(height: MediaQuery.of(context).size.height * 0.62, color: _T.card),
+              const SizedBox(height: 28),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(width: 150, height: 20, color: _T.card),
+                    const SizedBox(height: 14),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 0.62,
+                      ),
+                      itemCount: 9,
+                      itemBuilder: (_, __) => Container(
+                        decoration: BoxDecoration(
+                          color: _T.card,
+                          borderRadius: const BorderRadius.all(_T.r12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 16),
-        const Text('Loading…', style: TextStyle(color: _T.grey60, fontFamily: _T.font, fontSize: 13)),
-      ],
-    ),
+      ),
+    ],
   );
 
   Widget _buildError() => Center(
