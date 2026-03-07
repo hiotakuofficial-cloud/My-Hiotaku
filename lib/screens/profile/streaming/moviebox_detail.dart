@@ -217,7 +217,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
       fit: StackFit.expand,
       children: [
         ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+          imageFilter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
           child: Image.network(
             imageUrl,
             fit: BoxFit.cover,
