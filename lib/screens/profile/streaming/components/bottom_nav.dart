@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-class StreamingBottomNav extends StatelessWidget {
+class StreamingBottomNav extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
 
@@ -12,6 +12,43 @@ class StreamingBottomNav extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<StreamingBottomNav> createState() => _StreamingBottomNavState();
+}
+
+class _StreamingBottomNavState extends State<StreamingBottomNav> with SingleTickerProviderStateMixin {
+  late AnimationController _dotController;
+  late Animation<double> _dotAnimation;
+  int _previousIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousIndex = widget.currentIndex;
+    _dotController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _dotAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _dotController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(StreamingBottomNav oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentIndex != widget.currentIndex) {
+      _previousIndex = oldWidget.currentIndex;
+      _dotController.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _dotController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -20,7 +57,7 @@ class StreamingBottomNav extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withOpacity(0.5),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -29,42 +66,77 @@ class StreamingBottomNav extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF1a1a1a).withOpacity(0.8),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            child: Stack(
               children: [
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  isActive: currentIndex == 0,
-                  onTap: () => onTap(0),
+                // Animated dot indicator
+                AnimatedBuilder(
+                  animation: _dotAnimation,
+                  builder: (context, child) {
+                    final itemWidth = MediaQuery.of(context).size.width / 4 - 10;
+                    final startPos = _previousIndex * itemWidth + itemWidth / 2 + 10;
+                    final endPos = widget.currentIndex * itemWidth + itemWidth / 2 + 10;
+                    final currentPos = startPos + (endPos - startPos) * _dotAnimation.value;
+                    
+                    return Positioned(
+                      bottom: 8,
+                      left: currentPos - 2,
+                      child: Container(
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF3B5C),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                _NavItem(
-                  icon: Icons.play_circle_rounded,
-                  label: 'Streaming',
-                  isActive: currentIndex == 1,
-                  onTap: () => onTap(1),
-                ),
-                _NavItem(
-                  icon: Icons.download_rounded,
-                  label: 'Downloads',
-                  isActive: currentIndex == 2,
-                  onTap: () => onTap(2),
-                ),
-                _NavItem(
-                  icon: Icons.history_rounded,
-                  label: 'History',
-                  isActive: currentIndex == 3,
-                  onTap: () => onTap(3),
+                // Nav items
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _NavItem(
+                      icon: Icons.home_rounded,
+                      label: 'Home',
+                      isActive: widget.currentIndex == 0,
+                      onTap: () => widget.onTap(0),
+                    ),
+                    _NavItem(
+                      icon: Icons.play_circle_rounded,
+                      label: 'Streaming',
+                      isActive: widget.currentIndex == 1,
+                      onTap: () => widget.onTap(1),
+                    ),
+                    _NavItem(
+                      icon: Icons.download_rounded,
+                      label: 'Downloads',
+                      isActive: widget.currentIndex == 2,
+                      onTap: () => widget.onTap(2),
+                    ),
+                    _NavItem(
+                      icon: Icons.history_rounded,
+                      label: 'History',
+                      isActive: widget.currentIndex == 3,
+                      onTap: () => widget.onTap(3),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -150,15 +222,6 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'MazzardH',
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF3B5C),
-                        shape: BoxShape.circle,
                       ),
                     ),
                   ],

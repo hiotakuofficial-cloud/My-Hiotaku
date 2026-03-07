@@ -14,6 +14,9 @@ class MovieBoxHome extends StatefulWidget {
 class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMixin {
   late AnimationController _heroZoomController;
   late Animation<double> _heroZoomAnimation;
+  late AnimationController _heroTextController;
+  late Animation<double> _heroTextFadeAnimation;
+  late Animation<Offset> _heroTextSlideAnimation;
   late PageController _pageController;
   Timer? _autoScrollTimer;
   Timer? _titleTimer;
@@ -23,7 +26,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
   Map<String, dynamic>? _trendingData;
   String? _error;
   int _currentPage = 0;
-  int _currentNavIndex = 1; // Streaming tab active
+  int _currentNavIndex = 0; // Home tab active (MovieBox is home)
   int _currentTitleIndex = 0;
   
   final List<String> _titles = [
@@ -44,6 +47,19 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     _heroZoomAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _heroZoomController, curve: Curves.easeInOut),
     );
+    _heroTextController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _heroTextFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _heroTextController, curve: Curves.easeOut),
+    );
+    _heroTextSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _heroTextController, curve: Curves.easeOut),
+    );
     _startTitleAnimation();
     _loadData();
   }
@@ -62,12 +78,21 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (_pageController.hasClients && itemCount > 0) {
-        final nextPage = (_currentPage + 1) % itemCount;
-        _pageController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        );
+        int nextPage = _currentPage + 1;
+        
+        if (nextPage >= itemCount) {
+          // Jump to first without animation
+          _pageController.jumpToPage(0);
+          setState(() => _currentPage = 0);
+          _heroTextController.forward(from: 0.0);
+        } else {
+          // Animate to next
+          _pageController.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        }
       }
     });
   }
@@ -78,6 +103,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     _titleTimer?.cancel();
     _pageController.dispose();
     _heroZoomController.dispose();
+    _heroTextController.dispose();
     super.dispose();
   }
 
@@ -101,6 +127,9 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
       if (trendingList.length > 1) {
         _startAutoScroll(trendingList.take(5).length);
       }
+      
+      // Start hero text animation
+      _heroTextController.forward();
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -122,8 +151,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
           padding: const EdgeInsets.only(left: 10.0),
           child: Image.asset(
             'assets/images/logo.png',
-            width: 30,
-            height: 30,
+            width: 24,
+            height: 24,
           ),
         ),
         title: AnimatedSwitcher(
@@ -239,6 +268,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
         physics: const BouncingScrollPhysics(),
         onPageChanged: (index) {
           setState(() => _currentPage = index);
+          // Restart text animation on page change
+          _heroTextController.forward(from: 0.0);
         },
         itemCount: movies.length,
         itemBuilder: (context, index) {
@@ -287,25 +318,20 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
               },
             ),
           ),
-          // Light blur overlay
+          // Gradient overlay (no blur)
           Positioned.fill(
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.1),
-                        Colors.black.withOpacity(0.3),
-                        Colors.black.withOpacity(0.6),
-                        const Color(0xFF121212),
-                      ],
-                      stops: const [0.0, 0.3, 0.6, 1.0],
-                    ),
-                  ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.1),
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.6),
+                    const Color(0xFF121212),
+                  ],
+                  stops: const [0.0, 0.3, 0.6, 1.0],
                 ),
               ),
             ),
@@ -331,32 +357,36 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
             bottom: 40,
             left: 0,
             right: 0,
-            child: Column(
-              children: [
-                // Title
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'MazzardH',
-                      letterSpacing: 0.5,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black,
-                          blurRadius: 20,
-                          offset: Offset(0, 4),
+            child: FadeTransition(
+              opacity: _heroTextFadeAnimation,
+              child: SlideTransition(
+                position: _heroTextSlideAnimation,
+                child: Column(
+                  children: [
+                    // Title
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'MazzardH',
+                          letterSpacing: 0.5,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              blurRadius: 20,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
                 const SizedBox(height: 12),
                 // Meta info
                 Row(
@@ -475,6 +505,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                 ),
               ],
             ),
+              ),
+            ),
           ),
         ],
       ),
@@ -508,7 +540,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 3),
         GridView.builder(
           shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
