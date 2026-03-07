@@ -491,34 +491,47 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
               final cover = rec['cover'] ?? {};
               final imageUrl = cover['url']?.toString() ?? '';
               
-              return Container(
-                width: 120,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MovieBoxDetail(
+                        subjectId: rec['subjectId']?.toString() ?? '',
+                        detailPath: rec['detailPath']?.toString(),
+                      ),
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                  );
+                },
+                child: Container(
+                  width: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        spreadRadius: 1,
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: const Color(0xFF1a1a1a),
+                              child: const Icon(Icons.movie, color: Colors.white24, size: 48),
+                            ),
+                          )
+                        : Container(
                             color: const Color(0xFF1a1a1a),
                             child: const Icon(Icons.movie, color: Colors.white24, size: 48),
-                          ),
-                        )
-                      : Container(
-                          color: const Color(0xFF1a1a1a),
-                          child: const Icon(Icons.movie, color: Colors.white24, size: 48),
                         ),
+                  ),
                 ),
               );
             },
