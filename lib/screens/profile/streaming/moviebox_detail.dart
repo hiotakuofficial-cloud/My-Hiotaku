@@ -35,43 +35,19 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
 
   Future<void> _loadDetail() async {
     try {
-      Fluttertoast.showToast(
-        msg: 'Loading ID: ${widget.subjectId}\nPath: ${widget.detailPath}', 
-        backgroundColor: Colors.blue,
-        toastLength: Toast.LENGTH_LONG,
-      );
-      
       final detail = await MovieBoxService.getDetail(
         id: widget.subjectId,
         path: widget.detailPath,
-      );
-      
-      Fluttertoast.showToast(
-        msg: 'Response keys: ${detail.keys.join(", ")}', 
-        backgroundColor: Colors.orange,
-        toastLength: Toast.LENGTH_LONG,
-      );
-      
-      final subject = detail['subject'];
-      final data = detail['data'];
-      
-      Fluttertoast.showToast(
-        msg: 'Subject: ${subject != null}\nData: ${data != null}', 
-        backgroundColor: Colors.purple,
-        toastLength: Toast.LENGTH_LONG,
       );
       
       final recs = await MovieBoxService.getRecommendations(id: widget.subjectId);
       
       setState(() {
         _detailData = detail;
-        _recommendations = recs['data']?['subjectList'] ?? [];
+        _recommendations = recs['data']?['items'] ?? [];
         _isLoading = false;
       });
-      
-      Fluttertoast.showToast(msg: 'Success!', backgroundColor: Colors.green);
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error: $e', backgroundColor: Colors.red, toastLength: Toast.LENGTH_LONG);
       setState(() {
         _isLoading = false;
         _detailData = null;
@@ -128,52 +104,14 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
     
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 350),
-                const SizedBox(height: 120),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 24),
-                      _buildTitle(subject),
-                      const SizedBox(height: 12),
-                      _buildRating(subject),
-                      const SizedBox(height: 24),
-                      _buildMetadata(subject),
-                      const SizedBox(height: 24),
-                      _buildGenres(subject),
-                      const SizedBox(height: 24),
-                      _buildActionButtons(),
-                      const SizedBox(height: 24),
-                      _buildOverview(subject),
-                      const SizedBox(height: 24),
-                      _buildRecommendations(),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 350,
-            child: _buildHeroBanner(stills['url']?.toString() ?? cover['url']?.toString() ?? ''),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 16,
-            child: IconButton(
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 400,
+            pinned: false,
+            backgroundColor: Colors.transparent,
+            leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
               onPressed: () {
                 if (Navigator.canPop(context)) {
@@ -181,11 +119,43 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 }
               },
             ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                children: [
+                  _buildHeroBanner(stills['url']?.toString() ?? cover['url']?.toString() ?? ''),
+                  Positioned(
+                    bottom: 20,
+                    left: 16,
+                    child: _buildPosterCard(cover['url']?.toString() ?? ''),
+                  ),
+                ],
+              ),
+            ),
           ),
-          Positioned(
-            top: 350 - 180 + 60,
-            left: 16,
-            child: _buildPosterCard(cover['url']?.toString() ?? ''),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  _buildTitle(subject),
+                  const SizedBox(height: 12),
+                  _buildRating(subject),
+                  const SizedBox(height: 16),
+                  _buildMetadata(subject),
+                  const SizedBox(height: 16),
+                  _buildGenres(subject),
+                  const SizedBox(height: 20),
+                  _buildActionButtons(),
+                  const SizedBox(height: 24),
+                  _buildOverview(subject),
+                  const SizedBox(height: 24),
+                  _buildRecommendations(),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -198,29 +168,27 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
     }
     
     return Stack(
+      fit: StackFit.expand,
       children: [
-        Positioned.fill(
-          child: ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: const Color(0xFF1a1a1a),
-                child: const Icon(Icons.movie, color: Colors.white24, size: 64),
-              ),
-            ),
+        Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: const Color(0xFF1a1a1a),
+            child: const Icon(Icons.movie, color: Colors.white24, size: 64),
           ),
         ),
-        Positioned.fill(
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [Color(0xFF121212), Colors.transparent],
-                stops: [0.0, 0.7],
-              ),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withOpacity(0.3),
+                const Color(0xFF121212),
+              ],
+              stops: const [0.0, 0.7, 1.0],
             ),
           ),
         ),
