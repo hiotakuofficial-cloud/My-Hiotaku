@@ -35,7 +35,6 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await _controller.initialize();
       await _controller.setVolume(0.0); // Mute audio
-      await _controller.setPlaybackSpeed(1.5); // 1.5x speed
       setState(() {
         _isVideoInitialized = true;
       });
