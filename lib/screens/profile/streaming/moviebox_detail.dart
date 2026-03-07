@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../services/moviebox_service.dart';
 
 class MovieBoxDetail extends StatefulWidget {
@@ -34,18 +35,18 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
 
   Future<void> _loadDetail() async {
     try {
-      print('Loading detail for: ${widget.subjectId}');
+      Fluttertoast.showToast(msg: 'Loading: ${widget.subjectId}', backgroundColor: Colors.blue);
       
       final detail = await MovieBoxService.getDetail(
         id: widget.subjectId,
         path: widget.detailPath,
       );
       
-      print('Detail loaded: ${detail['subject']?['title']}');
+      Fluttertoast.showToast(msg: 'Detail loaded: ${detail['subject']?['title']}', backgroundColor: Colors.green);
       
       final recs = await MovieBoxService.getRecommendations(id: widget.subjectId);
       
-      print('Recommendations loaded: ${recs['data']?['subjectList']?.length ?? 0}');
+      Fluttertoast.showToast(msg: 'Recs: ${recs['data']?['subjectList']?.length ?? 0}', backgroundColor: Colors.green);
       
       setState(() {
         _detailData = detail;
@@ -53,7 +54,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading detail: $e');
+      Fluttertoast.showToast(msg: 'Error: $e', backgroundColor: Colors.red, toastLength: Toast.LENGTH_LONG);
       setState(() {
         _isLoading = false;
         _detailData = null;
