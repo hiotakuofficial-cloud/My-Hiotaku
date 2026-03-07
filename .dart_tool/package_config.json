@@ -362,6 +362,18 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "image",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image-4.8.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "js",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/js-0.6.7",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
       "name": "jwt_decode",
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/jwt_decode-0.3.1",
       "packageUri": "lib/",
@@ -408,6 +420,54 @@
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/material_color_utilities-0.13.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "media_kit",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit-1.1.11",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "media_kit_libs_android_video",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit_libs_android_video-1.3.8",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "media_kit_libs_ios_video",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit_libs_ios_video-1.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "media_kit_libs_linux",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit_libs_linux-1.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "media_kit_libs_macos_video",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit_libs_macos_video-1.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "media_kit_libs_video",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit_libs_video-1.0.7",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "media_kit_libs_windows_video",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit_libs_windows_video-1.0.11",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "media_kit_video",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/media_kit_video-1.2.5",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
     },
     {
       "name": "meta",
@@ -650,6 +710,48 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "safe_local_storage",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/safe_local_storage-1.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.16"
+    },
+    {
+      "name": "screen_brightness",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/screen_brightness-0.2.2+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "screen_brightness_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/screen_brightness_android-0.1.0+2",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "screen_brightness_ios",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/screen_brightness_ios-0.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "screen_brightness_macos",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/screen_brightness_macos-0.1.0+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "screen_brightness_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/screen_brightness_platform_interface-0.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "screen_brightness_windows",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/screen_brightness_windows-0.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "share_plus",
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/share_plus-7.2.2",
       "packageUri": "lib/",
@@ -758,6 +860,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "synchronized",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/synchronized-3.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
       "name": "term_glyph",
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
       "packageUri": "lib/",
@@ -780,6 +888,18 @@
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "universal_platform",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/universal_platform-1.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "uri_parser",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/uri_parser-2.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.16"
     },
     {
       "name": "url_launcher",
@@ -894,6 +1014,24 @@
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/vm_service-15.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "volume_controller",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/volume_controller-2.0.8",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "wakelock_plus",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/wakelock_plus-1.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "wakelock_plus_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/wakelock_plus_platform_interface-1.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "web",

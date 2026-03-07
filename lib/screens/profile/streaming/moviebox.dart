@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../services/moviebox_service.dart';
 import 'components/bottom_nav.dart';
+import 'moviebox_search.dart';
 
 class MovieBoxHome extends StatefulWidget {
   const MovieBoxHome({Key? key}) : super(key: key);
@@ -184,7 +185,12 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MovieBoxSearch()),
+              );
+            },
           ),
           const SizedBox(width: 10),
         ],
