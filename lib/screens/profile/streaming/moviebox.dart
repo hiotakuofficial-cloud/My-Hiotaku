@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -214,7 +213,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
                     child: Row(
                       children: [
                         const SizedBox(width: 16),
-                        Image.asset('assets/images/logo.png', width: 20, height: 20,
+                        Image.asset('assets/images/logo.png', width: 32, height: 32,
                           errorBuilder: (_, __, ___) => const Icon(Icons.movie_filter_rounded, color: _T.white, size: 20),
                         ),
                         Expanded(
@@ -344,11 +343,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
 
   // ── Main Content ───────────────────────────────────────────────────────────
   Widget _buildContent() {
-    // Select 5 random movies for hero carousel
-    final random = Random();
-    final hero = _allMovies.length > 5
-        ? (_allMovies.toList()..shuffle(random)).take(5).toList()
-        : _allMovies.toList();
+    // Top 5 movies for hero carousel
+    final hero = _allMovies.take(5).toList();
 
     return CustomScrollView(
       controller: _scrollCtrl,
