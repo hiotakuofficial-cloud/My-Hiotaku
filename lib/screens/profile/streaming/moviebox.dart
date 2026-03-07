@@ -202,6 +202,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // Background image with zoom
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _heroZoomAnimation,
@@ -213,145 +214,199 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
                     errorBuilder: (context, error, stackTrace) {
-                      return Container(color: Colors.grey[900]);
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF1a1a1a), Color(0xFF121212)],
+                          ),
+                        ),
+                      );
                     },
                   ),
                 );
               },
             ),
           ),
+          // Strong blur overlay
           Positioned.fill(
             child: ClipRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
                 child: Container(
-                  color: Colors.black.withOpacity(0.2),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.3),
+                        Colors.black.withOpacity(0.5),
+                        Colors.black.withOpacity(0.7),
+                        const Color(0xFF121212),
+                      ],
+                      stops: const [0.0, 0.3, 0.6, 1.0],
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
+          // Side vignette
           Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.5),
-                    const Color(0xFF121212).withOpacity(1.0),
-                  ],
-                  stops: const [0.0, 0.4, 0.7, 1.0],
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
+            child: Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.5),
                   ],
-                  stops: const [0.6, 1.0],
+                  stops: const [0.5, 1.0],
                   center: Alignment.center,
-                  radius: 0.9,
+                  radius: 1.2,
                 ),
               ),
             ),
           ),
+          // Content
           Positioned(
-            bottom: 20,
+            bottom: 40,
             left: 0,
             right: 0,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Title
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40.0),
                   child: Text(
                     title,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 32,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black,
+                          blurRadius: 20,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                // Meta info
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      year,
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        year,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.star, size: 16, color: Color(0xFFFF3B5C)),
-                    const SizedBox(width: 4),
-                    Text(
-                      rating,
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF3B5C).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star, size: 14, color: Color(0xFFFF3B5C)),
+                          const SizedBox(width: 4),
+                          Text(
+                            rating,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
+                // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: const Color(0xFFFF3B5C),
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.0),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        elevation: 5,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                        elevation: 8,
+                        shadowColor: const Color(0xFFFF3B5C).withOpacity(0.5),
                       ),
-                      icon: const Icon(Icons.play_arrow,
-                          color: Color(0xFFFF3B5C), size: 24),
+                      icon: const Icon(Icons.play_arrow, size: 24),
                       label: const Text(
-                        'Play',
+                        'Play Now',
                         style: TextStyle(
-                          color: Colors.black,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Column(
-                      children: [
-                        OutlinedButton(
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.transparent),
-                            shape: const CircleBorder(),
-                            backgroundColor: Colors.white.withOpacity(0.15),
-                            padding: const EdgeInsets.all(12),
-                          ),
-                          child: const Icon(Icons.info_outline,
-                              color: Colors.white, size: 24),
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Info',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      ),
+                      icon: const Icon(Icons.info_outline, color: Colors.white, size: 22),
+                      label: const Text(
+                        'Info',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
+                      ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 20),
+                // Page indicators
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    5,
+                    (index) => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: _currentPage == index ? 24 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _currentPage == index
+                            ? const Color(0xFFFF3B5C)
+                            : Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -365,30 +420,46 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Trending Now',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 24,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF3B5C),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Trending Now',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         SizedBox(
-          height: 180,
+          height: 200,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: movies.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final movie = movies[index];
               final cover = movie['cover'] ?? {};
               final imageUrl = cover['url'] ?? '';
               final title = movie['title'] ?? '';
+              final rating = movie['imdbRatingValue'] ?? '0.0';
 
               return _MovieCard(
                 imageUrl: imageUrl,
                 title: title,
+                rating: rating,
                 onTap: () {},
               );
             },
@@ -402,11 +473,13 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
 class _MovieCard extends StatefulWidget {
   final String imageUrl;
   final String title;
+  final String rating;
   final VoidCallback onTap;
 
   const _MovieCard({
     required this.imageUrl,
     required this.title,
+    required this.rating,
     required this.onTap,
   });
 
@@ -424,9 +497,9 @@ class _MovieCardState extends State<_MovieCard>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
   }
@@ -450,51 +523,96 @@ class _MovieCardState extends State<_MovieCard>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: 120,
+              width: 130,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16.0),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withOpacity(0.6),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.0),
+                borderRadius: BorderRadius.circular(12),
                 child: Stack(
                   children: [
+                    // Image
                     Positioned.fill(
                       child: Image.network(
                         widget.imageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return Container(color: Colors.grey[900]);
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF1a1a1a), Color(0xFF0a0a0a)],
+                              ),
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.movie, color: Colors.white30, size: 40),
+                            ),
+                          );
                         },
                       ),
                     ),
+                    // Gradient overlay
                     Positioned.fill(
-                      child: DecoratedBox(
+                      child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Colors.black.withOpacity(0.7),
+                              Colors.black.withOpacity(0.8),
                             ],
                             stops: const [0.5, 1.0],
                           ),
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.play_circle_fill,
-                        color: Colors.white.withOpacity(0.8),
-                        size: 48.0,
+                    // Rating badge
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF3B5C),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, size: 10, color: Colors.white),
+                            const SizedBox(width: 2),
+                            Text(
+                              widget.rating,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Play icon
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 32,
+                        ),
                       ),
                     ),
                   ],
