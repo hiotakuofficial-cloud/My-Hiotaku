@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'dart:async';
+import 'last_watch.dart';
+import 'options_setting.dart';
 
 class VideoPlayer extends StatefulWidget {
   final String videoUrl;
   final String? posterUrl;
+  final String? title;
+  final String subjectId;
+  final int season;
+  final int episode;
   final VoidCallback? onVideoEnd;
+  final Function(String quality)? onQualityChange;
+  final Function(String speed)? onSpeedChange;
 
   const VideoPlayer({
     Key? key,
     required this.videoUrl,
+    required this.subjectId,
+    required this.season,
+    required this.episode,
     this.posterUrl,
+    this.title,
     this.onVideoEnd,
+    this.onQualityChange,
+    this.onSpeedChange,
   }) : super(key: key);
 
   @override
@@ -21,15 +36,34 @@ class VideoPlayer extends StatefulWidget {
 class _VideoPlayerState extends State<VideoPlayer> {
   late final Player _player;
   late final VideoController _controller;
+  late final SettingsData _settingsData;
   bool _showControls = true;
   bool _isInitialized = false;
+  Timer? _saveTimer;
 
   @override
   void initState() {
     super.initState();
     _player = Player();
     _controller = VideoController(_player);
+    _settingsData = SettingsData(
+      initialSpeed: '1.0x',
+      initialQuality: '720p',
+      initialLanguage: 'English',
+    );
+    _settingsData.addListener(_onSettingsChanged);
     _initializePlayer();
+    _startSaveTimer();
+  }
+
+  void _onSettingsChanged() {
+    // Handle speed change
+    final speed = double.tryParse(_settingsData.currentSpeed.replaceAll('x', '')) ?? 1.0;
+    _player.setRate(speed);
+    widget.onSpeedChange?.call(_settingsData.currentSpeed);
+    
+    // Handle quality change
+    widget.onQualityChange?.call(_settingsData.currentQuality);
   }
 
   @override
@@ -58,18 +92,51 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
       _player.stream.completed.listen((completed) {
         if (completed) {
+          LastWatchHandler.clearPosition(
+            subjectId: widget.subjectId,
+            season: widget.season,
+            episode: widget.episode,
+          );
           widget.onVideoEnd?.call();
         }
       });
 
       setState(() => _isInitialized = true);
+
+      // Check for saved position and auto-resume
+      final savedPosition = await LastWatchHandler.getPosition(
+        subjectId: widget.subjectId,
+        season: widget.season,
+        episode: widget.episode,
+      );
+
+      if (savedPosition != null && savedPosition > 5) {
+        await _player.seek(Duration(seconds: savedPosition));
+      }
     } catch (e) {
       debugPrint('Media Kit error: $e');
     }
   }
 
+  void _startSaveTimer() {
+    _saveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_isInitialized && _player.state.playing) {
+        final position = _player.state.position.inSeconds;
+        LastWatchHandler.savePosition(
+          subjectId: widget.subjectId,
+          season: widget.season,
+          episode: widget.episode,
+          positionSeconds: position,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _saveTimer?.cancel();
+    _settingsData.removeListener(_onSettingsChanged);
+    _settingsData.dispose();
     _player.dispose();
     super.dispose();
   }
@@ -135,7 +202,10 @@ class _VideoPlayerState extends State<VideoPlayer> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Top Controls
-                        _TopControls(),
+                        _TopControls(
+                          title: widget.title,
+                          onSettingsTap: () => VideoSettingsDialog.show(context, _settingsData),
+                        ),
 
                         // Center Play/Pause
                         _CenterControls(
@@ -162,6 +232,14 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
 // Top Controls (Back, Title, Settings)
 class _TopControls extends StatelessWidget {
+  final String? title;
+  final VoidCallback onSettingsTap;
+
+  const _TopControls({
+    this.title,
+    required this.onSettingsTap,
+  });
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -171,9 +249,25 @@ class _TopControls extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _ControlButton(
-              icon: Icons.arrow_back,
+              icon: Icons.arrow_back_ios_new,
               onTap: () => Navigator.pop(context),
             ),
+            if (title != null) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'MazzardH',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
             const Spacer(),
             _ControlButton(
               icon: Icons.cast,
@@ -181,8 +275,13 @@ class _TopControls extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             _ControlButton(
-              iconPath: 'assets/player/player_settings.png',
+              icon: Icons.closed_caption_outlined,
               onTap: () {},
+            ),
+            const SizedBox(width: 12),
+            _ControlButton(
+              iconPath: 'assets/player/player_settings.png',
+              onTap: onSettingsTap,
             ),
           ],
         ),
@@ -277,6 +376,16 @@ class _BottomControls extends StatelessWidget {
                           fontFamily: 'MazzardH',
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      _ControlButton(
+                        iconPath: 'assets/player/pip.png',
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 16),
+                      _ControlButton(
+                        iconPath: 'assets/player/fullscreen.png',
+                        onTap: () {},
+                      ),
                     ],
                   ),
                 ),
@@ -313,16 +422,6 @@ class _BottomControls extends StatelessWidget {
                               const SizedBox(width: 16),
                               _ControlButton(
                                 iconPath: 'assets/player/aspect_ratio.png',
-                                onTap: () {},
-                              ),
-                              const SizedBox(width: 16),
-                              _ControlButton(
-                                iconPath: 'assets/player/pip.png',
-                                onTap: () {},
-                              ),
-                              const SizedBox(width: 16),
-                              _ControlButton(
-                                iconPath: 'assets/player/fullscreen.png',
                                 onTap: () {},
                               ),
                             ],
@@ -366,19 +465,19 @@ class _ControlButton extends StatelessWidget {
       child: iconPath != null
           ? Image.asset(
               iconPath!,
-              width: 24,
-              height: 24,
+              width: 20,
+              height: 20,
               color: Colors.white,
               errorBuilder: (_, __, ___) => const Icon(
                 Icons.settings,
                 color: Colors.white,
-                size: 24,
+                size: 20,
               ),
             )
           : Icon(
               icon ?? Icons.play_arrow,
               color: Colors.white,
-              size: 24,
+              size: 20,
             ),
     );
   }

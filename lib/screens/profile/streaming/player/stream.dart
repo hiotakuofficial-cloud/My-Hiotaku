@@ -87,17 +87,21 @@ class _StreamPageState extends State<StreamPage> {
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
+              // Top Spacing
+              SliverToBoxAdapter(
+                child: SizedBox(height: MediaQuery.of(context).padding.top),
+              ),
+
               // Video Player Area
-              SliverAppBar(
-                expandedHeight: MediaQuery.of(context).size.width * (9 / 16),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: VideoPlayer(
-                    videoUrl: _videoHandler.currentVideoUrl ?? '',
-                    posterUrl: widget.posterUrl,
-                  ),
+              SliverToBoxAdapter(
+                child: VideoPlayer(
+                  videoUrl: _videoHandler.currentVideoUrl ?? '',
+                  posterUrl: widget.posterUrl,
+                  title: widget.title,
+                  subjectId: widget.subjectId,
+                  season: _videoHandler.currentSeason,
+                  episode: _videoHandler.currentEpisode,
                 ),
-                automaticallyImplyLeading: false,
-                backgroundColor: _bg,
               ),
 
               SliverPadding(
