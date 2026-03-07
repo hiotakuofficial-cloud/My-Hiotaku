@@ -121,7 +121,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
         leading: Padding(
           padding: const EdgeInsets.only(left: 10.0),
           child: Image.asset(
-            'assets/images/header_logo.png',
+            'assets/images/logo.png',
             width: 30,
             height: 30,
           ),
