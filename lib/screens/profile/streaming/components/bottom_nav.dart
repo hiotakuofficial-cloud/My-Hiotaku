@@ -14,36 +14,29 @@ class StreamingBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      height: 65,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 30,
             offset: const Offset(0, 10),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
-            height: 70,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
+              color: const Color(0xFF1a1a1a).withOpacity(0.8),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
               ),
             ),
             child: Row(
@@ -56,7 +49,7 @@ class StreamingBottomNav extends StatelessWidget {
                   onTap: () => onTap(0),
                 ),
                 _NavItem(
-                  icon: Icons.play_circle_filled,
+                  icon: Icons.play_circle_rounded,
                   label: 'Streaming',
                   isActive: currentIndex == 1,
                   onTap: () => onTap(1),
@@ -108,9 +101,9 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
   }
@@ -135,47 +128,40 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
+            child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: widget.isActive
-                    ? LinearGradient(
-                        colors: [
-                          const Color(0xFFFF3B5C).withOpacity(0.8),
-                          const Color(0xFFFF3B5C).withOpacity(0.6),
-                        ],
-                      )
-                    : null,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: widget.isActive
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFFFF3B5C).withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
-              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     widget.icon,
-                    color: widget.isActive ? Colors.white : Colors.white.withOpacity(0.5),
+                    color: widget.isActive
+                        ? const Color(0xFFFF3B5C)
+                        : Colors.white.withOpacity(0.5),
                     size: 26,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.label,
-                    style: TextStyle(
-                      color: widget.isActive ? Colors.white : Colors.white.withOpacity(0.5),
-                      fontSize: 11,
-                      fontWeight: widget.isActive ? FontWeight.bold : FontWeight.w500,
+                  if (widget.isActive) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.label,
+                      style: const TextStyle(
+                        color: Color(0xFFFF3B5C),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'MazzardH',
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFF3B5C),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

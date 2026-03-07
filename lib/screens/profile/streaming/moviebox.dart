@@ -146,7 +146,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
             style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'MazzardH',
             ),
           ),
         ),
@@ -168,7 +169,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                     children: [
                       const Icon(Icons.error_outline, size: 48, color: Color(0xFFFF3B5C)),
                       const SizedBox(height: 16),
-                      Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                      Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontFamily: 'MazzardH')),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
@@ -186,13 +187,14 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
       bottomNavigationBar: StreamingBottomNav(
         currentIndex: _currentNavIndex,
         onTap: (index) {
+          if (index == _currentNavIndex) return; // Already on this tab
           setState(() => _currentNavIndex = index);
           // Handle navigation
           if (index == 0) {
-            // Home - go back
-            Navigator.pop(context);
+            // Home - go to main app home, not back
+            Navigator.of(context).popUntil((route) => route.isFirst);
           }
-          // Other tabs can be implemented later
+          // Other tabs stay on same screen for now
         },
       ),
     );
@@ -216,7 +218,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                 children: [
                   const SizedBox(height: 16),
                   _buildTrendingSection(trendingList),
-                  const SizedBox(height: 100), // Space for bottom nav
+                  const SizedBox(height: 30), // Space for bottom nav
                 ],
               ),
             ),
@@ -285,20 +287,20 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
               },
             ),
           ),
-          // Strong blur overlay
+          // Light blur overlay
           Positioned.fill(
             child: ClipRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+                filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
+                        Colors.black.withOpacity(0.1),
                         Colors.black.withOpacity(0.3),
-                        Colors.black.withOpacity(0.5),
-                        Colors.black.withOpacity(0.7),
+                        Colors.black.withOpacity(0.6),
                         const Color(0xFF121212),
                       ],
                       stops: const [0.0, 0.3, 0.6, 1.0],
@@ -339,7 +341,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'MazzardH',
                       letterSpacing: 0.5,
                       shadows: [
                         Shadow(
@@ -371,6 +374,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
+                          fontFamily: 'MazzardH',
                         ),
                       ),
                     ),
@@ -391,6 +395,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
+                              fontFamily: 'MazzardH',
                             ),
                           ),
                         ],
@@ -420,7 +425,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                         'Play Now',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'MazzardH',
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -442,6 +448,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          fontFamily: 'MazzardH',
                         ),
                       ),
                     ),
@@ -494,13 +501,14 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'MazzardH',
                 letterSpacing: 0.5,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
@@ -653,7 +661,8 @@ class _MovieCardState extends State<_MovieCard>
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'MazzardH',
                               ),
                             ),
                           ],

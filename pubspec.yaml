@@ -50,3 +50,9 @@ flutter:
     - assets/fallback/
     - assets/icons/
     - assets/manifest.json
+  
+  fonts:
+    - family: MazzardH
+      fonts:
+        - asset: assets/fonts/MazzardH-SemiBold.otf
+          weight: 600
