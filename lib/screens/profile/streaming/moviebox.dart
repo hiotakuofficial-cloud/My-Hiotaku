@@ -249,7 +249,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   _buildTrendingSection(trendingList),
                   const SizedBox(height: 30), // Space for bottom nav
                 ],
@@ -546,10 +546,10 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         GridView.builder(
           shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             crossAxisSpacing: 12,
