@@ -110,7 +110,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
           SliverAppBar(
             expandedHeight: 400,
             pinned: false,
-            backgroundColor: Colors.transparent,
+            backgroundColor: const Color(0xFF121212),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
               onPressed: () {
