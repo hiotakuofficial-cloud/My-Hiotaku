@@ -515,24 +515,26 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 4,
-              height: 20,
+              height: 18,
               decoration: BoxDecoration(
                 color: const Color(0xFFFF3B5C),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             const Text(
               'Trending Now',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'MazzardH',
                 letterSpacing: 0.5,
+                height: 1.0,
               ),
             ),
           ],
