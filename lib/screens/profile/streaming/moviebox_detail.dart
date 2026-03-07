@@ -122,7 +122,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
       );
     }
 
-    final subject = (_detailData!['subject'] ?? {}) as Map<String, dynamic>;
+    final subject = (_detailData?['data']?['subject'] ?? {}) as Map<String, dynamic>;
     final cover = subject['cover'] ?? {};
     final stills = subject['stills'] ?? {};
     
