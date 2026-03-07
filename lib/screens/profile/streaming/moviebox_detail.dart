@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../../services/moviebox_service.dart';
+import 'player/stream.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -383,11 +384,32 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
   }
 
   Widget _buildActionButtons() {
+    final subject = _detailData?['data']?['subject'];
+    final title = subject?['title'] ?? '';
+    final rating = double.tryParse(subject?['imdbRatingValue']?.toString() ?? '0') ?? 0.0;
+    final genres = (subject?['genre']?.toString() ?? '').split(',');
+    final posterUrl = subject?['cover']?['url'] ?? '';
+
     return Row(
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StreamPage(
+                    subjectId: widget.subjectId,
+                    detailPath: widget.detailPath ?? '',
+                    title: title,
+                    rating: rating,
+                    genres: genres,
+                    posterUrl: posterUrl,
+                    recommendations: [],
+                  ),
+                ),
+              );
+            },
             icon: const Icon(Icons.play_arrow),
             label: const Text('Watch Now'),
             style: ElevatedButton.styleFrom(
@@ -402,7 +424,22 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StreamPage(
+                    subjectId: widget.subjectId,
+                    detailPath: widget.detailPath ?? '',
+                    title: title,
+                    rating: rating,
+                    genres: genres,
+                    posterUrl: posterUrl,
+                    recommendations: [],
+                  ),
+                ),
+              );
+            },
             icon: const Icon(Icons.live_tv),
             label: const Text('Stream Now'),
             style: ElevatedButton.styleFrom(

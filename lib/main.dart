@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:media_kit/media_kit.dart';
 import 'screens/landing/splash.dart';
 import 'screens/landing/onboarding.dart';
 import 'screens/auth/login.dart';
@@ -45,6 +46,9 @@ void _handleInitialNotification(RemoteMessage message) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize MediaKit
+  MediaKit.ensureInitialized();
   
   // Run database migrations first
   try {
