@@ -35,24 +35,41 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
 
   Future<void> _loadDetail() async {
     try {
-      Fluttertoast.showToast(msg: 'Loading: ${widget.subjectId}', backgroundColor: Colors.blue);
+      Fluttertoast.showToast(
+        msg: 'Loading ID: ${widget.subjectId}\nPath: ${widget.detailPath}', 
+        backgroundColor: Colors.blue,
+        toastLength: Toast.LENGTH_LONG,
+      );
       
       final detail = await MovieBoxService.getDetail(
         id: widget.subjectId,
         path: widget.detailPath,
       );
       
-      Fluttertoast.showToast(msg: 'Detail loaded: ${detail['subject']?['title']}', backgroundColor: Colors.green);
+      Fluttertoast.showToast(
+        msg: 'Response keys: ${detail.keys.join(", ")}', 
+        backgroundColor: Colors.orange,
+        toastLength: Toast.LENGTH_LONG,
+      );
+      
+      final subject = detail['subject'];
+      final data = detail['data'];
+      
+      Fluttertoast.showToast(
+        msg: 'Subject: ${subject != null}\nData: ${data != null}', 
+        backgroundColor: Colors.purple,
+        toastLength: Toast.LENGTH_LONG,
+      );
       
       final recs = await MovieBoxService.getRecommendations(id: widget.subjectId);
-      
-      Fluttertoast.showToast(msg: 'Recs: ${recs['data']?['subjectList']?.length ?? 0}', backgroundColor: Colors.green);
       
       setState(() {
         _detailData = detail;
         _recommendations = recs['data']?['subjectList'] ?? [];
         _isLoading = false;
       });
+      
+      Fluttertoast.showToast(msg: 'Success!', backgroundColor: Colors.green);
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error: $e', backgroundColor: Colors.red, toastLength: Toast.LENGTH_LONG);
       setState(() {
