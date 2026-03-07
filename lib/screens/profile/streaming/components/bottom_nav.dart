@@ -89,9 +89,11 @@ class _StreamingBottomNavState extends State<StreamingBottomNav> with SingleTick
                 AnimatedBuilder(
                   animation: _dotAnimation,
                   builder: (context, child) {
-                    final itemWidth = MediaQuery.of(context).size.width / 4 - 10;
-                    final startPos = _previousIndex * itemWidth + itemWidth / 2 + 10;
-                    final endPos = widget.currentIndex * itemWidth + itemWidth / 2 + 10;
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final navWidth = screenWidth - 40; // minus margins (20 + 20)
+                    final itemWidth = navWidth / 4;
+                    final startPos = _previousIndex * itemWidth + itemWidth / 2;
+                    final endPos = widget.currentIndex * itemWidth + itemWidth / 2;
                     final currentPos = startPos + (endPos - startPos) * _dotAnimation.value;
                     
                     return Positioned(

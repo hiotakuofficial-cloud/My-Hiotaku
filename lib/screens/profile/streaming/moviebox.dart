@@ -151,8 +151,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
           padding: const EdgeInsets.only(left: 10.0),
           child: Image.asset(
             'assets/images/logo.png',
-            width: 24,
-            height: 24,
+            width: 18,
+            height: 18,
           ),
         ),
         title: AnimatedSwitcher(
@@ -219,11 +219,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
           if (index == _currentNavIndex) return; // Already on this tab
           setState(() => _currentNavIndex = index);
           // Handle navigation
-          if (index == 0) {
-            // Home - go to main app home, not back
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          }
-          // Other tabs stay on same screen for now
+          // Home (0) = MovieBox home (current screen, do nothing)
+          // Other tabs not implemented yet
         },
       ),
     );
@@ -357,14 +354,14 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
             bottom: 40,
             left: 0,
             right: 0,
-            child: FadeTransition(
-              opacity: _heroTextFadeAnimation,
-              child: SlideTransition(
-                position: _heroTextSlideAnimation,
-                child: Column(
-                  children: [
-                    // Title
-                    Padding(
+            child: Column(
+              children: [
+                // Title with animation
+                FadeTransition(
+                  opacity: _heroTextFadeAnimation,
+                  child: SlideTransition(
+                    position: _heroTextSlideAnimation,
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 40.0),
                       child: Text(
                         title,
@@ -387,6 +384,8 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 // Meta info
                 Row(
@@ -505,8 +504,6 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                 ),
               ],
             ),
-              ),
-            ),
           ),
         ],
       ),
@@ -521,7 +518,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
           children: [
             Container(
               width: 4,
-              height: 24,
+              height: 20,
               decoration: BoxDecoration(
                 color: const Color(0xFFFF3B5C),
                 borderRadius: BorderRadius.circular(2),
