@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../services/moviebox_service.dart';
+import 'components/bottom_nav.dart';
 
 class MovieBoxHome extends StatefulWidget {
   const MovieBoxHome({Key? key}) : super(key: key);
@@ -15,12 +16,22 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
   late Animation<double> _heroZoomAnimation;
   late PageController _pageController;
   Timer? _autoScrollTimer;
+  Timer? _titleTimer;
   
   bool _isLoading = true;
   Map<String, dynamic>? _homeData;
   Map<String, dynamic>? _trendingData;
   String? _error;
   int _currentPage = 0;
+  int _currentNavIndex = 1; // Streaming tab active
+  int _currentTitleIndex = 0;
+  
+  final List<String> _titles = [
+    'Streaming',
+    'Watch Together',
+    'Watch With Friends',
+    'Live Chatting',
+  ];
 
   @override
   void initState() {
@@ -33,7 +44,18 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     _heroZoomAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _heroZoomController, curve: Curves.easeInOut),
     );
+    _startTitleAnimation();
     _loadData();
+  }
+
+  void _startTitleAnimation() {
+    _titleTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentTitleIndex = (_currentTitleIndex + 1) % _titles.length;
+        });
+      }
+    });
   }
 
   void _startAutoScroll(int itemCount) {
@@ -53,6 +75,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
+    _titleTimer?.cancel();
     _pageController.dispose();
     _heroZoomController.dispose();
     super.dispose();
@@ -91,19 +114,40 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       extendBodyBehindAppBar: true,
+      extendBody: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 10.0),
-          child: Icon(Icons.movie, color: Colors.white, size: 30),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10.0),
+          child: Image.asset(
+            'assets/images/header_logo.png',
+            width: 30,
+            height: 30,
+          ),
         ),
-        title: const Text(
-          'MovieBox',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        title: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.3),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            );
+          },
+          child: Text(
+            _titles[_currentTitleIndex],
+            key: ValueKey<int>(_currentTitleIndex),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         centerTitle: true,
@@ -139,6 +183,18 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                   onRefresh: _loadData,
                   child: _buildContent(),
                 ),
+      bottomNavigationBar: StreamingBottomNav(
+        currentIndex: _currentNavIndex,
+        onTap: (index) {
+          setState(() => _currentNavIndex = index);
+          // Handle navigation
+          if (index == 0) {
+            // Home - go back
+            Navigator.pop(context);
+          }
+          // Other tabs can be implemented later
+        },
+      ),
     );
   }
 
@@ -149,6 +205,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
     return Container(
       color: const Color(0xFF121212),
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
             if (heroMovies.isNotEmpty) _buildHeroCarousel(heroMovies),
@@ -159,7 +216,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
                 children: [
                   const SizedBox(height: 16),
                   _buildTrendingSection(trendingList),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 100), // Space for bottom nav
                 ],
               ),
             ),
@@ -177,6 +234,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
       height: heroHeight,
       child: PageView.builder(
         controller: _pageController,
+        physics: const BouncingScrollPhysics(),
         onPageChanged: (index) {
           setState(() => _currentPage = index);
         },
@@ -443,27 +501,30 @@ class _MovieBoxHomeState extends State<MovieBoxHome> with TickerProviderStateMix
           ],
         ),
         const SizedBox(height: 20),
-        SizedBox(
-          height: 200,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: movies.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final movie = movies[index];
-              final cover = movie['cover'] ?? {};
-              final imageUrl = cover['url'] ?? '';
-              final title = movie['title'] ?? '';
-              final rating = movie['imdbRatingValue'] ?? '0.0';
-
-              return _MovieCard(
-                imageUrl: imageUrl,
-                title: title,
-                rating: rating,
-                onTap: () {},
-              );
-            },
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const BouncingScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.65,
           ),
+          itemCount: movies.length > 9 ? 9 : movies.length,
+          itemBuilder: (context, index) {
+            final movie = movies[index];
+            final cover = movie['cover'] ?? {};
+            final imageUrl = cover['url'] ?? '';
+            final title = movie['title'] ?? '';
+            final rating = movie['imdbRatingValue'] ?? '0.0';
+
+            return _MovieCard(
+              imageUrl: imageUrl,
+              title: title,
+              rating: rating,
+              onTap: () {},
+            );
+          },
         ),
       ],
     );
@@ -523,7 +584,6 @@ class _MovieCardState extends State<_MovieCard>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: 130,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
