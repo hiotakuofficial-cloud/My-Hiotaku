@@ -38,6 +38,31 @@ class MovieBoxService {
     throw Exception('Failed to load trending: ${response.statusCode}');
   }
   
+  // Search content
+  static Future<Map<String, dynamic>> search({
+    required String keyword,
+    int page = 0,
+    int perPage = 28,
+    int subjectType = 0,
+  }) async {
+    final url = AppConfig.buildMovieBoxUrl('search', {
+      'keyword': keyword,
+      'page': page,
+      'perPage': perPage,
+      'subjectType': subjectType,
+    });
+    
+    final response = await http.get(
+      Uri.parse(url),
+      headers: AppConfig.movieBoxHeaders,
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to search: ${response.statusCode}');
+  }
+  
   // Get content details
   static Future<Map<String, dynamic>> getDetail({
     String? id,
