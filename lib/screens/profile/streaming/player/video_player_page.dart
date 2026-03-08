@@ -44,9 +44,10 @@ class VideoPlayerPage extends StatefulWidget {
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
   late Player _player;
   late VideoController _controller;
-  bool _showControls = true;
+  bool _showControls = false; // Start hidden
   bool _isFullscreen = false;
-  bool _isBuffering = false;
+  bool _isBuffering = true; // Start with loading
+  bool _isInitialized = false;
   Timer? _hideTimer;
   String _currentVideoUrl = '';
 
@@ -156,17 +157,31 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Future<void> _initPlayer() async {
-    await _player.open(
-      Media(
-        _currentVideoUrl,
-        httpHeaders: {
-          'Referer': 'https://themoviebox.org/',
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
-        },
-      ),
-    );
-    await _player.play();
-    _startHideTimer();
+    try {
+      await _player.open(
+        Media(
+          _currentVideoUrl,
+          httpHeaders: {
+            'Referer': 'https://themoviebox.org/',
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+          },
+        ),
+      );
+      
+      // Wait for video to be ready
+      await _player.play();
+      
+      setState(() {
+        _isInitialized = true;
+        _isBuffering = false;
+        _showControls = true; // Show controls after video loads
+      });
+      
+      _startHideTimer();
+    } catch (e) {
+      setState(() => _isBuffering = false);
+      debugPrint('Player init error: $e');
+    }
   }
 
   void _startHideTimer() {
@@ -215,11 +230,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           // Video Surface
           Center(child: Video(controller: _controller)),
 
-          // Brightness Gesture (Left Side)
-          BrightnessGesture(showControls: _showControls),
+          // Brightness Gesture (Left Side) - Only in fullscreen
+          if (_isFullscreen)
+            BrightnessGesture(showControls: _showControls),
 
-          // Volume Gesture (Right Side)
-          VolumeGesture(showControls: _showControls),
+          // Volume Gesture (Right Side) - Only in fullscreen
+          if (_isFullscreen)
+            VolumeGesture(showControls: _showControls),
 
           // Tap to Toggle Controls
           GestureDetector(

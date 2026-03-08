@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 
-class Seekbar extends StatelessWidget {
+class Seekbar extends StatefulWidget {
   final Player player;
   final VoidCallback onSeek;
 
@@ -12,17 +12,27 @@ class Seekbar extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<Seekbar> createState() => _SeekbarState();
+}
+
+class _SeekbarState extends State<Seekbar> {
+  double? _seekValue;
+  bool _isSeeking = false;
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<Duration>(
-      stream: player.stream.position,
+      stream: widget.player.stream.position,
       builder: (context, posSnapshot) {
         return StreamBuilder<Duration>(
-          stream: player.stream.duration,
+          stream: widget.player.stream.duration,
           builder: (context, durSnapshot) {
             final position = posSnapshot.data?.inSeconds.toDouble() ?? 0;
             final duration = durSnapshot.data?.inSeconds.toDouble() ?? 1;
 
             if (duration < 1) return const SizedBox.shrink();
+
+            final displayPosition = _isSeeking ? (_seekValue ?? position) : position;
 
             return Column(
               children: [
@@ -31,7 +41,7 @@ class Seekbar extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _formatTime(position),
+                      _formatTime(displayPosition),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 13,
@@ -39,7 +49,7 @@ class Seekbar extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '-${_formatTime(duration - position)}',
+                      '-${_formatTime(duration - displayPosition)}',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 13,
@@ -61,11 +71,21 @@ class Seekbar extends StatelessWidget {
                     overlayColor: const Color(0xFFE5003C).withOpacity(0.3),
                   ),
                   child: Slider(
-                    value: position.clamp(0, duration),
+                    value: displayPosition.clamp(0.0, duration),
                     max: duration,
                     onChanged: (value) {
-                      player.seek(Duration(seconds: value.toInt()));
-                      onSeek();
+                      setState(() {
+                        _isSeeking = true;
+                        _seekValue = value;
+                      });
+                    },
+                    onChangeEnd: (value) {
+                      widget.player.seek(Duration(seconds: value.toInt()));
+                      setState(() {
+                        _isSeeking = false;
+                        _seekValue = null;
+                      });
+                      widget.onSeek();
                     },
                   ),
                 ),
