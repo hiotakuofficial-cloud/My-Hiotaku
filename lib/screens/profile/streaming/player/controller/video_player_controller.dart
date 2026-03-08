@@ -44,13 +44,13 @@ class VideoPlayerController extends ChangeNotifier {
         debugPrint('Entered PiP mode');
       },
       onPauseForCall: () {
-        // Save volume and mute for call
+        // Lower volume for call (audio ducking)
         _savedVolume = player.state.volume;
-        player.setVolume(0);
-        debugPrint('Audio muted for call');
+        player.setVolume(_savedVolume * 0.2); // 20% volume during call
+        debugPrint('Audio ducked for call');
       },
       onResumeAfterCall: () {
-        // Restore volume after call
+        // Restore full volume after call
         player.setVolume(_savedVolume);
         debugPrint('Audio restored after call');
       },
