@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
-import 'dart:async';
-import '../../../../services/moviebox_service.dart';
+import 'controller/video_player_controller.dart';
 import 'widgets/play_pause_button.dart';
 import 'widgets/seekbar.dart';
 import 'widgets/subtitle_selector.dart';
@@ -15,6 +12,7 @@ import 'widgets/quality_selector.dart';
 import 'widgets/buffer_indicator.dart';
 import 'widgets/pip_button.dart';
 import 'widgets/custom_buffering_loader.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final String videoUrl;
@@ -43,174 +41,28 @@ class VideoPlayerPage extends StatefulWidget {
 }
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
-  late Player _player;
-  late VideoController _controller;
-  bool _showControls = false; // Start hidden
+  late VideoPlayerController _controller;
   bool _isFullscreen = false;
-  bool _isBuffering = true; // Start with loading
-  bool _isInitialized = false;
-  Timer? _hideTimer;
-  String _currentVideoUrl = '';
 
   @override
   void initState() {
     super.initState();
-    _currentVideoUrl = widget.videoUrl;
-    _player = Player();
-    _controller = VideoController(_player);
-    _initPlayer();
+    _controller = VideoPlayerController(
+      initialVideoUrl: widget.videoUrl,
+      subjectId: widget.subjectId,
+      detailPath: widget.detailPath,
+      season: widget.season,
+      episode: widget.episode,
+      availableQualities: widget.availableQualities,
+    );
   }
 
-  Future<void> _changeAudioTrack(String newSubjectId, String newDetailPath, String language) async {
-    setState(() => _isBuffering = true);
-    
-    try {
-      final playData = await MovieBoxService.getPlayUrls(
-        id: newSubjectId,
-        path: newDetailPath,
-        season: widget.season,
-        episode: widget.episode,
-      );
-      
-      final streams = playData['data']?['streams'] as List? ?? [];
-      if (streams.isEmpty) {
-        setState(() => _isBuffering = false);
-        return;
-      }
-      
-      // Get 720p or first available
-      final stream = streams.firstWhere(
-        (s) => s['resolutions'] == '720',
-        orElse: () => streams.first,
-      );
-      
-      final newUrl = stream['url'] as String? ?? '';
-      if (newUrl.isNotEmpty) {
-        final currentPosition = _player.state.position;
-        
-        await _player.open(
-          Media(
-            newUrl,
-            httpHeaders: {
-              'Referer': 'https://themoviebox.org/',
-              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
-            },
-          ),
-        );
-        
-        await _player.seek(currentPosition);
-        await _player.play();
-        
-        setState(() {
-          _currentVideoUrl = newUrl;
-          _isBuffering = false;
-        });
-      }
-    } catch (e) {
-      setState(() => _isBuffering = false);
-      debugPrint('Audio track change error: $e');
-    }
-  }
-
-  Future<void> _changeQuality(String quality) async {
-    setState(() => _isBuffering = true);
-    
-    try {
-      final playData = await MovieBoxService.getPlayUrls(
-        id: widget.subjectId,
-        path: widget.detailPath,
-        season: widget.season,
-        episode: widget.episode,
-      );
-      
-      final streams = playData['data']?['streams'] as List? ?? [];
-      final stream = streams.firstWhere(
-        (s) => s['resolutions'] == quality.replaceAll('p', ''),
-        orElse: () => streams.first,
-      );
-      
-      final newUrl = stream['url'] as String? ?? '';
-      if (newUrl.isNotEmpty) {
-        final currentPosition = _player.state.position;
-        
-        await _player.open(
-          Media(
-            newUrl,
-            httpHeaders: {
-              'Referer': 'https://themoviebox.org/',
-              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
-            },
-          ),
-        );
-        
-        await _player.seek(currentPosition);
-        await _player.play();
-        
-        setState(() {
-          _currentVideoUrl = newUrl;
-          _isBuffering = false;
-        });
-      }
-    } catch (e) {
-      setState(() => _isBuffering = false);
-      debugPrint('Quality change error: $e');
-    }
-  }
-
-  Future<void> _initPlayer() async {
-    try {
-      await _player.open(
-        Media(
-          _currentVideoUrl,
-          httpHeaders: {
-            'Referer': 'https://themoviebox.org/',
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
-          },
-        ),
-      );
-      
-      // Listen to buffering state
-      _player.stream.buffering.listen((buffering) {
-        if (mounted) {
-          setState(() => _isBuffering = buffering);
-        }
-      });
-      
-      // Listen to playing state for UI sync
-      _player.stream.playing.listen((playing) {
-        if (mounted && playing && _showControls) {
-          _startHideTimer();
-        }
-      });
-      
-      // Wait for video to be ready
-      await _player.play();
-      
-      setState(() {
-        _isInitialized = true;
-        _isBuffering = false;
-        _showControls = true; // Show controls after video loads
-      });
-      
-      _startHideTimer();
-    } catch (e) {
-      setState(() => _isBuffering = false);
-      debugPrint('Player init error: $e');
-    }
-  }
-
-  void _startHideTimer() {
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && _player.state.playing) {
-        setState(() => _showControls = false);
-      }
-    });
-  }
-
-  void _toggleControls() {
-    setState(() => _showControls = !_showControls);
-    if (_showControls) _startHideTimer();
+  @override
+  void dispose() {
+    _controller.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
   }
 
   void _toggleFullscreen() async {
@@ -228,52 +80,48 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   @override
-  void dispose() {
-    _hideTimer?.cancel();
-    _player.dispose();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Video Surface
-          Center(child: Video(controller: _controller)),
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, child) {
+        return Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            children: [
+              // Video Surface
+              Center(child: Video(controller: _controller.videoController)),
 
-          // Brightness Gesture (Left Side) - Only in fullscreen
-          if (_isFullscreen)
-            BrightnessGesture(showControls: _showControls),
+              // Brightness Gesture (Left Side) - Only in fullscreen
+              if (_isFullscreen)
+                BrightnessGesture(showControls: _controller.showControls),
 
-          // Volume Gesture (Right Side) - Only in fullscreen
-          if (_isFullscreen)
-            VolumeGesture(showControls: _showControls),
+              // Volume Gesture (Right Side) - Only in fullscreen
+              if (_isFullscreen)
+                VolumeGesture(showControls: _controller.showControls),
 
-          // Tap to Toggle Controls
-          GestureDetector(
-            onTap: _toggleControls,
-            behavior: HitTestBehavior.translucent,
-            child: Container(color: Colors.transparent),
+              // Tap to Toggle Controls
+              GestureDetector(
+                onTap: _controller.toggleControls,
+                behavior: HitTestBehavior.translucent,
+                child: Container(color: Colors.transparent),
+              ),
+
+              // Buffer Indicator
+              Center(
+                child: BufferingLoader(
+                  isVisible: _controller.isBuffering,
+                ),
+              ),
+              
+              BufferIndicator(player: _controller.player),
+
+              // Controls Overlay
+              if (_controller.showControls)
+                _buildControls(),
+            ],
           ),
-
-          // Buffer Indicator
-          Center(
-            child: BufferingLoader(
-              isVisible: _isBuffering,
-            ),
-          ),
-          
-          BufferIndicator(player: _player),
-
-          // Controls Overlay
-          if (_showControls)
-            _buildControls(),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -298,8 +146,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
           // Center Play/Pause
           PlayPauseButton(
-            player: _player,
-            onTap: _startHideTimer,
+            player: _controller.player,
+            onTap: _controller.startHideTimer,
           ),
 
           // Bottom Controls
@@ -342,39 +190,23 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               detailPath: widget.detailPath,
               season: widget.season,
               episode: widget.episode,
-              onSubtitleSelect: (url, lang) async {
-                try {
-                  if (url.isEmpty || lang == 'Off') {
-                    // Turn off subtitles
-                    await _player.setSubtitleTrack(SubtitleTrack.no());
-                    debugPrint('Subtitles turned off');
-                  } else {
-                    // Load subtitle
-                    await _player.setSubtitleTrack(
-                      SubtitleTrack.uri(url, title: lang, language: lang),
-                    );
-                    debugPrint('Subtitle loaded: $lang from $url');
-                  }
-                } catch (e) {
-                  debugPrint('Subtitle error: $e');
-                }
-              },
-              onTap: _startHideTimer,
+              onSubtitleSelect: _controller.setSubtitle,
+              onTap: _controller.startHideTimer,
             ),
             const SizedBox(width: 8),
             // Audio Track Selector
             AudioTrackSelector(
               subjectId: widget.subjectId,
               detailPath: widget.detailPath,
-              onAudioSelect: _changeAudioTrack,
-              onTap: _startHideTimer,
+              onAudioSelect: (id, path, lang) => _controller.changeAudioTrack(id, path),
+              onTap: _controller.startHideTimer,
             ),
             const SizedBox(width: 8),
             // Quality Selector
             QualitySelector(
               availableQualities: widget.availableQualities,
-              onQualityChange: _changeQuality,
-              onTap: _startHideTimer,
+              onQualityChange: _controller.changeQuality,
+              onTap: _controller.startHideTimer,
             ),
           ],
         ),
@@ -389,8 +221,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         children: [
           // Seekbar
           Seekbar(
-            player: _player,
-            onSeek: _startHideTimer,
+            player: _controller.player,
+            onSeek: _controller.startHideTimer,
           ),
           const SizedBox(height: 8),
           // Bottom Buttons
@@ -399,7 +231,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             children: [
               // PiP Button
               PipButton(
-                onTap: _startHideTimer,
+                onTap: _controller.startHideTimer,
               ),
               const SizedBox(width: 16),
               // Fullscreen Button

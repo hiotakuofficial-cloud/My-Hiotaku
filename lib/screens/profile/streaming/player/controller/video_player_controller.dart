@@ -1,0 +1,213 @@
+import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+import 'dart:async';
+import '../../../../../services/moviebox_service.dart';
+
+class VideoPlayerController extends ChangeNotifier {
+  final String initialVideoUrl;
+  final String subjectId;
+  final String detailPath;
+  final int season;
+  final int episode;
+  final List<String> availableQualities;
+
+  late Player player;
+  late VideoController videoController;
+  
+  bool isInitialized = false;
+  bool isBuffering = true;
+  bool showControls = false;
+  bool isFullscreen = false;
+  
+  String currentVideoUrl = '';
+  Timer? hideTimer;
+
+  VideoPlayerController({
+    required this.initialVideoUrl,
+    required this.subjectId,
+    required this.detailPath,
+    required this.season,
+    required this.episode,
+    required this.availableQualities,
+  }) {
+    currentVideoUrl = initialVideoUrl;
+    player = Player();
+    videoController = VideoController(player);
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await player.open(
+        Media(
+          currentVideoUrl,
+          httpHeaders: {
+            'Referer': 'https://themoviebox.org/',
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+          },
+        ),
+      );
+
+      // Listen to streams
+      player.stream.buffering.listen((buffering) {
+        isBuffering = buffering;
+        notifyListeners();
+      });
+
+      player.stream.playing.listen((playing) {
+        if (playing && showControls) {
+          startHideTimer();
+        }
+      });
+
+      await player.play();
+
+      isInitialized = true;
+      isBuffering = false;
+      showControls = true;
+      notifyListeners();
+
+      startHideTimer();
+    } catch (e) {
+      isBuffering = false;
+      notifyListeners();
+      debugPrint('Player init error: $e');
+    }
+  }
+
+  void toggleControls() {
+    showControls = !showControls;
+    if (showControls) startHideTimer();
+    notifyListeners();
+  }
+
+  void startHideTimer() {
+    hideTimer?.cancel();
+    hideTimer = Timer(const Duration(seconds: 3), () {
+      if (player.state.playing) {
+        showControls = false;
+        notifyListeners();
+      }
+    });
+  }
+
+  Future<void> changeQuality(String quality) async {
+    isBuffering = true;
+    notifyListeners();
+
+    try {
+      final playData = await MovieBoxService.getPlayUrls(
+        id: subjectId,
+        path: detailPath,
+        season: season,
+        episode: episode,
+      );
+
+      final streams = playData['data']?['streams'] as List? ?? [];
+      final stream = streams.firstWhere(
+        (s) => s['resolutions'] == quality.replaceAll('p', ''),
+        orElse: () => streams.first,
+      );
+
+      final newUrl = stream['url'] as String? ?? '';
+      if (newUrl.isNotEmpty) {
+        final currentPosition = player.state.position;
+
+        await player.open(
+          Media(
+            newUrl,
+            httpHeaders: {
+              'Referer': 'https://themoviebox.org/',
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+            },
+          ),
+        );
+
+        await player.seek(currentPosition);
+        await player.play();
+
+        currentVideoUrl = newUrl;
+      }
+    } catch (e) {
+      debugPrint('Quality change error: $e');
+    }
+
+    isBuffering = false;
+    notifyListeners();
+  }
+
+  Future<void> changeAudioTrack(String newSubjectId, String newDetailPath) async {
+    isBuffering = true;
+    notifyListeners();
+
+    try {
+      final playData = await MovieBoxService.getPlayUrls(
+        id: newSubjectId,
+        path: newDetailPath,
+        season: season,
+        episode: episode,
+      );
+
+      final streams = playData['data']?['streams'] as List? ?? [];
+      if (streams.isEmpty) {
+        isBuffering = false;
+        notifyListeners();
+        return;
+      }
+
+      final stream = streams.firstWhere(
+        (s) => s['resolutions'] == '720',
+        orElse: () => streams.first,
+      );
+
+      final newUrl = stream['url'] as String? ?? '';
+      if (newUrl.isNotEmpty) {
+        final currentPosition = player.state.position;
+
+        await player.open(
+          Media(
+            newUrl,
+            httpHeaders: {
+              'Referer': 'https://themoviebox.org/',
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+            },
+          ),
+        );
+
+        await player.seek(currentPosition);
+        await player.play();
+
+        currentVideoUrl = newUrl;
+      }
+    } catch (e) {
+      debugPrint('Audio track change error: $e');
+    }
+
+    isBuffering = false;
+    notifyListeners();
+  }
+
+  Future<void> setSubtitle(String url, String language) async {
+    try {
+      if (url.isEmpty || language == 'Off') {
+        await player.setSubtitleTrack(SubtitleTrack.no());
+        debugPrint('Subtitles turned off');
+      } else {
+        await player.setSubtitleTrack(
+          SubtitleTrack.uri(url, title: language, language: language),
+        );
+        debugPrint('Subtitle loaded: $language');
+      }
+    } catch (e) {
+      debugPrint('Subtitle error: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    hideTimer?.cancel();
+    player.dispose();
+    super.dispose();
+  }
+}
