@@ -59,6 +59,57 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _initPlayer();
   }
 
+  Future<void> _changeAudioTrack(String newSubjectId, String newDetailPath, String language) async {
+    setState(() => _isBuffering = true);
+    
+    try {
+      final playData = await MovieBoxService.getPlayUrls(
+        id: newSubjectId,
+        path: newDetailPath,
+        season: widget.season,
+        episode: widget.episode,
+      );
+      
+      final streams = playData['data']?['streams'] as List? ?? [];
+      if (streams.isEmpty) {
+        setState(() => _isBuffering = false);
+        return;
+      }
+      
+      // Get 720p or first available
+      final stream = streams.firstWhere(
+        (s) => s['resolutions'] == '720',
+        orElse: () => streams.first,
+      );
+      
+      final newUrl = stream['url'] as String? ?? '';
+      if (newUrl.isNotEmpty) {
+        final currentPosition = _player.state.position;
+        
+        await _player.open(
+          Media(
+            newUrl,
+            httpHeaders: {
+              'Referer': 'https://themoviebox.org/',
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+            },
+          ),
+        );
+        
+        await _player.seek(currentPosition);
+        await _player.play();
+        
+        setState(() {
+          _currentVideoUrl = newUrl;
+          _isBuffering = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _isBuffering = false);
+      debugPrint('Audio track change error: $e');
+    }
+  }
+
   Future<void> _changeQuality(String quality) async {
     setState(() => _isBuffering = true);
     
@@ -267,7 +318,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             const SizedBox(width: 8),
             // Audio Track Selector
             AudioTrackSelector(
-              player: _player,
+              subjectId: widget.subjectId,
+              detailPath: widget.detailPath,
+              onAudioSelect: _changeAudioTrack,
               onTap: _startHideTimer,
             ),
             const SizedBox(width: 8),
