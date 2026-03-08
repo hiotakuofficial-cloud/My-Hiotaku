@@ -116,11 +116,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 ),
               ),
 
-              // Controls Overlay with Animation
+              // Controls Overlay with Fade Animation
               AnimatedOpacity(
                 opacity: _controller.showControls ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 300),
-                child: _controller.showControls ? _buildControls() : const SizedBox.shrink(),
+                child: IgnorePointer(
+                  ignoring: !_controller.showControls,
+                  child: _buildControls(),
+                ),
               ),
             ],
           ),
