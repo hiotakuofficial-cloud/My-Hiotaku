@@ -176,23 +176,46 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildTopControls(),
-          _buildCenterControls(),
+          _buildTopBar(),
+          const SizedBox.shrink(), // Empty center
           _buildBottomControls(),
         ],
       ),
     );
   }
 
-  Widget _buildTopControls() {
+  Widget _buildTopBar() {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          QualitySelector(
-            availableQualities: widget.availableQualities,
-            onQualityChange: _controller.changeQuality,
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
+          if (widget.title != null) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.title!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'MazzardH',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+          const Spacer(),
+          SubtitleSelector(
+            subjectId: widget.subjectId,
+            detailPath: widget.detailPath,
+            season: widget.season,
+            episode: widget.episode,
+            onSubtitleSelect: _controller.setSubtitle,
             onTap: _controller.startHideTimer,
           ),
           const SizedBox(width: 8),
@@ -203,94 +226,10 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
             onTap: _controller.startHideTimer,
           ),
           const SizedBox(width: 8),
-          SubtitleSelector(
-            subjectId: widget.subjectId,
-            detailPath: widget.detailPath,
-            season: widget.season,
-            episode: widget.episode,
-            onSubtitleSelect: _controller.setSubtitle,
+          QualitySelector(
+            availableQualities: widget.availableQualities,
+            onQualityChange: _controller.changeQuality,
             onTap: _controller.startHideTimer,
-          ),
-          const SizedBox(width: 8),
-          PipButton(
-            onTap: _controller.startHideTimer,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCenterControls() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            icon: Icon(
-              Icons.skip_previous,
-              color: widget.episode > 1 ? Colors.white : Colors.grey,
-              size: 32,
-            ),
-            onPressed: widget.episode > 1 ? () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ResponsiveVideoPlayerPage(
-                    videoUrl: '',
-                    subjectId: widget.subjectId,
-                    detailPath: widget.detailPath,
-                    season: widget.season,
-                    episode: widget.episode - 1,
-                    title: widget.title,
-                    posterUrl: widget.posterUrl,
-                    availableQualities: widget.availableQualities,
-                    recommendations: widget.recommendations,
-                  ),
-                ),
-              );
-            } : null,
-          ),
-          const SizedBox(width: 24),
-          GestureDetector(
-            onTap: () {
-              _controller.player.playOrPause();
-              _controller.startHideTimer();
-            },
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _controller.player.state.playing ? Icons.pause : Icons.play_arrow,
-                color: Colors.white,
-                size: 32,
-              ),
-            ),
-          ),
-          const SizedBox(width: 24),
-          IconButton(
-            icon: const Icon(Icons.skip_next, color: Colors.white, size: 32),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ResponsiveVideoPlayerPage(
-                    videoUrl: '',
-                    subjectId: widget.subjectId,
-                    detailPath: widget.detailPath,
-                    season: widget.season,
-                    episode: widget.episode + 1,
-                    title: widget.title,
-                    posterUrl: widget.posterUrl,
-                    availableQualities: widget.availableQualities,
-                    recommendations: widget.recommendations,
-                  ),
-                ),
-              );
-            },
           ),
         ],
       ),
@@ -300,18 +239,102 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   Widget _buildBottomControls() {
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Seekbar(
-              player: _controller.player,
-              onSeek: _controller.startHideTimer,
-            ),
+          Seekbar(
+            player: _controller.player,
+            onSeek: _controller.startHideTimer,
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.fullscreen, color: Colors.white, size: 24),
-            onPressed: _openFullscreen,
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Left: Previous | Play/Pause | Next
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.skip_previous,
+                      color: widget.episode > 1 ? Colors.white : Colors.grey,
+                      size: 24,
+                    ),
+                    onPressed: widget.episode > 1 ? () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ResponsiveVideoPlayerPage(
+                            videoUrl: '',
+                            subjectId: widget.subjectId,
+                            detailPath: widget.detailPath,
+                            season: widget.season,
+                            episode: widget.episode - 1,
+                            title: widget.title,
+                            posterUrl: widget.posterUrl,
+                            availableQualities: widget.availableQualities,
+                            recommendations: widget.recommendations,
+                          ),
+                        ),
+                      );
+                    } : null,
+                  ),
+                  ListenableBuilder(
+                    listenable: _controller,
+                    builder: (context, child) {
+                      final isPlaying = _controller.player.state.playing;
+                      return IconButton(
+                        icon: Icon(
+                          isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          _controller.player.playOrPause();
+                          _controller.startHideTimer();
+                        },
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.skip_next,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ResponsiveVideoPlayerPage(
+                            videoUrl: '',
+                            subjectId: widget.subjectId,
+                            detailPath: widget.detailPath,
+                            season: widget.season,
+                            episode: widget.episode + 1,
+                            title: widget.title,
+                            posterUrl: widget.posterUrl,
+                            availableQualities: widget.availableQualities,
+                            recommendations: widget.recommendations,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              // Right: PiP | Fullscreen
+              Row(
+                children: [
+                  PipButton(
+                    onTap: _controller.startHideTimer,
+                  ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    icon: const Icon(Icons.fullscreen, color: Colors.white, size: 24),
+                    onPressed: _openFullscreen,
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
