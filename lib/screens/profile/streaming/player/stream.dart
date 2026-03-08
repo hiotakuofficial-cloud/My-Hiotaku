@@ -162,31 +162,6 @@ class _StreamPageState extends State<StreamPage> {
                       ),
                     if (_videoHandler.seasons.isNotEmpty) const SizedBox(height: 16),
 
-                    // Action Buttons
-                    PlayerOptions(
-                      actions: [
-                        ButtonData(
-                          label: 'Share',
-                          icon: Icons.share_outlined,
-                          onPressed: () => _showSnack('Share'),
-                        ),
-                        ButtonData(
-                          label: 'Feedback',
-                          icon: Icons.feedback_outlined,
-                          onPressed: () => _showSnack('Feedback'),
-                        ),
-                        ButtonData(
-                          label: 'Download',
-                          icon: Icons.download_outlined,
-                          onPressed: () => _showSnack('Download'),
-                        ),
-                        ButtonData(
-                          label: 'View Downloads',
-                          icon: Icons.folder_open_outlined,
-                          onPressed: () => _showSnack('View Downloads'),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 24),
 
                     // Quality Selection

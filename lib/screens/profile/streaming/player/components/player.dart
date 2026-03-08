@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'dart:async';
@@ -39,6 +40,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
   late final SettingsData _settingsData;
   bool _showControls = true;
   bool _isInitialized = false;
+  bool _isFullscreen = false;
   Timer? _saveTimer;
 
   @override
@@ -64,6 +66,40 @@ class _VideoPlayerState extends State<VideoPlayer> {
     
     // Handle quality change
     widget.onQualityChange?.call(_settingsData.currentQuality);
+  }
+
+  void _toggleFullscreen() async {
+    setState(() => _isFullscreen = !_isFullscreen);
+    
+    if (_isFullscreen) {
+      // Enter fullscreen
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      
+      // Get video aspect ratio
+      final videoWidth = _controller.player.state.width ?? 16;
+      final videoHeight = _controller.player.state.height ?? 9;
+      final aspectRatio = videoWidth / videoHeight;
+      
+      // Set orientation based on video aspect ratio
+      if (aspectRatio > 1) {
+        // Horizontal video
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      } else {
+        // Vertical video
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+        ]);
+      }
+    } else {
+      // Exit fullscreen
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+    }
   }
 
   @override
@@ -113,6 +149,9 @@ class _VideoPlayerState extends State<VideoPlayer> {
       if (savedPosition != null && savedPosition > 5) {
         await _player.seek(Duration(seconds: savedPosition));
       }
+      
+      // Auto-play
+      await _player.play();
     } catch (e) {
       debugPrint('Media Kit error: $e');
     }
@@ -138,6 +177,9 @@ class _VideoPlayerState extends State<VideoPlayer> {
     _settingsData.removeListener(_onSettingsChanged);
     _settingsData.dispose();
     _player.dispose();
+    // Reset orientation on dispose
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }
 
@@ -160,9 +202,11 @@ class _VideoPlayerState extends State<VideoPlayer> {
             children: [
               // Video Surface
               if (_isInitialized)
-                Video(
-                  controller: _controller,
-                  controls: NoVideoControls,
+                SizedBox.expand(
+                  child: Video(
+                    controller: _controller,
+                    controls: NoVideoControls,
+                  ),
                 )
               else if (widget.posterUrl != null)
                 Image.network(
@@ -217,6 +261,8 @@ class _VideoPlayerState extends State<VideoPlayer> {
                         _BottomControls(
                           player: _player,
                           onPlayPause: _togglePlayPause,
+                          isFullscreen: _isFullscreen,
+                          onFullscreenToggle: _toggleFullscreen,
                         ),
                       ],
                     );
@@ -270,11 +316,6 @@ class _TopControls extends StatelessWidget {
             ],
             const Spacer(),
             _ControlButton(
-              icon: Icons.cast,
-              onTap: () {},
-            ),
-            const SizedBox(width: 12),
-            _ControlButton(
               icon: Icons.closed_caption_outlined,
               onTap: () {},
             ),
@@ -291,7 +332,7 @@ class _TopControls extends StatelessWidget {
 }
 
 // Center Play/Pause Button
-class _CenterControls extends StatelessWidget {
+class _CenterControls extends StatefulWidget {
   final bool isPlaying;
   final VoidCallback onPlayPause;
 
@@ -301,19 +342,48 @@ class _CenterControls extends StatelessWidget {
   });
 
   @override
+  State<_CenterControls> createState() => _CenterControlsState();
+}
+
+class _CenterControlsState extends State<_CenterControls> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnim = Tween<double>(begin: 1.0, end: 0.8).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    _animController.forward().then((_) {
+      _animController.reverse();
+    });
+    widget.onPlayPause();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onPlayPause,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
-          shape: BoxShape.circle,
-        ),
+      onTap: _handleTap,
+      child: ScaleTransition(
+        scale: _scaleAnim,
         child: Icon(
-          isPlaying ? Icons.pause : Icons.play_arrow,
+          widget.isPlaying ? Icons.pause : Icons.play_arrow,
           color: Colors.white,
-          size: 48,
+          size: 64,
         ),
       ),
     );
@@ -324,10 +394,14 @@ class _CenterControls extends StatelessWidget {
 class _BottomControls extends StatelessWidget {
   final Player player;
   final VoidCallback onPlayPause;
+  final bool isFullscreen;
+  final VoidCallback onFullscreenToggle;
 
   const _BottomControls({
     required this.player,
     required this.onPlayPause,
+    required this.isFullscreen,
+    required this.onFullscreenToggle,
   });
 
   @override
@@ -339,41 +413,63 @@ class _BottomControls extends StatelessWidget {
           stream: player.stream.duration,
           builder: (context, durationSnapshot) {
             final position = positionSnapshot.data?.inSeconds.toDouble() ?? 0.0;
-            final duration = durationSnapshot.data?.inSeconds.toDouble() ?? 1.0;
+            final duration = durationSnapshot.data?.inSeconds.toDouble() ?? 0.0;
+            final remaining = duration > position ? duration - position : 0.0;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Progress Bar
+                // Time Labels
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         _formatDuration(position),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                           fontFamily: 'MazzardH',
-                        ),
-                      ),
-                      Expanded(
-                        child: Slider(
-                          value: position.clamp(0.0, duration),
-                          max: duration > 0 ? duration : 1.0,
-                          activeColor: const Color(0xFFE5003C),
-                          inactiveColor: Colors.white.withOpacity(0.3),
-                          onChanged: (value) {
-                            player.seek(Duration(seconds: value.toInt()));
-                          },
                         ),
                       ),
                       Text(
-                        _formatDuration(duration),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                        '-${_formatDuration(remaining)}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                           fontFamily: 'MazzardH',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Progress Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SliderTheme(
+                          data: SliderThemeData(
+                            trackHeight: 3,
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                            activeTrackColor: const Color(0xFFE5003C),
+                            inactiveTrackColor: Colors.white.withOpacity(0.2),
+                            thumbColor: const Color(0xFFE5003C),
+                            overlayColor: const Color(0xFFE5003C).withOpacity(0.3),
+                          ),
+                          child: Slider(
+                            value: duration > 0 ? position.clamp(0.0, duration) : 0.0,
+                            max: duration > 0 ? duration : 1.0,
+                            onChanged: (value) {
+                              player.seek(Duration(seconds: value.toInt()));
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -382,55 +478,24 @@ class _BottomControls extends StatelessWidget {
                         onTap: () {},
                       ),
                       const SizedBox(width: 16),
-                      _ControlButton(
-                        iconPath: 'assets/player/fullscreen.png',
-                        onTap: () {},
+                      GestureDetector(
+                        onTap: onFullscreenToggle,
+                        child: Image.asset(
+                          'assets/player/fullscreen.png',
+                          width: 20,
+                          height: 20,
+                          color: isFullscreen ? const Color(0xFFE5003C) : Colors.white,
+                          errorBuilder: (_, __, ___) => Icon(
+                            isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                            color: isFullscreen ? const Color(0xFFE5003C) : Colors.white,
+                            size: 20,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // Control Buttons
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: StreamBuilder<bool>(
-                    stream: player.stream.playing,
-                    builder: (context, snapshot) {
-                      final isPlaying = snapshot.data ?? false;
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              _ControlButton(
-                                icon: isPlaying ? Icons.pause : Icons.play_arrow,
-                                onTap: onPlayPause,
-                              ),
-                              const SizedBox(width: 16),
-                              _ControlButton(
-                                icon: Icons.skip_next,
-                                onTap: () {},
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              _ControlButton(
-                                iconPath: 'assets/player/subtitles.png',
-                                onTap: () {},
-                              ),
-                              const SizedBox(width: 16),
-                              _ControlButton(
-                                iconPath: 'assets/player/aspect_ratio.png',
-                                onTap: () {},
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
               ],
             );
           },
