@@ -120,8 +120,8 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Widget _buildVideoPlayer() {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.25, // 25% height
       child: Container(
         color: Colors.black,
         child: ListenableBuilder(
@@ -129,19 +129,28 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
           builder: (context, _) {
             return Stack(
               children: [
-                Video(controller: _controller.videoController),
-                BrightnessGesture(showControls: _controller.showControls),
-                VolumeGesture(showControls: _controller.showControls),
+                Positioned.fill(
+                  child: Video(controller: _controller.videoController),
+                ),
+                if (!_controller.showControls)
+                  BrightnessGesture(showControls: _controller.showControls),
+                if (!_controller.showControls)
+                  VolumeGesture(showControls: _controller.showControls),
                 Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
                 AnimatedOpacity(
                   opacity: _controller.showControls ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 300),
-                  child: _controller.showControls ? _buildControls() : const SizedBox(),
+                  child: IgnorePointer(
+                    ignoring: !_controller.showControls,
+                    child: _controller.showControls ? _buildControls() : const SizedBox(),
+                  ),
                 ),
-                GestureDetector(
-                  onTap: _controller.toggleControls,
-                  behavior: HitTestBehavior.translucent,
-                  child: Container(color: Colors.transparent),
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: _controller.toggleControls,
+                    behavior: HitTestBehavior.translucent,
+                    child: Container(color: Colors.transparent),
+                  ),
                 ),
               ],
             );
@@ -177,7 +186,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
 
   Widget _buildTopControls() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -186,14 +195,14 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
             onQualityChange: _controller.changeQuality,
             onTap: _controller.startHideTimer,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           AudioTrackSelector(
             subjectId: widget.subjectId,
             detailPath: widget.detailPath,
             onAudioSelect: (id, path, lang) => _controller.changeAudioTrack(id, path),
             onTap: _controller.startHideTimer,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           SubtitleSelector(
             subjectId: widget.subjectId,
             detailPath: widget.detailPath,
@@ -202,7 +211,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
             onSubtitleSelect: _controller.setSubtitle,
             onTap: _controller.startHideTimer,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           PipButton(
             onTap: _controller.startHideTimer,
           ),
@@ -212,82 +221,85 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Widget _buildCenterControls() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: Icon(
-            Icons.skip_previous,
-            color: widget.episode > 1 ? Colors.white : Colors.grey,
-            size: 40,
-          ),
-          onPressed: widget.episode > 1 ? () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ResponsiveVideoPlayerPage(
-                  videoUrl: '',
-                  subjectId: widget.subjectId,
-                  detailPath: widget.detailPath,
-                  season: widget.season,
-                  episode: widget.episode - 1,
-                  title: widget.title,
-                  posterUrl: widget.posterUrl,
-                  availableQualities: widget.availableQualities,
-                  recommendations: widget.recommendations,
-                ),
-              ),
-            );
-          } : null,
-        ),
-        const SizedBox(width: 40),
-        GestureDetector(
-          onTap: () {
-            _controller.player.playOrPause();
-            _controller.startHideTimer();
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
-              shape: BoxShape.circle,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.skip_previous,
+              color: widget.episode > 1 ? Colors.white : Colors.grey,
+              size: 32,
             ),
-            child: Icon(
-              _controller.player.state.playing ? Icons.pause : Icons.play_arrow,
-              color: Colors.white,
-              size: 40,
+            onPressed: widget.episode > 1 ? () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ResponsiveVideoPlayerPage(
+                    videoUrl: '',
+                    subjectId: widget.subjectId,
+                    detailPath: widget.detailPath,
+                    season: widget.season,
+                    episode: widget.episode - 1,
+                    title: widget.title,
+                    posterUrl: widget.posterUrl,
+                    availableQualities: widget.availableQualities,
+                    recommendations: widget.recommendations,
+                  ),
+                ),
+              );
+            } : null,
+          ),
+          const SizedBox(width: 24),
+          GestureDetector(
+            onTap: () {
+              _controller.player.playOrPause();
+              _controller.startHideTimer();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _controller.player.state.playing ? Icons.pause : Icons.play_arrow,
+                color: Colors.white,
+                size: 32,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 40),
-        IconButton(
-          icon: const Icon(Icons.skip_next, color: Colors.white, size: 40),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ResponsiveVideoPlayerPage(
-                  videoUrl: '',
-                  subjectId: widget.subjectId,
-                  detailPath: widget.detailPath,
-                  season: widget.season,
-                  episode: widget.episode + 1,
-                  title: widget.title,
-                  posterUrl: widget.posterUrl,
-                  availableQualities: widget.availableQualities,
-                  recommendations: widget.recommendations,
+          const SizedBox(width: 24),
+          IconButton(
+            icon: const Icon(Icons.skip_next, color: Colors.white, size: 32),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ResponsiveVideoPlayerPage(
+                    videoUrl: '',
+                    subjectId: widget.subjectId,
+                    detailPath: widget.detailPath,
+                    season: widget.season,
+                    episode: widget.episode + 1,
+                    title: widget.title,
+                    posterUrl: widget.posterUrl,
+                    availableQualities: widget.availableQualities,
+                    recommendations: widget.recommendations,
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
-      ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildBottomControls() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           Expanded(
@@ -296,9 +308,9 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
               onSeek: _controller.startHideTimer,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.fullscreen, color: Colors.white),
+            icon: const Icon(Icons.fullscreen, color: Colors.white, size: 24),
             onPressed: _openFullscreen,
           ),
         ],
