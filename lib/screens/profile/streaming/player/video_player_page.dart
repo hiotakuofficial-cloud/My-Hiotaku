@@ -88,20 +88,16 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       builder: (context, child) {
         return Scaffold(
           backgroundColor: Colors.black,
-          body: SafeArea(
-            top: !_isFullscreen,
-            bottom: !_isFullscreen,
-            left: false,
-            right: false,
-            child: Stack(
-              children: [
-                // Video Surface
-                Center(
-                  child: Video(
-                    controller: _controller.videoController,
-                    controls: NoVideoControls,
-                  ),
-                ),
+          body: _isFullscreen
+              ? Stack(
+                  children: [
+                    // Video Surface
+                    Center(
+                      child: Video(
+                        controller: _controller.videoController,
+                        controls: NoVideoControls,
+                      ),
+                    ),
 
               // Tap to Toggle Controls (Behind gestures)
               GestureDetector(
@@ -135,9 +131,45 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 ),
               ),
             ],
-          ),
-        ),
-      );
+          )
+              : SafeArea(
+                  child: Stack(
+                    children: [
+                      // Video Surface
+                      Center(
+                        child: Video(
+                          controller: _controller.videoController,
+                          controls: NoVideoControls,
+                        ),
+                      ),
+
+                      // Tap to Toggle Controls
+                      GestureDetector(
+                        onTap: _controller.toggleControls,
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(color: Colors.transparent),
+                      ),
+
+                      // Custom Buffering Animation
+                      Center(
+                        child: BufferingLoader(
+                          isVisible: _controller.isBuffering,
+                        ),
+                      ),
+
+                      // Controls Overlay with Fade Animation
+                      AnimatedOpacity(
+                        opacity: _controller.showControls ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 300),
+                        child: IgnorePointer(
+                          ignoring: !_controller.showControls,
+                          child: _buildControls(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        );
       },
     );
   }
