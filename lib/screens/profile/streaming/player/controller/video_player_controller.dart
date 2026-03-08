@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../../../../../services/moviebox_service.dart';
 import 'video_lifecycle_controller.dart';
@@ -121,6 +122,10 @@ class VideoPlayerController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Save quality preference
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('preferred_quality', quality.replaceAll('p', ''));
+      
       final playData = await MovieBoxService.getPlayUrls(
         id: subjectId,
         path: detailPath,

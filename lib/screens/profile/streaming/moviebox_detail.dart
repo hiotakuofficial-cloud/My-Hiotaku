@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/moviebox_service.dart';
 import 'player/video_player_page.dart';
 
@@ -417,8 +418,12 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                   return;
                 }
                 
+                // Get saved quality preference or use minimum (360p)
+                final prefs = await SharedPreferences.getInstance();
+                final savedQuality = prefs.getString('preferred_quality') ?? '360';
+
                 final stream = streams.firstWhere(
-                  (s) => s['resolutions'] == '720',
+                  (s) => s['resolutions'] == savedQuality,
                   orElse: () => streams.first,
                 );
                 
@@ -499,8 +504,12 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                   return;
                 }
                 
+                // Get saved quality preference or use minimum (360p)
+                final prefs = await SharedPreferences.getInstance();
+                final savedQuality = prefs.getString('preferred_quality') ?? '360';
+
                 final stream = streams.firstWhere(
-                  (s) => s['resolutions'] == '720',
+                  (s) => s['resolutions'] == savedQuality,
                   orElse: () => streams.first,
                 );
                 
