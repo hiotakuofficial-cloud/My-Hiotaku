@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+import 'package:flutter/services.dart';
 
 class PipButton extends StatelessWidget {
-  final Player player;
   final VoidCallback onTap;
 
   const PipButton({
     Key? key,
-    required this.player,
     required this.onTap,
   }) : super(key: key);
+
+  Future<void> _enterPiP() async {
+    try {
+      const platform = MethodChannel('com.hiotaku.app/pip');
+      await platform.invokeMethod('enterPiP');
+    } catch (e) {
+      debugPrint('PiP error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +29,7 @@ class PipButton extends StatelessWidget {
         errorBuilder: (_, __, ___) => const Icon(Icons.picture_in_picture_alt, color: Colors.white, size: 20),
       ),
       onPressed: () {
-        // TODO: Implement PiP mode
+        _enterPiP();
         onTap();
       },
     );

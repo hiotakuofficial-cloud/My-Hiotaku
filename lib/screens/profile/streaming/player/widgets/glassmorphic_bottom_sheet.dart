@@ -78,7 +78,7 @@ class GlassmorphicBottomSheet extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 29,
+                    fontSize: 20,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                     fontFamily: 'MazzardH',
@@ -110,7 +110,7 @@ class GlassmorphicBottomSheet extends StatelessWidget {
                               Text(
                                 option,
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 16,
                                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                                   color: isSelected ? const Color(0xFFE5003C) : Colors.white,
                                   fontFamily: 'MazzardH',

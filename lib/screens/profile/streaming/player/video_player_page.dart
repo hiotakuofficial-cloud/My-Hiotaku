@@ -370,7 +370,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             children: [
               // PiP Button
               PipButton(
-                player: _player,
                 onTap: _startHideTimer,
               ),
               const SizedBox(width: 16),

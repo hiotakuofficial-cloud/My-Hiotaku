@@ -8,10 +8,14 @@ import android.provider.Settings
 import android.content.ContentResolver
 import android.net.Uri
 import android.os.Bundle
+import android.app.PictureInPictureParams
+import android.os.Build
+import android.util.Rational
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.hiotaku.app/auto_rotation"
     private val SETTINGS_CHANNEL = "com.hiotaku.app/settings"
+    private val PIP_CHANNEL = "com.hiotaku.app/pip"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +63,27 @@ class MainActivity: FlutterActivity() {
                     result.notImplemented()
                 }
             }
+        }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "enterPiP" -> {
+                    enterPictureInPictureMode()
+                    result.success(true)
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
+    }
+
+    private fun enterPictureInPictureMode() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val params = PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+                .build()
+            enterPictureInPictureMode(params)
         }
     }
 
