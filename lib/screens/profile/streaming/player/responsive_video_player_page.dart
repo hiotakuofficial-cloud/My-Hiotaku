@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'controller/video_player_controller.dart';
 import 'widgets/seekbar.dart';
@@ -82,39 +83,42 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0B0B0B),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        toolbarHeight: 0, // Remove AppBar height
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildVideoPlayer(),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  _buildTitle(),
+                  const SizedBox(height: 12),
+                  _buildRatingAndGenres(),
+                  const SizedBox(height: 24),
+                  _buildActionButtons(),
+                  const SizedBox(height: 24),
+                  _buildSeasonSelection(),
+                  const SizedBox(height: 24),
+                  _buildRecommendations(),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildVideoPlayer(),
-            const SizedBox(height: 24),
-            _buildTitle(),
-            const SizedBox(height: 12),
-            _buildRatingAndGenres(),
-            const SizedBox(height: 24),
-            _buildActionButtons(),
-            const SizedBox(height: 24),
-            _buildSeasonSelection(),
-            const SizedBox(height: 24),
-            _buildRecommendations(),
-            const SizedBox(height: 24),
-          ],
-        ),
       ),
     );
   }
@@ -133,18 +137,18 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                   child: Video(controller: _controller.videoController),
                 ),
                 if (!_controller.showControls)
-                  BrightnessGesture(showControls: _controller.showControls),
-                if (!_controller.showControls)
-                  VolumeGesture(showControls: _controller.showControls),
-                Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
-                AnimatedOpacity(
-                  opacity: _controller.showControls ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: IgnorePointer(
-                    ignoring: !_controller.showControls,
-                    child: _controller.showControls ? _buildControls() : const SizedBox(),
+                  Positioned.fill(
+                    child: BrightnessGesture(showControls: _controller.showControls),
                   ),
-                ),
+                if (!_controller.showControls)
+                  Positioned.fill(
+                    child: VolumeGesture(showControls: _controller.showControls),
+                  ),
+                Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
+                if (_controller.showControls)
+                  Positioned.fill(
+                    child: _buildControls(),
+                  ),
                 Positioned.fill(
                   child: GestureDetector(
                     onTap: _controller.toggleControls,
