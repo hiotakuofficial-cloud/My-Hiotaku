@@ -288,16 +288,20 @@ class _TopControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _ControlButton(
-              icon: Icons.arrow_back_ios_new,
-              onTap: () => Navigator.pop(context),
-            ),
+    return Padding(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _ControlButton(
+            icon: Icons.arrow_back_ios_new,
+            onTap: () => Navigator.pop(context),
+          ),
             if (title != null) ...[
               const SizedBox(width: 12),
               Expanded(
@@ -326,8 +330,7 @@ class _TopControls extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -414,6 +417,12 @@ class _BottomControls extends StatelessWidget {
           builder: (context, durationSnapshot) {
             final position = positionSnapshot.data?.inSeconds.toDouble() ?? 0.0;
             final duration = durationSnapshot.data?.inSeconds.toDouble() ?? 0.0;
+            
+            // Don't show controls if duration not loaded yet
+            if (duration < 1) {
+              return const SizedBox.shrink();
+            }
+            
             final remaining = duration > position ? duration - position : 0.0;
 
             return Column(
