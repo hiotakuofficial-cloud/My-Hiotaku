@@ -101,6 +101,9 @@ class _StreamPageState extends State<StreamPage> {
                   subjectId: widget.subjectId,
                   season: _videoHandler.currentSeason,
                   episode: _videoHandler.currentEpisode,
+                  availableQualities: _videoHandler.qualities
+                      .map((q) => '${q.resolution}p')
+                      .toList(),
                   onQualityChange: (quality) {
                     // Find matching quality and switch
                     final newQuality = _videoHandler.qualities.firstWhere(

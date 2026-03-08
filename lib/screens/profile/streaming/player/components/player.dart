@@ -17,6 +17,7 @@ class VideoPlayer extends StatefulWidget {
   final VoidCallback? onVideoEnd;
   final Function(String quality)? onQualityChange;
   final Function(String speed)? onSpeedChange;
+  final List<String>? availableQualities;
 
   const VideoPlayer({
     Key? key,
@@ -29,6 +30,7 @@ class VideoPlayer extends StatefulWidget {
     this.onVideoEnd,
     this.onQualityChange,
     this.onSpeedChange,
+    this.availableQualities,
   }) : super(key: key);
 
   @override
@@ -43,6 +45,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
   bool _isInitialized = false;
   bool _isFullscreen = false;
   bool _subtitlesEnabled = false;
+  bool _isBuffering = false;
   List<Map<String, dynamic>> _availableSubtitles = [];
   Timer? _saveTimer;
   Timer? _hideControlsTimer;
@@ -52,10 +55,15 @@ class _VideoPlayerState extends State<VideoPlayer> {
     super.initState();
     _player = Player();
     _controller = VideoController(_player);
+    
+    final qualities = widget.availableQualities ?? ['360p', '480p', '720p', '1080p'];
+    final defaultQuality = qualities.contains('720p') ? '720p' : qualities.first;
+    
     _settingsData = SettingsData(
       initialSpeed: '1.0x',
-      initialQuality: '720p',
+      initialQuality: defaultQuality,
       initialLanguage: 'English',
+      availableQualities: qualities,
     );
     _settingsData.addListener(_onSettingsChanged);
     _initializePlayer();
@@ -121,6 +129,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
     super.didUpdateWidget(oldWidget);
     // Reload video if URL changes (quality/episode switch)
     if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
+      setState(() => _isBuffering = true);
       _initializePlayer();
     }
   }
@@ -168,12 +177,15 @@ class _VideoPlayerState extends State<VideoPlayer> {
       // Auto-play
       await _player.play();
       
+      setState(() => _isBuffering = false);
+      
       // Load subtitles
       _loadSubtitles();
       
       // Start auto-hide timer
       _showControlsTemporarily();
     } catch (e) {
+      setState(() => _isBuffering = false);
       debugPrint('Media Kit error: $e');
     }
   }
@@ -239,9 +251,16 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: GestureDetector(
+    return PopScope(
+      canPop: !_isFullscreen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isFullscreen) {
+          _toggleFullscreen();
+        }
+      },
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: GestureDetector(
         onTap: () {
           if (_showControls) {
             setState(() => _showControls = false);
@@ -313,6 +332,14 @@ class _VideoPlayerState extends State<VideoPlayer> {
                           onPlayPause: _togglePlayPause,
                         ),
 
+                        // Buffering Indicator
+                        if (_isBuffering)
+                          const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFE5003C),
+                            ),
+                          ),
+
                         // Bottom Controls
                         _BottomControls(
                           player: _player,
@@ -328,6 +355,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

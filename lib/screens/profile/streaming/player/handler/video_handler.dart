@@ -87,12 +87,17 @@ class VideoHandler extends ChangeNotifier {
     try {
       final detail = await MovieBoxService.getDetail(id: subjectId, path: detailPath);
       
-      // Parse seasons from API (structure may vary)
-      // For now, create dummy structure - adjust based on actual API response
-      _seasons = [
-        Season(number: 1, episodes: List.generate(10, (i) => i + 1)),
-        Season(number: 2, episodes: List.generate(10, (i) => i + 1)),
-      ];
+      final resource = detail['data']?['resource'] as Map<String, dynamic>?;
+      final seasonsData = resource?['seasons'] as List? ?? [];
+      
+      _seasons = seasonsData.map((s) {
+        final seasonNum = s['se'] as int? ?? 1;
+        final maxEp = s['maxEp'] as int? ?? 0;
+        return Season(
+          number: seasonNum,
+          episodes: List.generate(maxEp, (i) => i + 1),
+        );
+      }).toList();
       
       notifyListeners();
     } catch (e) {

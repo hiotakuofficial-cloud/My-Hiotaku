@@ -28,11 +28,12 @@ class SettingsData extends ChangeNotifier {
     String initialSpeed = "1.0x",
     String initialQuality = "720p",
     String initialLanguage = "English",
+    List<String>? availableQualities,
   })  : _currentSpeed = initialSpeed,
         _currentQuality = initialQuality,
         _currentLanguage = initialLanguage,
         availableSpeeds = ["0.5x", "0.75x", "1.0x", "1.25x", "1.5x", "2.0x"],
-        availableQualities = ["360p", "480p", "720p", "1080p"],
+        availableQualities = availableQualities ?? ["360p", "480p", "720p", "1080p"],
         availableLanguages = ["English", "Hindi", "Spanish", "French"];
 
   String get currentSpeed => _currentSpeed;
