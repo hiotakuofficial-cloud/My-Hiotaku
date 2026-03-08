@@ -376,10 +376,16 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                   ),
                   const SizedBox(width: 12),
                   IconButton(
-                    icon: Icon(
-                      _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                      color: Colors.white,
-                      size: 24,
+                    icon: Image.asset(
+                      'assets/player/fullscreen.png',
+                      width: 20,
+                      height: 20,
+                      color: _isFullscreen ? const Color(0xFFE5003C) : Colors.white,
+                      errorBuilder: (_, __, ___) => Icon(
+                        _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                        color: _isFullscreen ? const Color(0xFFE5003C) : Colors.white,
+                        size: 20,
+                      ),
                     ),
                     onPressed: _toggleFullscreen,
                   ),

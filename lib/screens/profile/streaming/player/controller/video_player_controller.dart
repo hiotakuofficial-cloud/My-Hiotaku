@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../../../../../services/moviebox_service.dart';
 import 'video_lifecycle_controller.dart';
+import 'audio_handler.dart';
 
 class VideoPlayerController extends ChangeNotifier {
   final String initialVideoUrl;
@@ -24,10 +25,12 @@ class VideoPlayerController extends ChangeNotifier {
   bool isFullscreen = false;
   
   String currentVideoUrl = '';
+  String? currentAudioLanguage;
   Timer? hideTimer;
   Timer? _progressTimer;
   double _savedVolume = 1.0;
   int _lastSavedSecond = 0;
+  Function()? onEpisodeEnd;
 
   VideoPlayerController({
     required this.initialVideoUrl,
@@ -104,6 +107,21 @@ class VideoPlayerController extends ChangeNotifier {
       player.stream.completed.listen((completed) {
         if (completed) {
           _clearProgress();
+          // Auto-play next episode
+          if (onEpisodeEnd != null) {
+            onEpisodeEnd!();
+          }
+        }
+      });
+
+      // Check for episode end (last 30 seconds)
+      player.stream.position.listen((position) {
+        final duration = player.state.duration;
+        if (AudioHandler.hasEpisodeEnded(position, duration)) {
+          // Trigger auto-play next episode
+          if (onEpisodeEnd != null) {
+            onEpisodeEnd!();
+          }
         }
       });
 
@@ -207,6 +225,10 @@ class VideoPlayerController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Get preferred quality
+      final prefs = await SharedPreferences.getInstance();
+      final savedQuality = prefs.getString('preferred_quality') ?? '720';
+
       final playData = await MovieBoxService.getPlayUrls(
         id: newSubjectId,
         path: newDetailPath,
@@ -222,7 +244,7 @@ class VideoPlayerController extends ChangeNotifier {
       }
 
       final stream = streams.firstWhere(
-        (s) => s['resolutions'] == '720',
+        (s) => s['resolutions'] == savedQuality,
         orElse: () => streams.first,
       );
 
@@ -254,6 +276,19 @@ class VideoPlayerController extends ChangeNotifier {
 
     isBuffering = false;
     notifyListeners();
+  }
+
+  Future<void> changeAudioTrackWithLanguage(String newSubjectId, String newDetailPath, String language) async {
+    // Save preferred language
+    await AudioHandler.savePreferredLanguage(language);
+    currentAudioLanguage = language;
+    
+    // Change audio track
+    await changeAudioTrack(newSubjectId, newDetailPath);
+  }
+
+  Future<String?> getPreferredAudioLanguage() async {
+    return await AudioHandler.getPreferredLanguage();
   }
 
   Future<void> setSubtitle(String url, String language) async {
