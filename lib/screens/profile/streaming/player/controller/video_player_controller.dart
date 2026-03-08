@@ -3,6 +3,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'dart:async';
 import '../../../../../services/moviebox_service.dart';
+import 'video_lifecycle_controller.dart';
 
 class VideoPlayerController extends ChangeNotifier {
   final String initialVideoUrl;
@@ -14,6 +15,7 @@ class VideoPlayerController extends ChangeNotifier {
 
   late Player player;
   late VideoController videoController;
+  late VideoLifecycleController lifecycleController;
   
   bool isInitialized = false;
   bool isBuffering = true;
@@ -22,6 +24,7 @@ class VideoPlayerController extends ChangeNotifier {
   
   String currentVideoUrl = '';
   Timer? hideTimer;
+  double _savedVolume = 1.0;
 
   VideoPlayerController({
     required this.initialVideoUrl,
@@ -34,6 +37,26 @@ class VideoPlayerController extends ChangeNotifier {
     currentVideoUrl = initialVideoUrl;
     player = Player();
     videoController = VideoController(player);
+    
+    // Initialize lifecycle controller
+    lifecycleController = VideoLifecycleController(
+      onEnterPiP: () {
+        debugPrint('Entered PiP mode');
+      },
+      onPauseForCall: () {
+        // Save volume and mute for call
+        _savedVolume = player.state.volume;
+        player.setVolume(0);
+        debugPrint('Audio muted for call');
+      },
+      onResumeAfterCall: () {
+        // Restore volume after call
+        player.setVolume(_savedVolume);
+        debugPrint('Audio restored after call');
+      },
+    );
+    lifecycleController.initialize();
+    
     _initialize();
   }
 
@@ -207,6 +230,7 @@ class VideoPlayerController extends ChangeNotifier {
   @override
   void dispose() {
     hideTimer?.cancel();
+    lifecycleController.dispose();
     player.dispose();
     super.dispose();
   }

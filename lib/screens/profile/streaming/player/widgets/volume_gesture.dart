@@ -26,6 +26,7 @@ class _VolumeGestureState extends State<VolumeGesture> {
       bottom: 0,
       width: MediaQuery.of(context).size.width / 2,
       child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
         onVerticalDragUpdate: (details) async {
           if (widget.showControls) return;
           

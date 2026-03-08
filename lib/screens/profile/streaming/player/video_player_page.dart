@@ -91,6 +91,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               // Video Surface
               Center(child: Video(controller: _controller.videoController)),
 
+              // Tap to Toggle Controls (Behind gestures)
+              GestureDetector(
+                onTap: _controller.toggleControls,
+                behavior: HitTestBehavior.opaque,
+                child: Container(color: Colors.transparent),
+              ),
+
               // Brightness Gesture (Left Side) - Only in fullscreen
               if (_isFullscreen)
                 BrightnessGesture(showControls: _controller.showControls),
@@ -98,13 +105,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               // Volume Gesture (Right Side) - Only in fullscreen
               if (_isFullscreen)
                 VolumeGesture(showControls: _controller.showControls),
-
-              // Tap to Toggle Controls
-              GestureDetector(
-                onTap: _controller.toggleControls,
-                behavior: HitTestBehavior.translucent,
-                child: Container(color: Colors.transparent),
-              ),
 
               // Buffer Indicator
               Center(

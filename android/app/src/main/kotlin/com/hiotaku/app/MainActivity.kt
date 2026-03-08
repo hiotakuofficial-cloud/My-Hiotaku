@@ -67,6 +67,18 @@ class MainActivity: FlutterActivity() {
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
+                "checkPiPPermission" -> {
+                    val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                    } else {
+                        false
+                    }
+                    result.success(hasPermission)
+                }
+                "openPiPSettings" -> {
+                    openAppSettings()
+                    result.success(true)
+                }
                 "enterPiP" -> {
                     try {
                         enterPictureInPictureMode()

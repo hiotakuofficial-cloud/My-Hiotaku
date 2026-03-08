@@ -9,9 +9,24 @@ class PipButton extends StatelessWidget {
     required this.onTap,
   }) : super(key: key);
 
-  Future<void> _enterPiP() async {
+  Future<void> _enterPiP(BuildContext context) async {
     try {
       const platform = MethodChannel('com.hiotaku.app/pip');
+      final hasPermission = await platform.invokeMethod<bool>('checkPiPPermission') ?? false;
+      
+      if (!hasPermission) {
+        await platform.invokeMethod('openPiPSettings');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enable Picture-in-Picture permission'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+      
       await platform.invokeMethod('enterPiP');
     } catch (e) {
       debugPrint('PiP error: $e');
@@ -29,7 +44,7 @@ class PipButton extends StatelessWidget {
         errorBuilder: (_, __, ___) => const Icon(Icons.picture_in_picture_alt, color: Colors.white, size: 20),
       ),
       onPressed: () {
-        _enterPiP();
+        _enterPiP(context);
         onTap();
       },
     );

@@ -25,6 +25,7 @@ class _BrightnessGestureState extends State<BrightnessGesture> {
       bottom: 0,
       width: MediaQuery.of(context).size.width / 2,
       child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
         onVerticalDragUpdate: (details) async {
           if (widget.showControls) return;
           
