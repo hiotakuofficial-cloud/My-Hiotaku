@@ -5,6 +5,8 @@ import 'glassmorphic_bottom_sheet.dart';
 class SubtitleSelector extends StatefulWidget {
   final String subjectId;
   final String detailPath;
+  final int season;
+  final int episode;
   final Function(String url, String language) onSubtitleSelect;
   final VoidCallback onTap;
 
@@ -12,6 +14,8 @@ class SubtitleSelector extends StatefulWidget {
     Key? key,
     required this.subjectId,
     required this.detailPath,
+    required this.season,
+    required this.episode,
     required this.onSubtitleSelect,
     required this.onTap,
   }) : super(key: key);
@@ -33,8 +37,25 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
   Future<void> _loadSubtitles() async {
     setState(() => _loading = true);
     try {
-      final response = await MovieBoxService.getCaptions(
+      // First get episode ID from play API
+      final playData = await MovieBoxService.getPlayUrls(
         id: widget.subjectId,
+        path: widget.detailPath,
+        season: widget.season,
+        episode: widget.episode,
+      );
+      
+      final streams = playData['data']?['streams'] as List? ?? [];
+      if (streams.isEmpty) {
+        setState(() => _loading = false);
+        return;
+      }
+      
+      final episodeId = streams.first['id'] as String? ?? widget.subjectId;
+      
+      // Now get captions with episode ID
+      final response = await MovieBoxService.getCaptions(
+        id: episodeId,
         subjectId: widget.subjectId,
         path: widget.detailPath,
       );
@@ -69,8 +90,9 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
           context: context,
           title: 'Subtitles',
           options: options.cast<String>(),
-          onSelect: (selected) {
+          onSelect: (selected) async {
             if (selected == 'Off') {
+              widget.onSubtitleSelect('', 'Off');
               widget.onTap();
               return;
             }

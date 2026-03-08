@@ -39,7 +39,9 @@ class GlassmorphicBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final sheetHeight = screenHeight * 0.45;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLandscape = screenWidth > screenHeight;
+    final sheetHeight = isLandscape ? screenHeight * 0.8 : screenHeight * 0.45;
 
     return Container(
       height: sheetHeight,

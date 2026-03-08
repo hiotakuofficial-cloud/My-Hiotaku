@@ -13,6 +13,7 @@ import 'widgets/brightness_gesture.dart';
 import 'widgets/volume_gesture.dart';
 import 'widgets/quality_selector.dart';
 import 'widgets/buffer_indicator.dart';
+import 'widgets/pip_button.dart';
 import 'widgets/custom_buffering_loader.dart';
 
 class VideoPlayerPage extends StatefulWidget {
@@ -338,9 +339,25 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             // Subtitle Selector
             SubtitleSelector(
               subjectId: widget.subjectId,
-              detailPath: widget.subjectId,
-              onSubtitleSelect: (url, lang) {
-                _player.setSubtitleTrack(SubtitleTrack.uri(url));
+              detailPath: widget.detailPath,
+              season: widget.season,
+              episode: widget.episode,
+              onSubtitleSelect: (url, lang) async {
+                try {
+                  if (url.isEmpty || lang == 'Off') {
+                    // Turn off subtitles
+                    await _player.setSubtitleTrack(SubtitleTrack.no());
+                    debugPrint('Subtitles turned off');
+                  } else {
+                    // Load subtitle
+                    await _player.setSubtitleTrack(
+                      SubtitleTrack.uri(url, title: lang, language: lang),
+                    );
+                    debugPrint('Subtitle loaded: $lang from $url');
+                  }
+                } catch (e) {
+                  debugPrint('Subtitle error: $e');
+                }
               },
               onTap: _startHideTimer,
             ),
