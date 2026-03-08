@@ -32,10 +32,11 @@ class _VolumeGestureState extends State<VolumeGesture> {
           
           try {
             final currentVolume = await _volumeController.getVolume();
-            final delta = -details.delta.dy / 500;
+            final delta = -details.delta.dy / 300; // More sensitive
             final newVolume = (currentVolume + delta).clamp(0.0, 1.0);
             
-            _volumeController.setVolume(newVolume);
+            // Set volume with show system UI flag
+            _volumeController.setVolume(newVolume, showSystemUI: false);
             setState(() {
               _volume = newVolume;
               _showIndicator = true;
