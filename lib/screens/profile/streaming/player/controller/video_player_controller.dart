@@ -86,6 +86,20 @@ class VideoPlayerController extends ChangeNotifier {
         }
       });
 
+      // Listen to position and save progress every 5 seconds
+      player.stream.position.listen((position) {
+        if (position.inSeconds % 5 == 0 && position.inSeconds > 0) {
+          _saveProgress(position.inSeconds);
+        }
+      });
+
+      // Resume from saved position
+      final prefs = await SharedPreferences.getInstance();
+      final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
+      if (savedPosition > 0) {
+        await player.seek(Duration(seconds: savedPosition));
+      }
+
       await player.play();
 
       isInitialized = true;
@@ -230,6 +244,15 @@ class VideoPlayerController extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Subtitle error: $e');
+    }
+  }
+
+  Future<void> _saveProgress(int seconds) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('${subjectId}_s${season}_e${episode}_position', seconds);
+    } catch (e) {
+      debugPrint('Save progress error: $e');
     }
   }
 
