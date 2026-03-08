@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../services/moviebox_service.dart';
+import 'glassmorphic_bottom_sheet.dart';
 
 class SubtitleSelector extends StatefulWidget {
   final String subjectId;
@@ -55,63 +56,31 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
       icon: const Icon(Icons.closed_caption, color: Colors.white, size: 20),
       onPressed: () {
         if (_subtitles.isEmpty) return;
-        _showSubtitleDialog(context);
+        
+        final options = ['Off', ..._subtitles.map((s) => s['lanName'] ?? s['lan'] ?? 'Unknown')];
+        
+        GlassmorphicBottomSheet.show(
+          context: context,
+          title: 'Subtitles',
+          options: options.cast<String>(),
+          onSelect: (selected) {
+            if (selected == 'Off') {
+              widget.onTap();
+              return;
+            }
+            
+            final sub = _subtitles.firstWhere(
+              (s) => (s['lanName'] ?? s['lan']) == selected,
+              orElse: () => {},
+            );
+            
+            if (sub.isNotEmpty) {
+              widget.onSubtitleSelect(sub['url'] ?? '', selected);
+            }
+            widget.onTap();
+          },
+        );
       },
-    );
-  }
-
-  void _showSubtitleDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1E1E).withOpacity(0.95),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Subtitles',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'MazzardH',
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: const Text(
-                'Off',
-                style: TextStyle(color: Colors.white, fontFamily: 'MazzardH'),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                widget.onTap();
-              },
-            ),
-            ..._subtitles.map((sub) => ListTile(
-              title: Text(
-                sub['lanName'] ?? sub['lan'] ?? 'Unknown',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'MazzardH',
-                ),
-              ),
-              onTap: () {
-                widget.onSubtitleSelect(
-                  sub['url'] ?? '',
-                  sub['lanName'] ?? sub['lan'] ?? '',
-                );
-                Navigator.pop(context);
-                widget.onTap();
-              },
-            )),
-          ],
-        ),
-      ),
     );
   }
 }

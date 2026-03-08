@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../services/moviebox_service.dart';
+import 'glassmorphic_bottom_sheet.dart';
 
 class AudioTrackSelector extends StatefulWidget {
   final String subjectId;
@@ -54,71 +55,31 @@ class _AudioTrackSelectorState extends State<AudioTrackSelector> {
       icon: const Icon(Icons.audiotrack, color: Colors.white, size: 20),
       onPressed: () {
         if (_audioTracks.isEmpty) return;
-        _showAudioDialog(context);
-      },
-    );
-  }
-
-  void _showAudioDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1E1E).withOpacity(0.95),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Audio Track',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'MazzardH',
-              ),
-            ),
-            const SizedBox(height: 16),
-            ..._audioTracks.map((track) {
-              final lanName = track['lanName'] ?? 'Unknown';
-              final isOriginal = track['original'] == true;
-              final type = track['type'] == 0 ? 'dub' : 'sub';
-              
-              return ListTile(
-                title: Text(
-                  lanName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'MazzardH',
-                  ),
-                ),
-                trailing: isOriginal
-                    ? const Icon(Icons.check, color: Color(0xFFE5003C), size: 20)
-                    : null,
-                subtitle: Text(
-                  type.toUpperCase(),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 12,
-                    fontFamily: 'MazzardH',
-                  ),
-                ),
-                onTap: () {
-                  widget.onAudioSelect(
-                    track['subjectId'] ?? '',
-                    track['detailPath'] ?? '',
-                    lanName,
-                  );
-                  Navigator.pop(context);
-                  widget.onTap();
-                },
+        
+        final options = _audioTracks.map((track) {
+          final lanName = track['lanName'] ?? 'Unknown';
+          final type = track['type'] == 0 ? 'DUB' : 'SUB';
+          return '$lanName ($type)';
+        }).toList();
+        
+        GlassmorphicBottomSheet.show(
+          context: context,
+          title: 'Audio Track',
+          options: options.cast<String>(),
+          onSelect: (selected) {
+            final index = options.indexOf(selected);
+            if (index >= 0 && index < _audioTracks.length) {
+              final track = _audioTracks[index];
+              widget.onAudioSelect(
+                track['subjectId'] ?? '',
+                track['detailPath'] ?? '',
+                track['lanName'] ?? 'Unknown',
               );
-            }),
-          ],
-        ),
-      ),
+            }
+            widget.onTap();
+          },
+        );
+      },
     );
   }
 }
