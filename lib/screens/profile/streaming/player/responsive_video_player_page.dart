@@ -42,6 +42,7 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
 
 class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   late VideoPlayerController _controller;
+  bool _isFullscreen = false;
 
   @override
   void initState() {
@@ -59,24 +60,29 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   @override
   void dispose() {
     _controller.dispose();
+    if (_isFullscreen) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
     super.dispose();
   }
 
-  void _openFullscreen() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => VideoPlayerPage(
-          videoUrl: widget.videoUrl,
-          subjectId: widget.subjectId,
-          detailPath: widget.detailPath,
-          season: widget.season,
-          episode: widget.episode,
-          posterUrl: widget.posterUrl,
-          title: widget.title,
-          availableQualities: widget.availableQualities,
-        ),
-      ),
-    );
+  void _toggleFullscreen() async {
+    setState(() => _isFullscreen = !_isFullscreen);
+    if (_isFullscreen) {
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      await Future.delayed(const Duration(milliseconds: 100));
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersive,
+        overlays: [],
+      );
+    } else {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
   }
 
   @override
@@ -84,42 +90,80 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF0B0B0B),
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
+      appBar: _isFullscreen ? null : AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 0, // Remove AppBar height
+        toolbarHeight: 0,
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildVideoPlayer(),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 24),
-                  _buildTitle(),
-                  const SizedBox(height: 12),
-                  _buildRatingAndGenres(),
-                  const SizedBox(height: 24),
-                  _buildActionButtons(),
-                  const SizedBox(height: 24),
-                  _buildSeasonSelection(),
-                  const SizedBox(height: 24),
-                  _buildRecommendations(),
-                  const SizedBox(height: 24),
-                ],
-              ),
+      body: _isFullscreen ? _buildFullscreenPlayer() : _buildResponsiveLayout(),
+    );
+  }
+
+  Widget _buildFullscreenPlayer() {
+    return Stack(
+      children: [
+        Center(
+          child: Video(
+            controller: _controller.videoController,
+            controls: NoVideoControls,
+          ),
+        ),
+        // Tap to toggle controls
+        GestureDetector(
+          onTap: _controller.toggleControls,
+          behavior: HitTestBehavior.opaque,
+          child: Container(color: Colors.transparent),
+        ),
+        // Gestures only in fullscreen when controls hidden
+        if (!_controller.showControls)
+          BrightnessGesture(showControls: _controller.showControls),
+        if (!_controller.showControls)
+          VolumeGesture(showControls: _controller.showControls),
+        Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
+        // Controls
+        AnimatedOpacity(
+          opacity: _controller.showControls ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          child: IgnorePointer(
+            ignoring: !_controller.showControls,
+            child: _buildControls(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResponsiveLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildVideoPlayer(),
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                _buildTitle(),
+                const SizedBox(height: 12),
+                _buildRatingAndGenres(),
+                const SizedBox(height: 24),
+                _buildActionButtons(),
+                const SizedBox(height: 24),
+                _buildSeasonSelection(),
+                const SizedBox(height: 24),
+                _buildRecommendations(),
+                const SizedBox(height: 24),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -147,7 +191,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                     child: Container(color: Colors.transparent),
                   ),
                 ),
-                // No gestures in responsive mode (only in fullscreen)
+                // No gestures in responsive mode
                 Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
                 // Controls ON TOP
                 if (_controller.showControls)
@@ -331,8 +375,12 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                   ),
                   const SizedBox(width: 12),
                   IconButton(
-                    icon: const Icon(Icons.fullscreen, color: Colors.white, size: 24),
-                    onPressed: _openFullscreen,
+                    icon: Icon(
+                      _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    onPressed: _toggleFullscreen,
                   ),
                 ],
               ),
