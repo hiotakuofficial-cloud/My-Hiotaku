@@ -49,7 +49,7 @@ class _SeekbarState extends State<Seekbar> {
                       ),
                     ),
                     Text(
-                      '-${_formatTime(duration - displayPosition)}',
+                      _formatTime(duration),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 13,
