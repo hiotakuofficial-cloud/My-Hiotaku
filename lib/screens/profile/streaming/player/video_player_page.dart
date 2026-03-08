@@ -84,15 +84,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       builder: (context, child) {
         return Scaffold(
           backgroundColor: Colors.black,
-          body: Stack(
-            children: [
-              // Video Surface
-              Center(
-                child: Video(
-                  controller: _controller.videoController,
-                  controls: NoVideoControls,
+          body: SafeArea(
+            top: !_isFullscreen,
+            bottom: !_isFullscreen,
+            left: false,
+            right: false,
+            child: Stack(
+              children: [
+                // Video Surface
+                Center(
+                  child: Video(
+                    controller: _controller.videoController,
+                    controls: NoVideoControls,
+                  ),
                 ),
-              ),
 
               // Tap to Toggle Controls (Behind gestures)
               GestureDetector(
@@ -127,7 +132,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               ),
             ],
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -159,59 +165,53 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Widget _buildTopBar() {
-    return SafeArea(
-      top: !_isFullscreen, // No top padding in fullscreen
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-              onPressed: () => Navigator.pop(context),
-            ),
-            if (widget.title != null) ...[
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  widget.title!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'MazzardH',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          if (widget.title != null) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.title!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'MazzardH',
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-            const Spacer(),
-            // Subtitle Selector
-            SubtitleSelector(
-              subjectId: widget.subjectId,
-              detailPath: widget.detailPath,
-              season: widget.season,
-              episode: widget.episode,
-              onSubtitleSelect: _controller.setSubtitle,
-              onTap: _controller.startHideTimer,
-            ),
-            const SizedBox(width: 8),
-            // Audio Track Selector
-            AudioTrackSelector(
-              subjectId: widget.subjectId,
-              detailPath: widget.detailPath,
-              onAudioSelect: (id, path, lang) => _controller.changeAudioTrack(id, path),
-              onTap: _controller.startHideTimer,
-            ),
-            const SizedBox(width: 8),
-            // Quality Selector
-            QualitySelector(
-              availableQualities: widget.availableQualities,
-              onQualityChange: _controller.changeQuality,
-              onTap: _controller.startHideTimer,
             ),
           ],
-        ),
+          const Spacer(),
+          SubtitleSelector(
+            subjectId: widget.subjectId,
+            detailPath: widget.detailPath,
+            season: widget.season,
+            episode: widget.episode,
+            onSubtitleSelect: _controller.setSubtitle,
+            onTap: _controller.startHideTimer,
+          ),
+          const SizedBox(width: 8),
+          AudioTrackSelector(
+            subjectId: widget.subjectId,
+            detailPath: widget.detailPath,
+            onAudioSelect: (id, path, lang) => _controller.changeAudioTrack(id, path),
+            onTap: _controller.startHideTimer,
+          ),
+          const SizedBox(width: 8),
+          QualitySelector(
+            availableQualities: widget.availableQualities,
+            onQualityChange: _controller.changeQuality,
+            onTap: _controller.startHideTimer,
+          ),
+        ],
       ),
     );
   }
