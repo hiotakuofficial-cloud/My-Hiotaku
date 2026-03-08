@@ -23,6 +23,7 @@ class AudioTrackSelector extends StatefulWidget {
 class _AudioTrackSelectorState extends State<AudioTrackSelector> {
   List<Map<String, dynamic>> _audioTracks = [];
   bool _loading = false;
+  String? _currentAudio;
 
   @override
   void initState() {
@@ -66,10 +67,12 @@ class _AudioTrackSelectorState extends State<AudioTrackSelector> {
           context: context,
           title: 'Audio Track',
           options: options.cast<String>(),
+          currentSelection: _currentAudio,
           onSelect: (selected) {
             final index = options.indexOf(selected);
             if (index >= 0 && index < _audioTracks.length) {
               final track = _audioTracks[index];
+              setState(() => _currentAudio = selected);
               widget.onAudioSelect(
                 track['subjectId'] ?? '',
                 track['detailPath'] ?? '',

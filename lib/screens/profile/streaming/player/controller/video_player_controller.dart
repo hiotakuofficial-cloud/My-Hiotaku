@@ -87,20 +87,31 @@ class VideoPlayerController extends ChangeNotifier {
       });
 
       // Listen to position and save progress every 5 seconds
+      int lastSavedSecond = 0;
       player.stream.position.listen((position) {
-        if (position.inSeconds % 5 == 0 && position.inSeconds > 0) {
-          _saveProgress(position.inSeconds);
+        final currentSecond = position.inSeconds;
+        if (currentSecond > 0 && currentSecond - lastSavedSecond >= 5) {
+          _saveProgress(currentSecond);
+          lastSavedSecond = currentSecond;
         }
       });
 
-      // Resume from saved position
-      final prefs = await SharedPreferences.getInstance();
-      final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
-      if (savedPosition > 0) {
-        await player.seek(Duration(seconds: savedPosition));
-      }
+      // Clear progress when video completes
+      player.stream.completed.listen((completed) {
+        if (completed) {
+          _clearProgress();
+        }
+      });
 
       await player.play();
+
+      // Resume from saved position after play starts
+      final prefs = await SharedPreferences.getInstance();
+      final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
+      if (savedPosition > 10) { // Only resume if more than 10 seconds watched
+        await Future.delayed(const Duration(milliseconds: 500));
+        await player.seek(Duration(seconds: savedPosition));
+      }
 
       isInitialized = true;
       isBuffering = false;
@@ -253,6 +264,16 @@ class VideoPlayerController extends ChangeNotifier {
       await prefs.setInt('${subjectId}_s${season}_e${episode}_position', seconds);
     } catch (e) {
       debugPrint('Save progress error: $e');
+    }
+  }
+
+  Future<void> _clearProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('${subjectId}_s${season}_e${episode}_position');
+      debugPrint('Progress cleared - video completed');
+    } catch (e) {
+      debugPrint('Clear progress error: $e');
     }
   }
 

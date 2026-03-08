@@ -28,6 +28,7 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
   List<Map<String, dynamic>> _subtitles = [];
   bool _loading = false;
   bool _isSubtitleActive = false;
+  String _currentSubtitle = 'Off';
 
   @override
   void initState() {
@@ -95,9 +96,13 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
           context: context,
           title: 'Subtitles',
           options: options.cast<String>(),
+          currentSelection: _currentSubtitle,
           onSelect: (selected) async {
             if (selected == 'Off') {
-              setState(() => _isSubtitleActive = false);
+              setState(() {
+                _isSubtitleActive = false;
+                _currentSubtitle = 'Off';
+              });
               widget.onSubtitleSelect('', 'Off');
               widget.onTap();
               return;
@@ -109,7 +114,10 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
             );
             
             if (sub.isNotEmpty) {
-              setState(() => _isSubtitleActive = true);
+              setState(() {
+                _isSubtitleActive = true;
+                _currentSubtitle = selected;
+              });
               widget.onSubtitleSelect(sub['url'] ?? '', selected);
             }
             widget.onTap();
