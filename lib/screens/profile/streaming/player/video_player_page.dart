@@ -70,12 +70,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         SystemUiMode.immersiveSticky,
         overlays: [],
       );
+      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+      ));
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
     } else {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.black,
+      ));
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
   }
