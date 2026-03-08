@@ -8,19 +8,8 @@ import 'widgets/brightness_gesture.dart';
 import 'widgets/volume_gesture.dart';
 import 'widgets/quality_selector.dart';
 import 'widgets/pip_button.dart';
+import 'widgets/custom_buffering_loader.dart';
 import 'video_player_page.dart';
-
-class BufferingLoader extends StatelessWidget {
-  final bool isVisible;
-  const BufferingLoader({Key? key, required this.isVisible}) : super(key: key);
-  
-  @override
-  Widget build(BuildContext context) {
-    return isVisible 
-        ? const CircularProgressIndicator(color: Color(0xFFE5003C))
-        : const SizedBox.shrink();
-  }
-}
 
 class ResponsiveVideoPlayerPage extends StatefulWidget {
   final String videoUrl;
