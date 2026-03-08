@@ -121,7 +121,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -160,7 +160,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
             pinned: false,
             backgroundColor: const Color(0xFF121212),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
               onPressed: () {
                 if (Navigator.canPop(context)) {
                   Navigator.pop(context);

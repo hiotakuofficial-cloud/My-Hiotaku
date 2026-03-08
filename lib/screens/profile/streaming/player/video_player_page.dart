@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'controller/video_player_controller.dart';
-import 'widgets/play_pause_button.dart';
 import 'widgets/seekbar.dart';
 import 'widgets/subtitle_selector.dart';
 import 'widgets/audio_track_selector.dart';
@@ -9,7 +8,6 @@ import 'widgets/fullscreen_button.dart';
 import 'widgets/brightness_gesture.dart';
 import 'widgets/volume_gesture.dart';
 import 'widgets/quality_selector.dart';
-import 'widgets/buffer_indicator.dart';
 import 'widgets/pip_button.dart';
 import 'widgets/custom_buffering_loader.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -98,26 +96,27 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 child: Container(color: Colors.transparent),
               ),
 
-              // Brightness Gesture (Left Side) - Only in fullscreen
-              if (_isFullscreen)
+              // Brightness Gesture (Left Side) - Only in fullscreen and controls hidden
+              if (_isFullscreen && !_controller.showControls)
                 BrightnessGesture(showControls: _controller.showControls),
 
-              // Volume Gesture (Right Side) - Only in fullscreen
-              if (_isFullscreen)
+              // Volume Gesture (Right Side) - Only in fullscreen and controls hidden
+              if (_isFullscreen && !_controller.showControls)
                 VolumeGesture(showControls: _controller.showControls),
 
-              // Buffer Indicator
+              // Custom Buffering Animation
               Center(
                 child: BufferingLoader(
                   isVisible: _controller.isBuffering,
                 ),
               ),
-              
-              BufferIndicator(player: _controller.player),
 
-              // Controls Overlay
-              if (_controller.showControls)
-                _buildControls(),
+              // Controls Overlay with Animation
+              AnimatedOpacity(
+                opacity: _controller.showControls ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: _controller.showControls ? _buildControls() : const SizedBox.shrink(),
+              ),
             ],
           ),
         );
@@ -143,12 +142,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         children: [
           // Top Bar
           _buildTopBar(),
-
-          // Center Play/Pause
-          PlayPauseButton(
-            player: _controller.player,
-            onTap: _controller.startHideTimer,
-          ),
 
           // Bottom Controls
           _buildBottomControls(),
@@ -227,17 +220,93 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           const SizedBox(height: 8),
           // Bottom Buttons
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // PiP Button
-              PipButton(
-                onTap: _controller.startHideTimer,
+              // Left: Previous | Play/Pause | Next
+              Row(
+                children: [
+                  // Previous Episode Button
+                  IconButton(
+                    icon: Icon(
+                      Icons.skip_previous,
+                      color: widget.episode > 1 ? Colors.white : Colors.grey,
+                      size: 28,
+                    ),
+                    onPressed: widget.episode > 1 ? () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VideoPlayerPage(
+                            videoUrl: '', // Will be loaded by controller
+                            subjectId: widget.subjectId,
+                            detailPath: widget.detailPath,
+                            season: widget.season,
+                            episode: widget.episode - 1,
+                            title: widget.title,
+                            availableQualities: widget.availableQualities,
+                          ),
+                        ),
+                      );
+                    } : null,
+                  ),
+                  // Play/Pause Button
+                  StreamBuilder<bool>(
+                    stream: _controller.player.stream.playing,
+                    builder: (context, snapshot) {
+                      final isPlaying = snapshot.data ?? false;
+                      return IconButton(
+                        icon: Icon(
+                          isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        onPressed: () {
+                          _controller.player.playOrPause();
+                          _controller.startHideTimer();
+                        },
+                      );
+                    },
+                  ),
+                  // Next Episode Button
+                  IconButton(
+                    icon: const Icon(
+                      Icons.skip_next,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VideoPlayerPage(
+                            videoUrl: '', // Will be loaded by controller
+                            subjectId: widget.subjectId,
+                            detailPath: widget.detailPath,
+                            season: widget.season,
+                            episode: widget.episode + 1,
+                            title: widget.title,
+                            availableQualities: widget.availableQualities,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              // Fullscreen Button
-              FullscreenButton(
-                isFullscreen: _isFullscreen,
-                onToggle: _toggleFullscreen,
+              // Right: PiP | Fullscreen
+              Row(
+                children: [
+                  // PiP Button
+                  PipButton(
+                    onTap: _controller.startHideTimer,
+                  ),
+                  const SizedBox(width: 16),
+                  // Fullscreen Button
+                  FullscreenButton(
+                    isFullscreen: _isFullscreen,
+                    onToggle: _toggleFullscreen,
+                  ),
+                ],
               ),
             ],
           ),

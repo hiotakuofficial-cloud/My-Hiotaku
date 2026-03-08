@@ -27,6 +27,7 @@ class SubtitleSelector extends StatefulWidget {
 class _SubtitleSelectorState extends State<SubtitleSelector> {
   List<Map<String, dynamic>> _subtitles = [];
   bool _loading = false;
+  bool _isSubtitleActive = false;
 
   @override
   void initState() {
@@ -78,8 +79,12 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
         'assets/player/subtitles.png',
         width: 20,
         height: 20,
-        color: Colors.white,
-        errorBuilder: (_, __, ___) => const Icon(Icons.closed_caption, color: Colors.white, size: 20),
+        color: _isSubtitleActive ? const Color(0xFFE5003C) : Colors.white,
+        errorBuilder: (_, __, ___) => Icon(
+          Icons.closed_caption,
+          color: _isSubtitleActive ? const Color(0xFFE5003C) : Colors.white,
+          size: 20,
+        ),
       ),
       onPressed: () {
         if (_subtitles.isEmpty) return;
@@ -92,6 +97,7 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
           options: options.cast<String>(),
           onSelect: (selected) async {
             if (selected == 'Off') {
+              setState(() => _isSubtitleActive = false);
               widget.onSubtitleSelect('', 'Off');
               widget.onTap();
               return;
@@ -103,6 +109,7 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
             );
             
             if (sub.isNotEmpty) {
+              setState(() => _isSubtitleActive = true);
               widget.onSubtitleSelect(sub['url'] ?? '', selected);
             }
             widget.onTap();

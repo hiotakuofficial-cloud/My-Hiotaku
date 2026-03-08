@@ -19,13 +19,6 @@ class _VolumeGestureState extends State<VolumeGesture> {
   final VolumeController _volumeController = VolumeController();
 
   @override
-  void initState() {
-    super.initState();
-    // Initialize volume controller
-    _volumeController.showSystemUI = false;
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Positioned(
       right: 0,

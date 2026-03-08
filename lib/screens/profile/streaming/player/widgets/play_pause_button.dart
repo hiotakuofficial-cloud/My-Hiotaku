@@ -17,6 +17,18 @@ class PlayPauseButton extends StatelessWidget {
       stream: player.stream.playing,
       builder: (context, snapshot) {
         final isPlaying = snapshot.data ?? false;
+        
+        // Only show button when paused or buffering
+        if (isPlaying) {
+          return GestureDetector(
+            onTap: () {
+              player.playOrPause();
+              onTap();
+            },
+            child: Container(color: Colors.transparent),
+          );
+        }
+        
         return GestureDetector(
           onTap: () {
             player.playOrPause();
@@ -25,8 +37,8 @@ class PlayPauseButton extends StatelessWidget {
           child: AnimatedScale(
             scale: 1.0,
             duration: const Duration(milliseconds: 150),
-            child: Icon(
-              isPlaying ? Icons.pause : Icons.play_arrow,
+            child: const Icon(
+              Icons.play_arrow,
               color: Colors.white,
               size: 64,
             ),
