@@ -25,6 +25,7 @@ class VideoPlayerController extends ChangeNotifier {
   
   String currentVideoUrl = '';
   Timer? hideTimer;
+  Timer? _progressTimer;
   double _savedVolume = 1.0;
   int _lastSavedSecond = 0;
 
@@ -88,7 +89,7 @@ class VideoPlayerController extends ChangeNotifier {
       });
 
       // Listen to position and save progress periodically
-      Timer.periodic(const Duration(seconds: 5), (timer) {
+      _progressTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
         if (!isInitialized) {
           timer.cancel();
           return;
@@ -284,6 +285,7 @@ class VideoPlayerController extends ChangeNotifier {
   @override
   void dispose() {
     hideTimer?.cancel();
+    _progressTimer?.cancel();
     lifecycleController.dispose();
     player.dispose();
     super.dispose();
