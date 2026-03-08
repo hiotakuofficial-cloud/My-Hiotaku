@@ -115,9 +115,7 @@ class VideoPlayerController extends ChangeNotifier {
         }
       });
 
-      await player.play();
-
-      // Resume from saved position after play starts
+      // Resume from saved position BEFORE play
       final prefs = await SharedPreferences.getInstance();
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
       debugPrint('RESUME CHECK: Key=${subjectId}_s${season}_e${episode}_position, Saved=$savedPosition');
@@ -129,7 +127,6 @@ class VideoPlayerController extends ChangeNotifier {
       );
       
       if (savedPosition > 5) {
-        await Future.delayed(const Duration(milliseconds: 1000));
         await player.seek(Duration(seconds: savedPosition));
         debugPrint('RESUMED TO: $savedPosition seconds');
         Fluttertoast.showToast(
@@ -138,6 +135,8 @@ class VideoPlayerController extends ChangeNotifier {
           gravity: ToastGravity.CENTER,
         );
       }
+
+      await player.play();
 
       isInitialized = true;
       isBuffering = false;
