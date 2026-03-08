@@ -5,7 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/moviebox_service.dart';
-import 'player/video_player_page.dart';
+import 'player/responsive_video_player_page.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -440,7 +440,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => VideoPlayerPage(
+                    builder: (context) => ResponsiveVideoPlayerPage(
                       videoUrl: videoUrl,
                       subjectId: widget.subjectId,
                       detailPath: widget.detailPath ?? '',
@@ -449,6 +449,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                       title: title,
                       posterUrl: posterUrl,
                       availableQualities: availableQualities,
+                      recommendations: const [],
                     ),
                   ),
                 );
@@ -469,7 +470,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                     ),
                   )
                 : const Icon(Icons.play_arrow),
-            label: Text(_isLoadingVideo ? 'Loading...' : 'Watch Now'),
+            label: _isLoadingVideo ? const SizedBox.shrink() : const Text('Watch Now'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF3B5C),
               foregroundColor: Colors.white,
@@ -482,80 +483,9 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: _isLoadingVideo ? null : () async {
-              if (_isLoadingVideo) return;
-              
-              setState(() => _isLoadingVideo = true);
-              
-              try {
-                final playData = await MovieBoxService.getPlayUrls(
-                  id: widget.subjectId,
-                  path: widget.detailPath ?? '',
-                  season: 1,
-                  episode: 1,
-                );
-                
-                final streams = playData['data']?['streams'] as List? ?? [];
-                if (streams.isEmpty) {
-                  if (mounted) {
-                    setState(() => _isLoadingVideo = false);
-                    Fluttertoast.showToast(msg: 'No video available');
-                  }
-                  return;
-                }
-                
-                // Get saved quality preference or use minimum (360p)
-                final prefs = await SharedPreferences.getInstance();
-                final savedQuality = prefs.getString('preferred_quality') ?? '360';
-
-                final stream = streams.firstWhere(
-                  (s) => s['resolutions'] == savedQuality,
-                  orElse: () => streams.first,
-                );
-                
-                final videoUrl = stream['url'] as String? ?? '';
-                final availableQualities = streams
-                    .map((s) => '${s['resolutions']}p')
-                    .toList()
-                    .cast<String>();
-                
-                if (!mounted) return;
-                
-                setState(() => _isLoadingVideo = false);
-                
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => VideoPlayerPage(
-                      videoUrl: videoUrl,
-                      subjectId: widget.subjectId,
-                      detailPath: widget.detailPath ?? '',
-                      season: 1,
-                      episode: 1,
-                      title: title,
-                      posterUrl: posterUrl,
-                      availableQualities: availableQualities,
-                    ),
-                  ),
-                );
-              } catch (e) {
-                if (mounted) {
-                  setState(() => _isLoadingVideo = false);
-                  Fluttertoast.showToast(msg: 'Failed to load video');
-                }
-              }
-            },
-            icon: _isLoadingVideo
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Icon(Icons.live_tv),
-            label: Text(_isLoadingVideo ? 'Loading...' : 'Stream Now'),
+            onPressed: null, // Disabled
+            icon: const Icon(Icons.live_tv),
+            label: const Text('Stream Now'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1a1a1a),
               foregroundColor: Colors.white,
