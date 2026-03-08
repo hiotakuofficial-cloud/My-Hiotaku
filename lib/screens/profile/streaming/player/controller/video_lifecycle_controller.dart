@@ -29,14 +29,16 @@ class VideoLifecycleController extends WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.inactive:
-        // App going to background - enter PiP
+        // Don't auto-enter PiP (causes issues with fullscreen toggle)
+        // User can manually trigger PiP via button
         _wasPlayingBeforeInactive = true;
-        _enterPiPMode();
         break;
         
       case AppLifecycleState.paused:
-        // App fully paused (call incoming or switched app)
-        onPauseForCall();
+        // Only duck audio if was playing (likely a call)
+        if (_wasPlayingBeforeInactive) {
+          onPauseForCall();
+        }
         break;
         
       case AppLifecycleState.resumed:
