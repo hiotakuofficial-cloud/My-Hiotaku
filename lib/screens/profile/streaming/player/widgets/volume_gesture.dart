@@ -19,6 +19,13 @@ class _VolumeGestureState extends State<VolumeGesture> {
   final VolumeController _volumeController = VolumeController();
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize volume controller
+    _volumeController.showSystemUI = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Positioned(
       right: 0,
@@ -32,17 +39,28 @@ class _VolumeGestureState extends State<VolumeGesture> {
           
           try {
             final currentVolume = await _volumeController.getVolume();
-            final delta = -details.delta.dy / 300; // More sensitive
+            final delta = -details.delta.dy / 300;
             final newVolume = (currentVolume + delta).clamp(0.0, 1.0);
             
-            // Set volume with show system UI flag
-            _volumeController.setVolume(newVolume, showSystemUI: false);
-            setState(() {
-              _volume = newVolume;
-              _showIndicator = true;
-            });
+            // Only update if there's actual change
+            if ((newVolume - currentVolume).abs() > 0.01) {
+              _volumeController.setVolume(newVolume, showSystemUI: false);
+              setState(() {
+                _volume = newVolume;
+                _showIndicator = true;
+              });
+            }
           } catch (e) {
             debugPrint('Volume error: $e');
+          }
+        },
+        onVerticalDragStart: (_) async {
+          // Store initial volume
+          try {
+            final currentVolume = await _volumeController.getVolume();
+            setState(() => _volume = currentVolume);
+          } catch (e) {
+            debugPrint('Volume init error: $e');
           }
         },
         onVerticalDragEnd: (_) {
