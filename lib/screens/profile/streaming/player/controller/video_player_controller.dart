@@ -186,8 +186,9 @@ class VideoPlayerController extends ChangeNotifier {
           ),
         );
 
-        await player.seek(currentPosition);
         await player.play();
+        await Future.delayed(const Duration(milliseconds: 500));
+        await player.seek(currentPosition);
 
         currentVideoUrl = newUrl;
       }
@@ -237,8 +238,9 @@ class VideoPlayerController extends ChangeNotifier {
           ),
         );
 
-        await player.seek(currentPosition);
         await player.play();
+        await Future.delayed(const Duration(milliseconds: 500));
+        await player.seek(currentPosition);
 
         currentVideoUrl = newUrl;
       }
