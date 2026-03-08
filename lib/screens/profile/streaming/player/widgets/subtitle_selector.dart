@@ -73,19 +73,16 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        IconButton(
-          icon: Image.asset(
-            'assets/player/subtitles.png',
-            width: 20,
-            height: 20,
-            color: Colors.white,
-            errorBuilder: (_, __, ___) => const Icon(Icons.closed_caption, color: Colors.white, size: 20),
-          ),
-          onPressed: () {
-            if (_subtitles.isEmpty) return;
+    return IconButton(
+      icon: Image.asset(
+        'assets/player/subtitles.png',
+        width: 20,
+        height: 20,
+        color: Colors.white,
+        errorBuilder: (_, __, ___) => const Icon(Icons.closed_caption, color: Colors.white, size: 20),
+      ),
+      onPressed: () {
+        if (_subtitles.isEmpty) return;
         
         final options = ['Off', ..._subtitles.map((s) => s['lanName'] ?? s['lan'] ?? 'Unknown')];
         
@@ -110,35 +107,8 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
             }
             widget.onTap();
           },
-        ),
-        // Badge showing count
-        if (_subtitles.isNotEmpty)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE5003C),
-                shape: BoxShape.circle,
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
-              child: Text(
-                '${_subtitles.length}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'MazzardH',
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-      ],
+        );
+      },
     );
   }
 }

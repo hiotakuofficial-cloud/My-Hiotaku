@@ -51,13 +51,10 @@ class _AudioTrackSelectorState extends State<AudioTrackSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.audiotrack, color: Colors.white, size: 20),
-          onPressed: () {
-            if (_audioTracks.isEmpty) return;
+    return IconButton(
+      icon: const Icon(Icons.audiotrack, color: Colors.white, size: 20),
+      onPressed: () {
+        if (_audioTracks.isEmpty) return;
         
         final options = _audioTracks.map((track) {
           final lanName = track['lanName'] ?? 'Unknown';
@@ -81,35 +78,8 @@ class _AudioTrackSelectorState extends State<AudioTrackSelector> {
             }
             widget.onTap();
           },
-        ),
-        // Badge showing count
-        if (_audioTracks.isNotEmpty)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE5003C),
-                shape: BoxShape.circle,
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
-              child: Text(
-                '${_audioTracks.length}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'MazzardH',
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-      ],
+        );
+      },
     );
   }
 }
