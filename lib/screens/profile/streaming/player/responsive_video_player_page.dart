@@ -141,6 +141,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: MediaQuery.of(context).padding.top), // Status bar spacing
         _buildVideoPlayer(),
         Expanded(
           child: SingleChildScrollView(
