@@ -134,21 +134,12 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
             return Stack(
               children: [
                 Positioned.fill(
-                  child: Video(controller: _controller.videoController),
+                  child: Video(
+                    controller: _controller.videoController,
+                    controls: NoVideoControls,
+                  ),
                 ),
-                if (!_controller.showControls)
-                  Positioned.fill(
-                    child: BrightnessGesture(showControls: _controller.showControls),
-                  ),
-                if (!_controller.showControls)
-                  Positioned.fill(
-                    child: VolumeGesture(showControls: _controller.showControls),
-                  ),
-                Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
-                if (_controller.showControls)
-                  Positioned.fill(
-                    child: _buildControls(),
-                  ),
+                // Tap detector BEHIND controls
                 Positioned.fill(
                   child: GestureDetector(
                     onTap: _controller.toggleControls,
@@ -156,6 +147,13 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                     child: Container(color: Colors.transparent),
                   ),
                 ),
+                // No gestures in responsive mode (only in fullscreen)
+                Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
+                // Controls ON TOP
+                if (_controller.showControls)
+                  Positioned.fill(
+                    child: _buildControls(),
+                  ),
               ],
             );
           },

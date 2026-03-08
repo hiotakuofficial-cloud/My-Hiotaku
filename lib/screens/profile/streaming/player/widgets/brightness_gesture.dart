@@ -44,36 +44,40 @@ class _BrightnessGestureState extends State<BrightnessGesture> {
           }
         },
         onVerticalDragEnd: (_) {
-          Future.delayed(const Duration(seconds: 1), () {
+          Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) setState(() => _showIndicator = false);
           });
         },
-        child: _showIndicator && _brightness != null
-            ? Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.brightness_6, color: Colors.white, size: 32),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${(_brightness! * 100).toInt()}%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontFamily: 'MazzardH',
+        child: AnimatedOpacity(
+          opacity: _showIndicator && _brightness != null ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: _brightness != null
+              ? Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.brightness_6, color: Colors.white, size: 32),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${(_brightness! * 100).toInt()}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontFamily: 'MazzardH',
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              )
-            : const SizedBox.shrink(),
+                )
+              : const SizedBox.shrink(),
+        ),
       ),
     );
   }

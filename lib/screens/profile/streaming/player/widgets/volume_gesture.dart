@@ -55,40 +55,44 @@ class _VolumeGestureState extends State<VolumeGesture> {
           }
         },
         onVerticalDragEnd: (_) {
-          Future.delayed(const Duration(seconds: 1), () {
+          Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) setState(() => _showIndicator = false);
           });
         },
-        child: _showIndicator && _volume != null
-            ? Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _volume! > 0 ? Icons.volume_up : Icons.volume_off,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${(_volume! * 100).toInt()}%',
-                        style: const TextStyle(
+        child: AnimatedOpacity(
+          opacity: _showIndicator && _volume != null ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: _volume != null
+              ? Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _volume! > 0 ? Icons.volume_up : Icons.volume_off,
                           color: Colors.white,
-                          fontSize: 16,
-                          fontFamily: 'MazzardH',
+                          size: 32,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          '${(_volume! * 100).toInt()}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontFamily: 'MazzardH',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              )
-            : const SizedBox.shrink(),
+                )
+              : const SizedBox.shrink(),
+        ),
       ),
     );
   }
