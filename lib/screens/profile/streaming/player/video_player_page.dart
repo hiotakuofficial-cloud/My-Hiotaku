@@ -13,7 +13,7 @@ import 'widgets/brightness_gesture.dart';
 import 'widgets/volume_gesture.dart';
 import 'widgets/quality_selector.dart';
 import 'widgets/buffer_indicator.dart';
-import 'widgets/pip_button.dart';
+import 'widgets/custom_buffering_loader.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final String videoUrl;
@@ -260,13 +260,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           ),
 
           // Buffer Indicator
-          if (_isBuffering)
-            const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFE5003C),
-                strokeWidth: 3,
-              ),
+          Center(
+            child: BufferingLoader(
+              isVisible: _isBuffering,
             ),
+          ),
           
           BufferIndicator(player: _player),
 

@@ -68,8 +68,8 @@ class MainActivity: FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "enterPiP" -> {
-                    enterPictureInPictureMode()
-                    result.success(true)
+                    val success = enterPictureInPictureMode()
+                    result.success(success)
                 }
                 else -> {
                     result.notImplemented()
@@ -78,12 +78,14 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    private fun enterPictureInPictureMode() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    override fun enterPictureInPictureMode(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val params = PictureInPictureParams.Builder()
                 .setAspectRatio(Rational(16, 9))
                 .build()
-            enterPictureInPictureMode(params)
+            super.enterPictureInPictureMode(params)
+        } else {
+            false
         }
     }
 
