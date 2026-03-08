@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:async';
 import '../../../../../services/moviebox_service.dart';
 import 'video_lifecycle_controller.dart';
@@ -98,6 +99,12 @@ class VideoPlayerController extends ChangeNotifier {
         if (currentSecond > 0) {
           _saveProgress(currentSecond);
           debugPrint('SAVED: $currentSecond seconds');
+          // Show toast
+          Fluttertoast.showToast(
+            msg: 'Saved: $currentSecond sec',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+          );
         }
       });
 
@@ -115,10 +122,21 @@ class VideoPlayerController extends ChangeNotifier {
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
       debugPrint('RESUME CHECK: Key=${subjectId}_s${season}_e${episode}_position, Saved=$savedPosition');
       
+      Fluttertoast.showToast(
+        msg: 'Resume check: $savedPosition sec',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+      );
+      
       if (savedPosition > 5) {
         await Future.delayed(const Duration(milliseconds: 1000));
         await player.seek(Duration(seconds: savedPosition));
         debugPrint('RESUMED TO: $savedPosition seconds');
+        Fluttertoast.showToast(
+          msg: 'Resumed to: $savedPosition sec',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+        );
       }
 
       isInitialized = true;
