@@ -79,6 +79,7 @@ class VideoPlayerController extends ChangeNotifier {
       });
 
       player.stream.playing.listen((playing) {
+        notifyListeners(); // Notify UI to update play/pause button
         if (playing && showControls) {
           startHideTimer();
         }

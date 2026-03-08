@@ -255,10 +255,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     } : null,
                   ),
                   // Play/Pause Button
-                  StreamBuilder<bool>(
-                    stream: _controller.player.stream.playing,
-                    builder: (context, snapshot) {
-                      final isPlaying = snapshot.data ?? false;
+                  ListenableBuilder(
+                    listenable: _controller,
+                    builder: (context, child) {
+                      final isPlaying = _controller.player.state.playing;
                       return IconButton(
                         icon: Icon(
                           isPlaying ? Icons.pause : Icons.play_arrow,
