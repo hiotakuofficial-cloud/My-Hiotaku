@@ -5,6 +5,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'dart:async';
 import 'last_watch.dart';
 import 'options_setting.dart';
+import '../../../../../services/moviebox_service.dart';
 
 class VideoPlayer extends StatefulWidget {
   final String videoUrl;
@@ -41,7 +42,10 @@ class _VideoPlayerState extends State<VideoPlayer> {
   bool _showControls = true;
   bool _isInitialized = false;
   bool _isFullscreen = false;
+  bool _subtitlesEnabled = false;
+  List<Map<String, dynamic>> _availableSubtitles = [];
   Timer? _saveTimer;
+  Timer? _hideControlsTimer;
 
   @override
   void initState() {
@@ -64,8 +68,18 @@ class _VideoPlayerState extends State<VideoPlayer> {
     _player.setRate(speed);
     widget.onSpeedChange?.call(_settingsData.currentSpeed);
     
-    // Handle quality change
+    // Handle quality change - notify parent to switch video URL
     widget.onQualityChange?.call(_settingsData.currentQuality);
+  }
+
+  void _showControlsTemporarily() {
+    setState(() => _showControls = true);
+    _hideControlsTimer?.cancel();
+    _hideControlsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _player.state.playing) {
+        setState(() => _showControls = false);
+      }
+    });
   }
 
   void _toggleFullscreen() async {
@@ -105,7 +119,8 @@ class _VideoPlayerState extends State<VideoPlayer> {
   @override
   void didUpdateWidget(VideoPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoUrl != widget.videoUrl) {
+    // Reload video if URL changes (quality/episode switch)
+    if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
       _initializePlayer();
     }
   }
@@ -152,9 +167,43 @@ class _VideoPlayerState extends State<VideoPlayer> {
       
       // Auto-play
       await _player.play();
+      
+      // Load subtitles
+      _loadSubtitles();
+      
+      // Start auto-hide timer
+      _showControlsTemporarily();
     } catch (e) {
       debugPrint('Media Kit error: $e');
     }
+  }
+
+  Future<void> _loadSubtitles() async {
+    try {
+      final captions = await MovieBoxService.getCaptions(
+        id: widget.subjectId,
+        subjectId: widget.subjectId,
+        path: widget.subjectId,
+      );
+      
+      final subtitles = captions['data']?['subtitles'] as List? ?? [];
+      setState(() {
+        _availableSubtitles = subtitles.cast<Map<String, dynamic>>();
+      });
+    } catch (e) {
+      debugPrint('Subtitle load error: $e');
+    }
+  }
+
+  void _toggleSubtitles() {
+    setState(() => _subtitlesEnabled = !_subtitlesEnabled);
+    // TODO: Apply subtitle track to player
+    _showControlsTemporarily();
+  }
+
+  void _togglePiP() async {
+    // TODO: Implement PiP mode
+    _showControlsTemporarily();
   }
 
   void _startSaveTimer() {
@@ -174,6 +223,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _hideControlsTimer?.cancel();
     _settingsData.removeListener(_onSettingsChanged);
     _settingsData.dispose();
     _player.dispose();
@@ -193,7 +243,12 @@ class _VideoPlayerState extends State<VideoPlayer> {
       aspectRatio: 16 / 9,
       child: GestureDetector(
         onTap: () {
-          setState(() => _showControls = !_showControls);
+          if (_showControls) {
+            setState(() => _showControls = false);
+            _hideControlsTimer?.cancel();
+          } else {
+            _showControlsTemporarily();
+          }
         },
         child: Container(
           color: Colors.black,
@@ -249,6 +304,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
                         _TopControls(
                           title: widget.title,
                           onSettingsTap: () => VideoSettingsDialog.show(context, _settingsData),
+                          onSubtitleTap: _toggleSubtitles,
                         ),
 
                         // Center Play/Pause
@@ -263,6 +319,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
                           onPlayPause: _togglePlayPause,
                           isFullscreen: _isFullscreen,
                           onFullscreenToggle: _toggleFullscreen,
+                          onPiPToggle: _togglePiP,
                         ),
                       ],
                     );
@@ -280,10 +337,12 @@ class _VideoPlayerState extends State<VideoPlayer> {
 class _TopControls extends StatelessWidget {
   final String? title;
   final VoidCallback onSettingsTap;
+  final VoidCallback onSubtitleTap;
 
   const _TopControls({
     this.title,
     required this.onSettingsTap,
+    required this.onSubtitleTap,
   });
 
   @override
@@ -321,7 +380,7 @@ class _TopControls extends StatelessWidget {
             const Spacer(),
             _ControlButton(
               icon: Icons.closed_caption_outlined,
-              onTap: () {},
+              onTap: onSubtitleTap,
             ),
             const SizedBox(width: 12),
             _ControlButton(
@@ -399,12 +458,14 @@ class _BottomControls extends StatelessWidget {
   final VoidCallback onPlayPause;
   final bool isFullscreen;
   final VoidCallback onFullscreenToggle;
+  final VoidCallback onPiPToggle;
 
   const _BottomControls({
     required this.player,
     required this.onPlayPause,
     required this.isFullscreen,
     required this.onFullscreenToggle,
+    required this.onPiPToggle,
   });
 
   @override
@@ -484,7 +545,7 @@ class _BottomControls extends StatelessWidget {
                       const SizedBox(width: 16),
                       _ControlButton(
                         iconPath: 'assets/player/pip.png',
-                        onTap: () {},
+                        onTap: onPiPToggle,
                       ),
                       const SizedBox(width: 16),
                       GestureDetector(

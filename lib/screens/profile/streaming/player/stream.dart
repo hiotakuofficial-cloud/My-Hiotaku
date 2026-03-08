@@ -101,6 +101,17 @@ class _StreamPageState extends State<StreamPage> {
                   subjectId: widget.subjectId,
                   season: _videoHandler.currentSeason,
                   episode: _videoHandler.currentEpisode,
+                  onQualityChange: (quality) {
+                    // Find matching quality and switch
+                    final newQuality = _videoHandler.qualities.firstWhere(
+                      (q) => q.resolution == quality.replaceAll('p', ''),
+                      orElse: () => _videoHandler.qualities.first,
+                    );
+                    _videoHandler.switchQuality(newQuality);
+                  },
+                  onSpeedChange: (speed) {
+                    // Speed is handled in player directly
+                  },
                 ),
               ),
 
