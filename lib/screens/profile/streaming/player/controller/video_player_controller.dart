@@ -97,6 +97,7 @@ class VideoPlayerController extends ChangeNotifier {
         final currentSecond = player.state.position.inSeconds;
         if (currentSecond > 0) {
           _saveProgress(currentSecond);
+          debugPrint('SAVED: $currentSecond seconds');
         }
       });
 
@@ -112,10 +113,12 @@ class VideoPlayerController extends ChangeNotifier {
       // Resume from saved position after play starts
       final prefs = await SharedPreferences.getInstance();
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
+      debugPrint('RESUME CHECK: Key=${subjectId}_s${season}_e${episode}_position, Saved=$savedPosition');
       
       if (savedPosition > 5) {
         await Future.delayed(const Duration(milliseconds: 1000));
         await player.seek(Duration(seconds: savedPosition));
+        debugPrint('RESUMED TO: $savedPosition seconds');
       }
 
       isInitialized = true;
