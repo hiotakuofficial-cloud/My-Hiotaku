@@ -13,10 +13,16 @@ class FullscreenButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(
-        isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+      icon: Image.asset(
+        isFullscreen ? 'assets/player/fullscreen.png' : 'assets/player/fullscreen.png',
+        width: 20,
+        height: 20,
         color: isFullscreen ? const Color(0xFFE5003C) : Colors.white,
-        size: 20,
+        errorBuilder: (_, __, ___) => Icon(
+          isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+          color: isFullscreen ? const Color(0xFFE5003C) : Colors.white,
+          size: 20,
+        ),
       ),
       onPressed: onToggle,
     );

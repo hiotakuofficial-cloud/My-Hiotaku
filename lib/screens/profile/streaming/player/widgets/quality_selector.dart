@@ -16,7 +16,13 @@ class QualitySelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.settings, color: Colors.white, size: 20),
+      icon: Image.asset(
+        'assets/player/player_settings.png',
+        width: 20,
+        height: 20,
+        color: Colors.white,
+        errorBuilder: (_, __, ___) => const Icon(Icons.settings, color: Colors.white, size: 20),
+      ),
       onPressed: () {
         GlassmorphicBottomSheet.show(
           context: context,

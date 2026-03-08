@@ -14,7 +14,13 @@ class PipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.picture_in_picture_alt, color: Colors.white, size: 20),
+      icon: Image.asset(
+        'assets/player/pip.png',
+        width: 20,
+        height: 20,
+        color: Colors.white,
+        errorBuilder: (_, __, ___) => const Icon(Icons.picture_in_picture_alt, color: Colors.white, size: 20),
+      ),
       onPressed: () {
         // TODO: Implement PiP mode
         onTap();

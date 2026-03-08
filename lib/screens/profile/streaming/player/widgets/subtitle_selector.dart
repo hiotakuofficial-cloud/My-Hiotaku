@@ -53,7 +53,13 @@ class _SubtitleSelectorState extends State<SubtitleSelector> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.closed_caption, color: Colors.white, size: 20),
+      icon: Image.asset(
+        'assets/player/subtitles.png',
+        width: 20,
+        height: 20,
+        color: Colors.white,
+        errorBuilder: (_, __, ___) => const Icon(Icons.closed_caption, color: Colors.white, size: 20),
+      ),
       onPressed: () {
         if (_subtitles.isEmpty) return;
         
