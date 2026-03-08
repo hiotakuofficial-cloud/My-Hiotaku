@@ -66,24 +66,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _toggleFullscreen() async {
     setState(() => _isFullscreen = !_isFullscreen);
     if (_isFullscreen) {
-      await SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.immersiveSticky,
-        overlays: [],
-      );
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: Colors.transparent,
-      ));
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
+      await Future.delayed(const Duration(milliseconds: 100));
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersive,
+        overlays: [],
+      );
     } else {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: Colors.black,
-      ));
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
   }
