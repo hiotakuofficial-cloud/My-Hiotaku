@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../../services/moviebox_service.dart';
-import 'player/stream.dart';
+import 'player/video_player_page.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -394,21 +394,53 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StreamPage(
-                    subjectId: widget.subjectId,
-                    detailPath: widget.detailPath ?? '',
-                    title: title,
-                    rating: rating,
-                    genres: genres,
-                    posterUrl: posterUrl,
-                    recommendations: [],
+            onPressed: () async {
+              // Fetch video URL
+              try {
+                final playData = await MovieBoxService.getPlayUrls(
+                  id: widget.subjectId,
+                  path: widget.detailPath ?? '',
+                  season: 1,
+                  episode: 1,
+                );
+                
+                final streams = playData['data']?['streams'] as List? ?? [];
+                if (streams.isEmpty) {
+                  Fluttertoast.showToast(msg: 'No video available');
+                  return;
+                }
+                
+                // Get 720p or first available
+                final stream = streams.firstWhere(
+                  (s) => s['resolutions'] == '720',
+                  orElse: () => streams.first,
+                );
+                
+                final videoUrl = stream['url'] as String? ?? '';
+                final availableQualities = streams
+                    .map((s) => '${s['resolutions']}p')
+                    .toList()
+                    .cast<String>();
+                
+                if (!mounted) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VideoPlayerPage(
+                      videoUrl: videoUrl,
+                      subjectId: widget.subjectId,
+                      detailPath: widget.detailPath ?? '',
+                      season: 1,
+                      episode: 1,
+                      title: title,
+                      posterUrl: posterUrl,
+                      availableQualities: availableQualities,
+                    ),
                   ),
-                ),
-              );
+                );
+              } catch (e) {
+                Fluttertoast.showToast(msg: 'Failed to load video');
+              }
             },
             icon: const Icon(Icons.play_arrow),
             label: const Text('Watch Now'),
@@ -424,21 +456,52 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StreamPage(
-                    subjectId: widget.subjectId,
-                    detailPath: widget.detailPath ?? '',
-                    title: title,
-                    rating: rating,
-                    genres: genres,
-                    posterUrl: posterUrl,
-                    recommendations: [],
+            onPressed: () async {
+              // Same as Watch Now
+              try {
+                final playData = await MovieBoxService.getPlayUrls(
+                  id: widget.subjectId,
+                  path: widget.detailPath ?? '',
+                  season: 1,
+                  episode: 1,
+                );
+                
+                final streams = playData['data']?['streams'] as List? ?? [];
+                if (streams.isEmpty) {
+                  Fluttertoast.showToast(msg: 'No video available');
+                  return;
+                }
+                
+                final stream = streams.firstWhere(
+                  (s) => s['resolutions'] == '720',
+                  orElse: () => streams.first,
+                );
+                
+                final videoUrl = stream['url'] as String? ?? '';
+                final availableQualities = streams
+                    .map((s) => '${s['resolutions']}p')
+                    .toList()
+                    .cast<String>();
+                
+                if (!mounted) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VideoPlayerPage(
+                      videoUrl: videoUrl,
+                      subjectId: widget.subjectId,
+                      detailPath: widget.detailPath ?? '',
+                      season: 1,
+                      episode: 1,
+                      title: title,
+                      posterUrl: posterUrl,
+                      availableQualities: availableQualities,
+                    ),
                   ),
-                ),
-              );
+                );
+              } catch (e) {
+                Fluttertoast.showToast(msg: 'Failed to load video');
+              }
             },
             icon: const Icon(Icons.live_tv),
             label: const Text('Stream Now'),
