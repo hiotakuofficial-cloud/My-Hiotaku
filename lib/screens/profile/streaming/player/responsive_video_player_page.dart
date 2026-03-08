@@ -194,11 +194,15 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                 ),
                 // No gestures in responsive mode
                 Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
-                // Controls ON TOP
-                if (_controller.showControls)
-                  Positioned.fill(
+                // Controls with fade animation
+                AnimatedOpacity(
+                  opacity: _controller.showControls ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: IgnorePointer(
+                    ignoring: !_controller.showControls,
                     child: _buildControls(),
                   ),
+                ),
               ],
             );
           },
