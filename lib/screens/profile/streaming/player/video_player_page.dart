@@ -160,6 +160,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   Widget _buildTopBar() {
     return SafeArea(
+      top: !_isFullscreen, // No top padding in fullscreen
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(

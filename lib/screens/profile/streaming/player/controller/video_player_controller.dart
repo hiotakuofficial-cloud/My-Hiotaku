@@ -26,6 +26,7 @@ class VideoPlayerController extends ChangeNotifier {
   String currentVideoUrl = '';
   Timer? hideTimer;
   double _savedVolume = 1.0;
+  int _lastSavedSecond = 0;
 
   VideoPlayerController({
     required this.initialVideoUrl,
@@ -87,12 +88,11 @@ class VideoPlayerController extends ChangeNotifier {
       });
 
       // Listen to position and save progress every 5 seconds
-      int lastSavedSecond = 0;
       player.stream.position.listen((position) {
         final currentSecond = position.inSeconds;
-        if (currentSecond > 0 && currentSecond - lastSavedSecond >= 5) {
+        if (currentSecond > 0 && currentSecond - _lastSavedSecond >= 5) {
           _saveProgress(currentSecond);
-          lastSavedSecond = currentSecond;
+          _lastSavedSecond = currentSecond;
         }
       });
 
@@ -108,9 +108,14 @@ class VideoPlayerController extends ChangeNotifier {
       // Resume from saved position after play starts
       final prefs = await SharedPreferences.getInstance();
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
+      debugPrint('Resume check - Key: ${subjectId}_s${season}_e${episode}_position, Saved: $savedPosition seconds');
+      
       if (savedPosition > 10) { // Only resume if more than 10 seconds watched
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 1000)); // Wait 1 second for player to be ready
         await player.seek(Duration(seconds: savedPosition));
+        debugPrint('Resumed from $savedPosition seconds');
+      } else {
+        debugPrint('Not resuming - position too low: $savedPosition seconds');
       }
 
       isInitialized = true;
@@ -261,7 +266,9 @@ class VideoPlayerController extends ChangeNotifier {
   Future<void> _saveProgress(int seconds) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('${subjectId}_s${season}_e${episode}_position', seconds);
+      final key = '${subjectId}_s${season}_e${episode}_position';
+      await prefs.setInt(key, seconds);
+      debugPrint('Progress saved - Key: $key, Position: $seconds seconds');
     } catch (e) {
       debugPrint('Save progress error: $e');
     }

@@ -17,6 +17,7 @@ class _VolumeGestureState extends State<VolumeGesture> {
   double? _volume;
   bool _showIndicator = false;
   final VolumeController _volumeController = VolumeController();
+  double _dragStartVolume = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -27,33 +28,30 @@ class _VolumeGestureState extends State<VolumeGesture> {
       width: MediaQuery.of(context).size.width / 2,
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onVerticalDragUpdate: (details) async {
+        onVerticalDragStart: (details) async {
+          // Get initial volume once at start
+          try {
+            _dragStartVolume = await _volumeController.getVolume();
+            setState(() {
+              _volume = _dragStartVolume;
+              _showIndicator = true;
+            });
+          } catch (e) {
+            debugPrint('Volume init error: $e');
+          }
+        },
+        onVerticalDragUpdate: (details) {
           if (widget.showControls) return;
           
           try {
-            final currentVolume = await _volumeController.getVolume();
+            // Calculate new volume based on drag distance from start
             final delta = -details.delta.dy / 300;
-            final newVolume = (currentVolume + delta).clamp(0.0, 1.0);
+            final newVolume = (_volume! + delta).clamp(0.0, 1.0);
             
-            // Only update if there's actual change
-            if ((newVolume - currentVolume).abs() > 0.01) {
-              _volumeController.setVolume(newVolume, showSystemUI: false);
-              setState(() {
-                _volume = newVolume;
-                _showIndicator = true;
-              });
-            }
+            _volumeController.setVolume(newVolume, showSystemUI: false);
+            setState(() => _volume = newVolume);
           } catch (e) {
             debugPrint('Volume error: $e');
-          }
-        },
-        onVerticalDragStart: (_) async {
-          // Store initial volume
-          try {
-            final currentVolume = await _volumeController.getVolume();
-            setState(() => _volume = currentVolume);
-          } catch (e) {
-            debugPrint('Volume init error: $e');
           }
         },
         onVerticalDragEnd: (_) {
