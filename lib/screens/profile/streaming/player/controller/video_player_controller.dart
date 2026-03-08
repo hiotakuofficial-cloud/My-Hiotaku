@@ -87,12 +87,15 @@ class VideoPlayerController extends ChangeNotifier {
         }
       });
 
-      // Listen to position and save progress every 5 seconds
-      player.stream.position.listen((position) {
-        final currentSecond = position.inSeconds;
-        if (currentSecond > 0 && currentSecond - _lastSavedSecond >= 5) {
+      // Listen to position and save progress periodically
+      Timer.periodic(const Duration(seconds: 5), (timer) {
+        if (!isInitialized) {
+          timer.cancel();
+          return;
+        }
+        final currentSecond = player.state.position.inSeconds;
+        if (currentSecond > 0) {
           _saveProgress(currentSecond);
-          _lastSavedSecond = currentSecond;
         }
       });
 
@@ -108,14 +111,10 @@ class VideoPlayerController extends ChangeNotifier {
       // Resume from saved position after play starts
       final prefs = await SharedPreferences.getInstance();
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
-      debugPrint('Resume check - Key: ${subjectId}_s${season}_e${episode}_position, Saved: $savedPosition seconds');
       
-      if (savedPosition > 10) { // Only resume if more than 10 seconds watched
-        await Future.delayed(const Duration(milliseconds: 1000)); // Wait 1 second for player to be ready
+      if (savedPosition > 5) {
+        await Future.delayed(const Duration(milliseconds: 1000));
         await player.seek(Duration(seconds: savedPosition));
-        debugPrint('Resumed from $savedPosition seconds');
-      } else {
-        debugPrint('Not resuming - position too low: $savedPosition seconds');
       }
 
       isInitialized = true;
@@ -268,7 +267,6 @@ class VideoPlayerController extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final key = '${subjectId}_s${season}_e${episode}_position';
       await prefs.setInt(key, seconds);
-      debugPrint('Progress saved - Key: $key, Position: $seconds seconds');
     } catch (e) {
       debugPrint('Save progress error: $e');
     }
@@ -278,7 +276,6 @@ class VideoPlayerController extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('${subjectId}_s${season}_e${episode}_position');
-      debugPrint('Progress cleared - video completed');
     } catch (e) {
       debugPrint('Clear progress error: $e');
     }
