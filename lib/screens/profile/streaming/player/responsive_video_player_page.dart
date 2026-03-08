@@ -8,8 +8,19 @@ import 'widgets/brightness_gesture.dart';
 import 'widgets/volume_gesture.dart';
 import 'widgets/quality_selector.dart';
 import 'widgets/pip_button.dart';
-import 'widgets/custom_buffering_loader.dart';
 import 'video_player_page.dart';
+
+class BufferingLoader extends StatelessWidget {
+  final bool isVisible;
+  const BufferingLoader({Key? key, required this.isVisible}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return isVisible 
+        ? const CircularProgressIndicator(color: Color(0xFFE5003C))
+        : const SizedBox.shrink();
+  }
+}
 
 class ResponsiveVideoPlayerPage extends StatefulWidget {
   final String videoUrl;
@@ -130,10 +141,9 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
             return Stack(
               children: [
                 Video(controller: _controller.videoController),
-                BrightnessGesture(controller: _controller),
-                VolumeGesture(controller: _controller),
-                if (_controller.isBuffering)
-                  const Center(child: CustomBufferingLoader()),
+                BrightnessGesture(showControls: _controller.showControls),
+                VolumeGesture(showControls: _controller.showControls),
+                Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
                 AnimatedOpacity(
                   opacity: _controller.showControls ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 300),
@@ -182,13 +192,31 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          QualitySelector(controller: _controller),
+          QualitySelector(
+            availableQualities: widget.availableQualities,
+            onQualityChange: _controller.changeQuality,
+            onTap: _controller.startHideTimer,
+          ),
           const SizedBox(width: 12),
-          AudioTrackSelector(controller: _controller),
+          AudioTrackSelector(
+            subjectId: widget.subjectId,
+            detailPath: widget.detailPath,
+            onAudioSelect: (id, path, lang) => _controller.changeAudioTrack(id, path),
+            onTap: _controller.startHideTimer,
+          ),
           const SizedBox(width: 12),
-          SubtitleSelector(controller: _controller),
+          SubtitleSelector(
+            subjectId: widget.subjectId,
+            detailPath: widget.detailPath,
+            season: widget.season,
+            episode: widget.episode,
+            onSubtitleSelect: _controller.setSubtitle,
+            onTap: _controller.startHideTimer,
+          ),
           const SizedBox(width: 12),
-          PipButton(controller: _controller),
+          PipButton(
+            onTap: _controller.startHideTimer,
+          ),
         ],
       ),
     );
@@ -199,12 +227,36 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon: const Icon(Icons.skip_previous, color: Colors.white, size: 40),
-          onPressed: _controller.canGoPrevious ? _controller.previousEpisode : null,
+          icon: Icon(
+            Icons.skip_previous,
+            color: widget.episode > 1 ? Colors.white : Colors.grey,
+            size: 40,
+          ),
+          onPressed: widget.episode > 1 ? () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResponsiveVideoPlayerPage(
+                  videoUrl: '',
+                  subjectId: widget.subjectId,
+                  detailPath: widget.detailPath,
+                  season: widget.season,
+                  episode: widget.episode - 1,
+                  title: widget.title,
+                  posterUrl: widget.posterUrl,
+                  availableQualities: widget.availableQualities,
+                  recommendations: widget.recommendations,
+                ),
+              ),
+            );
+          } : null,
         ),
         const SizedBox(width: 40),
         GestureDetector(
-          onTap: _controller.togglePlayPause,
+          onTap: () {
+            _controller.player.playOrPause();
+            _controller.startHideTimer();
+          },
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -212,7 +264,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              _controller.isPlaying ? Icons.pause : Icons.play_arrow,
+              _controller.player.state.playing ? Icons.pause : Icons.play_arrow,
               color: Colors.white,
               size: 40,
             ),
@@ -221,7 +273,24 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
         const SizedBox(width: 40),
         IconButton(
           icon: const Icon(Icons.skip_next, color: Colors.white, size: 40),
-          onPressed: _controller.nextEpisode,
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResponsiveVideoPlayerPage(
+                  videoUrl: '',
+                  subjectId: widget.subjectId,
+                  detailPath: widget.detailPath,
+                  season: widget.season,
+                  episode: widget.episode + 1,
+                  title: widget.title,
+                  posterUrl: widget.posterUrl,
+                  availableQualities: widget.availableQualities,
+                  recommendations: widget.recommendations,
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -232,7 +301,12 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Expanded(child: Seekbar(controller: _controller)),
+          Expanded(
+            child: Seekbar(
+              player: _controller.player,
+              onSeek: _controller.startHideTimer,
+            ),
+          ),
           const SizedBox(width: 12),
           IconButton(
             icon: const Icon(Icons.fullscreen, color: Colors.white),
