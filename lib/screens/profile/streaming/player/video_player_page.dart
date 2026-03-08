@@ -87,7 +87,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           body: Stack(
             children: [
               // Video Surface
-              Center(child: Video(controller: _controller.videoController)),
+              Center(
+                child: Video(
+                  controller: _controller.videoController,
+                  controls: NoVideoControls,
+                ),
+              ),
 
               // Tap to Toggle Controls (Behind gestures)
               GestureDetector(
