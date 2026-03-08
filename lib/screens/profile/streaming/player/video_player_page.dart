@@ -168,6 +168,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
       );
       
+      // Listen to buffering state
+      _player.stream.buffering.listen((buffering) {
+        if (mounted) {
+          setState(() => _isBuffering = buffering);
+        }
+      });
+      
+      // Listen to playing state for UI sync
+      _player.stream.playing.listen((playing) {
+        if (mounted && playing && _showControls) {
+          _startHideTimer();
+        }
+      });
+      
       // Wait for video to be ready
       await _player.play();
       
