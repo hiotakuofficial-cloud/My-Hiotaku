@@ -69,7 +69,27 @@ class MainActivity: FlutterActivity() {
             when (call.method) {
                 "checkPiPPermission" -> {
                     val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                        // Check if PiP is actually available (not disabled in settings)
+                        try {
+                            val appOpsManager = getSystemService(android.app.AppOpsManager::class.java)
+                            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                appOpsManager.unsafeCheckOpNoThrow(
+                                    "android:picture_in_picture",
+                                    android.os.Process.myUid(),
+                                    packageName
+                                )
+                            } else {
+                                appOpsManager.checkOpNoThrow(
+                                    "android:picture_in_picture",
+                                    android.os.Process.myUid(),
+                                    packageName
+                                )
+                            }
+                            mode == android.app.AppOpsManager.MODE_ALLOWED
+                        } catch (e: Exception) {
+                            // Fallback: just check if feature exists
+                            packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                        }
                     } else {
                         false
                     }
