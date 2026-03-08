@@ -187,8 +187,10 @@ class VideoPlayerController extends ChangeNotifier {
         );
 
         await player.play();
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 2000));
+        await player.pause();
         await player.seek(currentPosition);
+        await player.play();
 
         currentVideoUrl = newUrl;
       }
@@ -239,8 +241,10 @@ class VideoPlayerController extends ChangeNotifier {
         );
 
         await player.play();
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 2000));
+        await player.pause();
         await player.seek(currentPosition);
+        await player.play();
 
         currentVideoUrl = newUrl;
       }
