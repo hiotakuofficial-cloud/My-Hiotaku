@@ -163,30 +163,49 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: MediaQuery.of(context).padding.top), // Status bar spacing
+        SizedBox(height: MediaQuery.of(context).padding.top),
         _buildVideoPlayer(),
         Expanded(
-          child: SingleChildScrollView(
+          child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                _buildTitle(),
-                const SizedBox(height: 12),
-                _buildRatingAndGenres(),
-                const SizedBox(height: 24),
-                _buildActionButtons(),
-                const SizedBox(height: 24),
-                // Only show season selection for series
-                if (widget.subjectType == 2) ...[
-                  _buildSeasonSelection(),
-                  const SizedBox(height: 24),
-                ],
-                _buildRecommendations(),
-                const SizedBox(height: 24),
-              ],
-            ),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 24),
+                    _buildTitle(),
+                    const SizedBox(height: 12),
+                    _buildRatingAndGenres(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyButtonsDelegate(
+                  child: Container(
+                    color: const Color(0xFF0B0B0B),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: _buildActionButtons(),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 24),
+                    if (widget.subjectType == 2) ...[
+                      _buildSeasonSelection(),
+                      const SizedBox(height: 24),
+                    ],
+                    _buildRecommendations(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -793,4 +812,22 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       ],
     );
   }
+}
+
+class _StickyButtonsDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  _StickyButtonsDelegate({required this.child});
+
+  @override
+  double get minExtent => 64;
+  @override
+  double get maxExtent => 64;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(_StickyButtonsDelegate oldDelegate) => false;
 }
