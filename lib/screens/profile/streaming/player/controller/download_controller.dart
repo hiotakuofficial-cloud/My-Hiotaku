@@ -310,7 +310,10 @@ class DownloadController extends ChangeNotifier {
     
     // Delete partial file
     if (_currentFilePath != null) {
-      File(_currentFilePath!).deleteSync(recursive: true);
+      final file = File(_currentFilePath!);
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
     }
     
     _notifications.cancel(0);
