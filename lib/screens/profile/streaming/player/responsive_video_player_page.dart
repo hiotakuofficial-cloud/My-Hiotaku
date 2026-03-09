@@ -177,8 +177,11 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                 const SizedBox(height: 24),
                 _buildActionButtons(),
                 const SizedBox(height: 24),
-                _buildSeasonSelection(),
-                const SizedBox(height: 24),
+                // Only show season selection for series
+                if (widget.subjectType == 2) ...[
+                  _buildSeasonSelection(),
+                  const SizedBox(height: 24),
+                ],
                 _buildRecommendations(),
                 const SizedBox(height: 24),
               ],
