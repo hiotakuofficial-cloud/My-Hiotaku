@@ -125,14 +125,18 @@ class VideoPlayerController extends ChangeNotifier {
         }
       });
 
-      // Resume from saved position BEFORE playing
+      // Resume from saved position
       final prefs = await SharedPreferences.getInstance();
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
       
       if (savedPosition > 5) {
-        // Play, wait, then pause-seek-play for resume
+        // Wait for video to load, then seek and play
         await player.play();
-        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Wait for video to actually start playing
+        await player.stream.playing.firstWhere((playing) => playing);
+        
+        // Pause, seek, play instantly
         await player.pause();
         await player.seek(Duration(seconds: savedPosition));
         await player.play();

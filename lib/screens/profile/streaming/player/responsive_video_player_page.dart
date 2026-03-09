@@ -119,43 +119,45 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Widget _buildFullscreenPlayer() {
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) {
-        return Stack(
-          children: [
-            Center(
-              child: Video(
-                controller: _controller.videoController,
-                controls: NoVideoControls,
+    return SafeArea(
+      child: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) {
+          return Stack(
+            children: [
+              Center(
+                child: Video(
+                  controller: _controller.videoController,
+                  controls: NoVideoControls,
+                ),
               ),
-            ),
-            // Tap to toggle controls
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _controller.toggleControls,
-                behavior: HitTestBehavior.translucent,
-                child: Container(color: Colors.transparent),
+              // Tap to toggle controls
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: _controller.toggleControls,
+                  behavior: HitTestBehavior.translucent,
+                  child: Container(color: Colors.transparent),
+                ),
               ),
-            ),
-            // Gestures only in fullscreen when controls hidden
-            if (!_controller.showControls)
-              BrightnessGesture(showControls: _controller.showControls),
-            if (!_controller.showControls)
-              VolumeGesture(showControls: _controller.showControls),
-            Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
-            // Controls with fade animation
-            AnimatedOpacity(
-              opacity: _controller.showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: IgnorePointer(
-                ignoring: !_controller.showControls,
-                child: _buildControls(),
+              // Gestures only in fullscreen when controls hidden
+              if (!_controller.showControls)
+                BrightnessGesture(showControls: _controller.showControls),
+              if (!_controller.showControls)
+                VolumeGesture(showControls: _controller.showControls),
+              Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
+              // Controls with fade animation
+              AnimatedOpacity(
+                opacity: _controller.showControls ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: IgnorePointer(
+                  ignoring: !_controller.showControls,
+                  child: _buildControls(),
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
