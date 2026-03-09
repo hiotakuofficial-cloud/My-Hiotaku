@@ -59,10 +59,19 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   late SeasonEpisodeController _seasonEpisodeController;
   bool _isFullscreen = false;
   bool _isLoadingEpisode = false;
+  
+  // Current season and episode state
+  late int _currentSeason;
+  late int _currentEpisode;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize current season/episode
+    _currentSeason = widget.season;
+    _currentEpisode = widget.episode;
+    
     _controller = VideoPlayerController(
       initialVideoUrl: widget.videoUrl,
       subjectId: widget.subjectId,
@@ -125,7 +134,13 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       if (videoUrl.isNotEmpty && mounted) {
         // Update video URL in controller
         await _controller.changeVideoUrl(videoUrl, season, episode);
-        setState(() => _isLoadingEpisode = false);
+        
+        // Update UI state
+        setState(() {
+          _currentSeason = season;
+          _currentEpisode = episode;
+          _isLoadingEpisode = false;
+        });
       }
     } catch (e) {
       debugPrint('Load episode error: $e');
@@ -652,11 +667,11 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final seasonNum = seasons[index]['se'] as int;
-                    final isSelected = seasonNum == widget.season;
+                    final isSelected = seasonNum == _currentSeason;
                     return GestureDetector(
                       onTap: () {
-                        if (seasonNum != widget.season) {
-                          _loadEpisode(seasonNum, 1); // Load first episode of new season
+                        if (seasonNum != _currentSeason && !_isLoadingEpisode) {
+                          _loadEpisode(seasonNum, 1);
                         }
                       },
                       child: Container(
@@ -905,8 +920,8 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                       backgroundColor: Colors.transparent,
                       builder: (context) => SeasonEpisodeSelector(
                         seasons: _seasonEpisodeController.seasons,
-                        currentSeason: widget.season,
-                        currentEpisode: widget.episode,
+                        currentSeason: _currentSeason,
+                        currentEpisode: _currentEpisode,
                         onSelect: (season, episode) {
                           _loadEpisode(season, episode);
                         },
@@ -934,7 +949,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                 return _buildEpisodesShimmer();
               }
 
-              final episodes = _seasonEpisodeController.getEpisodesForSeason(widget.season);
+              final episodes = _seasonEpisodeController.getEpisodesForSeason(_currentSeason);
               
               if (episodes.isEmpty) {
                 return const SizedBox.shrink();
@@ -949,12 +964,12 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final episode = episodes[index];
-                    final isActive = episode == widget.episode;
+                    final isActive = episode == _currentEpisode;
                     
                     return GestureDetector(
                       onTap: () {
-                        if (episode != widget.episode) {
-                          _loadEpisode(widget.season, episode);
+                        if (episode != _currentEpisode && !_isLoadingEpisode) {
+                          _loadEpisode(_currentSeason, episode);
                         }
                       },
                       child: Container(
