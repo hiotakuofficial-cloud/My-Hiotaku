@@ -5,7 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/moviebox_service.dart';
-import 'player/responsive_video_player_page.dart';
+import 'player/play.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -469,7 +469,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ResponsiveVideoPlayerPage(
+                    builder: (context) => PlayPage(
                       videoUrl: videoUrl,
                       subjectId: widget.subjectId,
                       detailPath: widget.detailPath ?? '',

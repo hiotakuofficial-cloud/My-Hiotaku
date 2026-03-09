@@ -19,7 +19,7 @@ import 'widgets/pip_button.dart';
 import 'widgets/custom_buffering_loader.dart';
 import 'widgets/season_episode_selector.dart';
 
-class ResponsiveVideoPlayerPage extends StatefulWidget {
+class PlayPage extends StatefulWidget {
   final String videoUrl;
   final String? posterUrl;
   final String? title;
@@ -33,7 +33,7 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
   final double rating; // IMDb rating
   final String genres; // Comma-separated genres
 
-  const ResponsiveVideoPlayerPage({
+  const PlayPage({
     Key? key,
     required this.videoUrl,
     required this.subjectId,
@@ -50,10 +50,10 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ResponsiveVideoPlayerPage> createState() => _ResponsiveVideoPlayerPageState();
+  State<PlayPage> createState() => _PlayPageState();
 }
 
-class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
+class _PlayPageState extends State<PlayPage> {
   late VideoPlayerController _controller;
   late RecommendationController _recommendationController;
   late SeasonEpisodeController _seasonEpisodeController;
@@ -410,7 +410,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ResponsiveVideoPlayerPage(
+                          builder: (context) => PlayPage(
                             videoUrl: '',
                             subjectId: widget.subjectId,
                             detailPath: widget.detailPath,
@@ -453,7 +453,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ResponsiveVideoPlayerPage(
+                          builder: (context) => PlayPage(
                             videoUrl: '',
                             subjectId: widget.subjectId,
                             detailPath: widget.detailPath,
