@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
 import 'controller/action_button_controller.dart';
+import 'controller/season_episode_controller.dart';
 import 'widgets/seekbar.dart';
 import 'widgets/subtitle_selector.dart';
 import 'widgets/audio_track_selector.dart';
@@ -13,6 +14,7 @@ import 'widgets/volume_gesture.dart';
 import 'widgets/quality_selector.dart';
 import 'widgets/pip_button.dart';
 import 'widgets/custom_buffering_loader.dart';
+import 'widgets/season_episode_selector.dart';
 
 class ResponsiveVideoPlayerPage extends StatefulWidget {
   final String videoUrl;
@@ -51,6 +53,7 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
 class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   late VideoPlayerController _controller;
   late RecommendationController _recommendationController;
+  late SeasonEpisodeController _seasonEpisodeController;
   bool _isFullscreen = false;
 
   @override
@@ -68,12 +71,17 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
     // Load recommendations in background
     _recommendationController = RecommendationController();
     _recommendationController.loadRecommendations(widget.subjectId);
+    
+    // Load seasons in background
+    _seasonEpisodeController = SeasonEpisodeController();
+    _seasonEpisodeController.loadSeasons(widget.subjectId);
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _recommendationController.dispose();
+    _seasonEpisodeController.dispose();
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -181,6 +189,8 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                 // Only show season selection for series
                 if (widget.subjectType == 2) ...[
                   _buildSeasonSelection(),
+                  const SizedBox(height: 16),
+                  _buildEpisodesSection(),
                   const SizedBox(height: 24),
                 ],
                 _buildRecommendations(),
@@ -584,15 +594,13 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.grey,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontFamily: 'MazzardH',
                       ),
                     ),
                   ),
                 );
-                    },
-                  ),
-                ),
-              ),
-            ],
+              },
+            ),
           ),
         ],
       ),
@@ -778,9 +786,146 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.w600,
+            fontFamily: 'MazzardH',
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEpisodesSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Episodes',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'MazzardH',
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_seasonEpisodeController.seasons.isNotEmpty) {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => SeasonEpisodeSelector(
+                        seasons: _seasonEpisodeController.seasons,
+                        currentSeason: widget.season,
+                        currentEpisode: widget.episode,
+                        onSelect: (season, episode) {
+                          // TODO: Load new episode
+                        },
+                      ),
+                    );
+                  }
+                },
+                child: const Text(
+                  'Show All',
+                  style: TextStyle(
+                    color: Color(0xFFDC143C),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'MazzardH',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListenableBuilder(
+            listenable: _seasonEpisodeController,
+            builder: (context, _) {
+              if (_seasonEpisodeController.isLoading) {
+                return _buildEpisodesShimmer();
+              }
+
+              final episodes = _seasonEpisodeController.getEpisodesForSeason(widget.season);
+              
+              if (episodes.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              return SizedBox(
+                height: 44,
+                child: ListView.separated(
+                  physics: const BouncingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: episodes.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final episode = episodes[index];
+                    final isActive = episode == widget.episode;
+                    
+                    return GestureDetector(
+                      onTap: () {
+                        // TODO: Load episode
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? const Color(0xFFDC143C).withOpacity(0.2)
+                              : const Color(0xFF141414),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isActive
+                                ? const Color(0xFFDC143C)
+                                : Colors.grey.withOpacity(0.5),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          'EP $episode',
+                          style: TextStyle(
+                            color: isActive ? Colors.white : Colors.grey,
+                            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            fontFamily: 'MazzardH',
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEpisodesShimmer() {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        physics: const NeverScrollableScrollPhysics(),
+        scrollDirection: Axis.horizontal,
+        itemCount: 5,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          return Shimmer.fromColors(
+            baseColor: const Color(0xFF1E1E1E),
+            highlightColor: const Color(0xFF2A2A2A),
+            child: Container(
+              width: 70,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
