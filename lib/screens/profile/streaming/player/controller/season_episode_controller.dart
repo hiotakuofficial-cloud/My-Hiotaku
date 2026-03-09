@@ -33,11 +33,16 @@ class SeasonEpisodeController extends ChangeNotifier {
   }
 
   List<int> getEpisodesForSeason(int season) {
+    debugPrint('Getting episodes for season: $season');
+    debugPrint('Available seasons: ${_seasons.map((s) => s['se']).toList()}');
+    
     final seasonData = _seasons.firstWhere(
       (s) => s['se'] == season,
       orElse: () => {'maxEp': 0},
     );
     final maxEp = seasonData['maxEp'] ?? 0;
+    debugPrint('Max episodes for season $season: $maxEp');
+    
     return List.generate(maxEp, (index) => index + 1);
   }
 }
