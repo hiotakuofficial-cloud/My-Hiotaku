@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../../services/moviebox_service.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
@@ -897,9 +898,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
               ),
               TextButton(
                 onPressed: () {
-                  debugPrint('Show All clicked');
-                  debugPrint('Seasons loaded: ${_seasonEpisodeController.seasons.length}');
-                  debugPrint('Is loading: ${_seasonEpisodeController.isLoading}');
+                  Fluttertoast.showToast(msg: 'Show All clicked. Seasons: ${_seasonEpisodeController.seasons.length}, Loading: ${_seasonEpisodeController.isLoading}');
                   
                   if (_seasonEpisodeController.seasons.isNotEmpty) {
                     showModalBottomSheet(
@@ -916,7 +915,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                       ),
                     );
                   } else {
-                    debugPrint('Seasons empty, cannot show bottom sheet');
+                    Fluttertoast.showToast(msg: 'Seasons not loaded yet or empty');
                   }
                 },
                 child: const Text(
