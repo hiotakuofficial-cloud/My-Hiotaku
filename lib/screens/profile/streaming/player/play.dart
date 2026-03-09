@@ -187,10 +187,7 @@ class _PlayPageState extends State<PlayPage> {
         DeviceOrientation.landscapeRight,
       ]);
       await Future.delayed(const Duration(milliseconds: 100));
-      await SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.immersive,
-        overlays: [],
-      );
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     } else {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -216,10 +213,15 @@ class _PlayPageState extends State<PlayPage> {
   }
 
   Widget _buildFullscreenPlayer() {
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) {
-        return Stack(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+      ),
+      child: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) {
+          return Stack(
           children: [
             Center(
               child: Video(
@@ -252,7 +254,8 @@ class _PlayPageState extends State<PlayPage> {
             ),
           ],
         );
-      },
+        },
+      ),
     );
   }
 
