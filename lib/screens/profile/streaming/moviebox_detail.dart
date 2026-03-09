@@ -367,21 +367,45 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
         ? genreString.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
         : <String>[];
     
+    // Get subject type (1 = Movie, 2 = Series)
+    final subjectType = subject['subjectType'] ?? 2;
+    final typeLabel = subjectType == 1 ? 'Movie' : 'Series';
+    
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: genres.map((genre) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFB0B0B0).withOpacity(0.3)),
+      children: [
+        // Type badge (Movie/Series)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE5003C),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            typeLabel,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'MazzardH',
+            ),
+          ),
         ),
-        child: Text(
-          genre,
-          style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'MazzardH'),
-        ),
-      )).toList(),
+        // Genre badges
+        ...genres.map((genre) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFB0B0B0).withOpacity(0.3)),
+          ),
+          child: Text(
+            genre,
+            style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'MazzardH'),
+          ),
+        )).toList(),
+      ],
     );
   }
 
@@ -391,6 +415,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
     final rating = double.tryParse(subject?['imdbRatingValue']?.toString() ?? '0') ?? 0.0;
     final genres = (subject?['genre']?.toString() ?? '').split(',');
     final posterUrl = subject?['cover']?['url'] ?? '';
+    final subjectType = subject?['subjectType'] ?? 2; // 1 = Movie, 2 = Series
 
     return Row(
       children: [
@@ -402,11 +427,15 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
               setState(() => _isLoadingVideo = true);
               
               try {
+                // For movies: season=0, episode=0; For series: season=1, episode=1
+                final season = subjectType == 1 ? 0 : 1;
+                final episode = subjectType == 1 ? 0 : 1;
+                
                 final playData = await MovieBoxService.getPlayUrls(
                   id: widget.subjectId,
                   path: widget.detailPath ?? '',
-                  season: 1,
-                  episode: 1,
+                  season: season,
+                  episode: episode,
                 );
                 
                 final streams = playData['data']?['streams'] as List? ?? [];
@@ -444,12 +473,13 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                       videoUrl: videoUrl,
                       subjectId: widget.subjectId,
                       detailPath: widget.detailPath ?? '',
-                      season: 1,
-                      episode: 1,
+                      season: season,
+                      episode: episode,
                       title: title,
                       posterUrl: posterUrl,
                       availableQualities: availableQualities,
                       recommendations: const [],
+                      subjectType: subjectType, // Pass type to player
                     ),
                   ),
                 );

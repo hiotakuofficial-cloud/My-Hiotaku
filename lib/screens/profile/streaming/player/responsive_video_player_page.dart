@@ -22,6 +22,7 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
   final int episode;
   final List<String> availableQualities;
   final List<Map<String, dynamic>> recommendations;
+  final int subjectType; // 1 = Movie, 2 = Series
 
   const ResponsiveVideoPlayerPage({
     Key? key,
@@ -34,6 +35,7 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
     this.title,
     this.availableQualities = const ['360p', '480p', '720p', '1080p'],
     this.recommendations = const [],
+    this.subjectType = 2, // Default to Series
   }) : super(key: key);
 
   @override
