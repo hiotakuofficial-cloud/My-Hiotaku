@@ -56,9 +56,10 @@ class VideoPlayerController extends ChangeNotifier {
         debugPrint('Audio ducked for call');
       },
       onResumeAfterCall: () {
-        // Restore full volume after call
+        // Restore full volume and resume playback
         player.setVolume(_savedVolume);
-        debugPrint('Audio restored after call');
+        player.play();
+        debugPrint('Audio restored and video resumed');
       },
     );
     lifecycleController.initialize();

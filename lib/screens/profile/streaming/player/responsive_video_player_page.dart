@@ -547,57 +547,47 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "If current season is not working, try a different one.",
+            "If current video isn't playing, kindly check your WiFi. Short & professional.",
             style: TextStyle(
               color: Color(0xFFFFC107),
               fontSize: 12,
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              const Text(
-                'Seasons : ',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: ListView.separated(
-                    physics: const BouncingScrollPhysics(),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 7,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final isSelected = index == widget.season - 1;
-                      return GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFFFF2D75).withOpacity(0.2)
-                                : const Color(0xFF141414),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFFFF2D75)
-                                  : Colors.grey.withOpacity(0.5),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Text(
-                            'Season ${index + 1}',
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.grey,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      );
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              physics: const BouncingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              itemCount: 7,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final isSelected = index == widget.season - 1;
+                return GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFFFF2D75).withOpacity(0.2)
+                          : const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFFFF2D75)
+                            : Colors.grey.withOpacity(0.5),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Text(
+                      'Season ${index + 1}',
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.grey,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
                     },
                   ),
                 ),
