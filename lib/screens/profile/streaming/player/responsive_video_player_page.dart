@@ -557,7 +557,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "If current video isn't playing, kindly check your WiFi. Short & professional.",
+            "If current video isn't playing, kindly check your WiFi.",
             style: TextStyle(
               color: Color(0xFFFFC107),
               fontSize: 12,
