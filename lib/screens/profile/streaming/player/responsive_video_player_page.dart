@@ -315,10 +315,10 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                   IconButton(
                     icon: Icon(
                       Icons.skip_previous,
-                      color: widget.episode > 1 ? Colors.white : Colors.grey,
+                      color: widget.subjectType == 1 ? Colors.grey.withOpacity(0.3) : (widget.episode > 1 ? Colors.white : Colors.grey),
                       size: 24,
                     ),
-                    onPressed: widget.episode > 1 ? () {
+                    onPressed: widget.subjectType == 1 ? null : (widget.episode > 1 ? () {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -332,10 +332,11 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                             posterUrl: widget.posterUrl,
                             availableQualities: widget.availableQualities,
                             recommendations: widget.recommendations,
+                            subjectType: widget.subjectType,
                           ),
                         ),
                       );
-                    } : null,
+                    } : null),
                   ),
                   ListenableBuilder(
                     listenable: _controller,
@@ -355,12 +356,12 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                     },
                   ),
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.skip_next,
-                      color: Colors.white,
+                      color: widget.subjectType == 1 ? Colors.grey.withOpacity(0.3) : Colors.white,
                       size: 24,
                     ),
-                    onPressed: () {
+                    onPressed: widget.subjectType == 1 ? null : () {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -374,6 +375,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                             posterUrl: widget.posterUrl,
                             availableQualities: widget.availableQualities,
                             recommendations: widget.recommendations,
+                            subjectType: widget.subjectType,
                           ),
                         ),
                       );
