@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../services/moviebox_service.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
 import 'controller/action_button_controller.dart';
@@ -87,6 +89,52 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
     super.dispose();
+  }
+
+  Future<void> _loadEpisode(int season, int episode) async {
+    try {
+      final playData = await MovieBoxService.getPlayUrls(
+        id: widget.subjectId,
+        path: widget.detailPath,
+        season: season,
+        episode: episode,
+      );
+
+      final streams = playData['data']?['streams'] as List? ?? [];
+      if (streams.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final savedQuality = prefs.getString('preferred_quality') ?? '720';
+
+      final stream = streams.firstWhere(
+        (s) => s['resolutions'] == savedQuality,
+        orElse: () => streams.first,
+      );
+
+      final videoUrl = stream['url'] as String? ?? '';
+      if (videoUrl.isNotEmpty && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResponsiveVideoPlayerPage(
+              videoUrl: videoUrl,
+              subjectId: widget.subjectId,
+              detailPath: widget.detailPath,
+              season: season,
+              episode: episode,
+              title: widget.title,
+              posterUrl: widget.posterUrl,
+              availableQualities: widget.availableQualities,
+              subjectType: widget.subjectType,
+              rating: widget.rating,
+              genres: widget.genres,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Load episode error: $e');
+    }
   }
 
   void _toggleFullscreen() async {
@@ -564,43 +612,80 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              physics: const BouncingScrollPhysics(),
-              scrollDirection: Axis.horizontal,
-              itemCount: 7,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final isSelected = index == widget.season - 1;
-                return GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFFF2D75).withOpacity(0.2)
-                          : const Color(0xFF141414),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFFFF2D75)
-                            : Colors.grey.withOpacity(0.5),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Text(
-                      'Season ${index + 1}',
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        fontFamily: 'MazzardH',
-                      ),
-                    ),
+          ListenableBuilder(
+            listenable: _seasonEpisodeController,
+            builder: (context, _) {
+              if (_seasonEpisodeController.isLoading) {
+                return SizedBox(
+                  height: 44,
+                  child: ListView.separated(
+                    physics: const NeverScrollableScrollPhysics(),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 3,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      return Shimmer.fromColors(
+                        baseColor: const Color(0xFF1E1E1E),
+                        highlightColor: const Color(0xFF2A2A2A),
+                        child: Container(
+                          width: 90,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
-              },
-            ),
+              }
+
+              final seasons = _seasonEpisodeController.seasons;
+              if (seasons.isEmpty) return const SizedBox.shrink();
+
+              return SizedBox(
+                height: 44,
+                child: ListView.separated(
+                  physics: const BouncingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: seasons.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final seasonNum = seasons[index]['se'] as int;
+                    final isSelected = seasonNum == widget.season;
+                    return GestureDetector(
+                      onTap: () {
+                        // TODO: Load season
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFFFF2D75).withOpacity(0.2)
+                              : const Color(0xFF141414),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFFFF2D75)
+                                : Colors.grey.withOpacity(0.5),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          'Season $seasonNum',
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.grey,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontFamily: 'MazzardH',
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -822,7 +907,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                         currentSeason: widget.season,
                         currentEpisode: widget.episode,
                         onSelect: (season, episode) {
-                          // TODO: Load new episode
+                          _loadEpisode(season, episode);
                         },
                       ),
                     );
@@ -867,7 +952,9 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                     
                     return GestureDetector(
                       onTap: () {
-                        // TODO: Load episode
+                        if (episode != widget.episode) {
+                          _loadEpisode(widget.season, episode);
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
