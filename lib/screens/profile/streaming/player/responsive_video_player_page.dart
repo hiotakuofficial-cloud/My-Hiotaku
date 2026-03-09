@@ -897,6 +897,10 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
               ),
               TextButton(
                 onPressed: () {
+                  debugPrint('Show All clicked');
+                  debugPrint('Seasons loaded: ${_seasonEpisodeController.seasons.length}');
+                  debugPrint('Is loading: ${_seasonEpisodeController.isLoading}');
+                  
                   if (_seasonEpisodeController.seasons.isNotEmpty) {
                     showModalBottomSheet(
                       context: context,
@@ -911,6 +915,8 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                         },
                       ),
                     );
+                  } else {
+                    debugPrint('Seasons empty, cannot show bottom sheet');
                   }
                 },
                 child: const Text(

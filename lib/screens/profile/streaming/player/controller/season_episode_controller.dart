@@ -15,21 +15,32 @@ class SeasonEpisodeController extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    debugPrint('Loading seasons for subjectId: $subjectId');
+
     try {
       final response = await MovieBoxService.getDetail(id: subjectId);
+      debugPrint('Detail API response received');
+      
       final resource = response['data']?['subject']?['resource'];
+      debugPrint('Resource data: $resource');
       
       if (resource != null && resource['seasons'] != null) {
         _seasons = (resource['seasons'] as List)
             .map((s) => s as Map<String, dynamic>)
             .toList();
+        debugPrint('Seasons loaded: ${_seasons.length}');
+        debugPrint('Seasons: $_seasons');
+      } else {
+        debugPrint('No seasons found in response');
       }
     } catch (e) {
       _error = e.toString();
+      debugPrint('Error loading seasons: $e');
     }
 
     _isLoading = false;
     notifyListeners();
+    debugPrint('Loading complete. Seasons count: ${_seasons.length}');
   }
 
   List<int> getEpisodesForSeason(int season) {
