@@ -25,6 +25,8 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
   final List<String> availableQualities;
   final List<Map<String, dynamic>> recommendations;
   final int subjectType; // 1 = Movie, 2 = Series
+  final double rating; // IMDb rating
+  final String genres; // Comma-separated genres
 
   const ResponsiveVideoPlayerPage({
     Key? key,
@@ -38,6 +40,8 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
     this.availableQualities = const ['360p', '480p', '720p', '1080p'],
     this.recommendations = const [],
     this.subjectType = 2, // Default to Series
+    this.rating = 0.0,
+    this.genres = '',
   }) : super(key: key);
 
   @override
@@ -436,24 +440,30 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Widget _buildRatingAndGenres() {
+    final typeLabel = widget.subjectType == 1 ? 'Movie' : 'Series';
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           const Icon(Icons.star, color: Color(0xFFFFC107), size: 20),
           const SizedBox(width: 4),
-          const Text(
-            '8.5',
-            style: TextStyle(
+          Text(
+            widget.rating.toStringAsFixed(1),
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(width: 16),
-          Text(
-            'Action, Drama, Thriller',
-            style: TextStyle(
-              color: Colors.grey[400],
+          Expanded(
+            child: Text(
+              '$typeLabel : ${widget.genres}',
+              style: TextStyle(
+                color: Colors.grey[400],
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],

@@ -479,7 +479,9 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                       posterUrl: posterUrl,
                       availableQualities: availableQualities,
                       recommendations: const [],
-                      subjectType: subjectType, // Pass type to player
+                      subjectType: subjectType,
+                      rating: rating,
+                      genres: genres.join(', '),
                     ),
                   ),
                 );
