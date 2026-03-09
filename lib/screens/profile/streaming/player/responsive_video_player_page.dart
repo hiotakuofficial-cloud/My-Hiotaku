@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:shimmer/shimmer.dart';
 import 'controller/video_player_controller.dart';
+import 'controller/recommendation_controller.dart';
 import 'widgets/seekbar.dart';
 import 'widgets/subtitle_selector.dart';
 import 'widgets/audio_track_selector.dart';
@@ -44,6 +46,7 @@ class ResponsiveVideoPlayerPage extends StatefulWidget {
 
 class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   late VideoPlayerController _controller;
+  late RecommendationController _recommendationController;
   bool _isFullscreen = false;
 
   @override
@@ -57,11 +60,16 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       episode: widget.episode,
       availableQualities: widget.availableQualities,
     );
+    
+    // Load recommendations in background
+    _recommendationController = RecommendationController();
+    _recommendationController.loadRecommendations(widget.subjectId);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _recommendationController.dispose();
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -575,44 +583,112 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Widget _buildRecommendations() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'You May Also Like',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+    return ListenableBuilder(
+      listenable: _recommendationController,
+      builder: (context, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'You May Also Like',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.5,
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _recommendationController.isLoading
+                  ? _buildShimmerGrid()
+                  : _buildRecommendationGrid(),
             ),
-            itemCount: widget.recommendations.length,
-            itemBuilder: (context, index) {
-              final rec = widget.recommendations[index];
-              return _buildMovieCard(
-                rec['imageUrl'] ?? '',
-                rec['rating'] ?? 0.0,
-                rec['title'] ?? '',
-              );
-            },
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.5,
+      ),
+      itemCount: 9,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: const Color(0xFF1E1E1E),
+          highlightColor: const Color(0xFF2A2A2A),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 12,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                height: 12,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+        );
+      },
+    );
+  }
+
+  Widget _buildRecommendationGrid() {
+    final recommendations = _recommendationController.recommendations;
+    
+    if (recommendations.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.5,
+      ),
+      itemCount: recommendations.length,
+      itemBuilder: (context, index) {
+        final rec = recommendations[index];
+        return _buildMovieCard(
+          rec['imageUrl'] ?? '',
+          rec['rating'] ?? 0.0,
+          rec['title'] ?? '',
+        );
+      },
     );
   }
 
