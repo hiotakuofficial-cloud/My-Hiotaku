@@ -206,9 +206,9 @@ class VideoPlayerController extends ChangeNotifier {
           ),
         );
 
-        // Pause-seek-play pattern
+        // Pause-seek-play pattern with 2000ms delay
         await player.play();
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 2000));
         await player.pause();
         await player.seek(currentPosition);
         await player.play();
@@ -265,9 +265,9 @@ class VideoPlayerController extends ChangeNotifier {
           ),
         );
 
-        // Pause-seek-play pattern
+        // Pause-seek-play pattern with 2000ms delay
         await player.play();
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 2000));
         await player.pause();
         await player.seek(currentPosition);
         await player.play();
