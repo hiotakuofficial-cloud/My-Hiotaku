@@ -41,6 +41,7 @@ class DownloadOptionsBottomSheet extends StatefulWidget {
 
 class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet> {
   late String _selectedQuality;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -69,22 +70,21 @@ class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet>
   }
 
   Future<void> _handleDownload() async {
+    if (_isDownloading) return; // Prevent multiple clicks
+    
+    setState(() => _isDownloading = true);
+    
     // Request permissions
     final hasPermissions = await _requestPermissions();
     
     if (!hasPermissions) {
+      if (mounted) setState(() => _isDownloading = false);
       Fluttertoast.showToast(msg: 'Permissions required for download');
       return;
     }
 
-    // Show downloading toast
-    Fluttertoast.showToast(msg: 'Downloading...');
-    
     // Trigger download
     widget.onDownload(_selectedQuality);
-    
-    // Close sheet
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -215,7 +215,7 @@ class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet>
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _handleDownload,
+                    onPressed: _isDownloading ? null : _handleDownload,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFDC143C),
                       foregroundColor: Colors.white,

@@ -1,5 +1,6 @@
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../widgets/feedback.dart';
 import '../widgets/download_options.dart';
 import '../controller/download_controller.dart';
@@ -58,8 +59,11 @@ class ActionButtonController {
         title: title,
         availableQualities: availableQualities,
         onDownload: (quality) async {
+          Navigator.pop(context); // Close sheet immediately
+          Fluttertoast.showToast(msg: 'Starting download...');
+          
           final controller = DownloadController();
-          await controller.downloadEpisode(
+          controller.downloadEpisode(
             subjectId: subjectId,
             detailPath: detailPath,
             title: title,

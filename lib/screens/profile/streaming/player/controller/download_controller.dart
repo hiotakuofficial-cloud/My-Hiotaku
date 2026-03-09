@@ -66,15 +66,27 @@ class DownloadController extends ChangeNotifier {
     await _notifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (details) {
-        if (details.payload == 'cancel') {
+        if (details.actionId == 'cancel') {
           cancelDownload();
-        } else if (details.payload == 'pause') {
+        } else if (details.actionId == 'pause') {
           pauseDownload();
-        } else if (details.payload == 'resume') {
+        } else if (details.actionId == 'resume') {
           resumeDownload();
         }
       },
     );
+
+    // Create notification channel with actions
+    const androidChannel = AndroidNotificationChannel(
+      'download_channel',
+      'Downloads',
+      description: 'Episode download progress',
+      importance: Importance.low,
+    );
+    
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
   }
 
   Future<void> _showDownloadNotification() async {
@@ -93,6 +105,20 @@ class DownloadController extends ChangeNotifier {
       progress: progressInt,
       ongoing: true,
       autoCancel: false,
+      actions: <AndroidNotificationAction>[
+        const AndroidNotificationAction(
+          'cancel',
+          'Cancel',
+          showsUserInterface: false,
+          cancelNotification: false,
+        ),
+        AndroidNotificationAction(
+          isPaused ? 'resume' : 'pause',
+          isPaused ? 'Resume' : 'Pause',
+          showsUserInterface: false,
+          cancelNotification: false,
+        ),
+      ],
     );
 
     await _notifications.show(
@@ -100,7 +126,6 @@ class DownloadController extends ChangeNotifier {
       'Downloading Episode',
       '$progressPercent% • $speedMB MB/s',
       NotificationDetails(android: androidDetails),
-      payload: 'download',
     );
   }
 
