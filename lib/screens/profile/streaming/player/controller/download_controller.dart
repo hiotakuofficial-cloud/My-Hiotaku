@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
 import 'network_controller.dart';
 import '../dialogs/file_exists_dialog.dart';
+import '../../../../../services/moviebox_service.dart';
 
 class DownloadController extends ChangeNotifier {
   final Dio _dio = Dio(
@@ -116,16 +117,17 @@ class DownloadController extends ChangeNotifier {
   }
 
   Future<String?> downloadEpisode({
-    required String videoUrl,
+    required String subjectId,
+    required String detailPath,
     required String title,
     required int season,
     required int episode,
+    required String quality,
     required BuildContext context,
   }) async {
     if (isDownloading) return null;
 
     // Save current download info
-    _currentVideoUrl = videoUrl;
     _currentTitle = title;
     _currentSeason = season;
     _currentEpisode = episode;
@@ -139,6 +141,38 @@ class DownloadController extends ChangeNotifier {
     }
 
     try {
+      // Fetch video URL from API based on quality
+      final playData = await MovieBoxService.getPlayUrls(
+        id: subjectId,
+        path: detailPath,
+        season: season,
+        episode: episode,
+      );
+
+      final streams = playData['data']?['streams'] as List? ?? [];
+      if (streams.isEmpty) {
+        downloadError = 'No video available';
+        notifyListeners();
+        return null;
+      }
+
+      // Remove 'p' from quality (e.g., '720p' -> '720')
+      final qualityValue = quality.replaceAll('p', '');
+      
+      // Find stream matching quality
+      final stream = streams.firstWhere(
+        (s) => s['resolutions'] == qualityValue,
+        orElse: () => streams.first,
+      );
+
+      final videoUrl = stream['url'] as String? ?? '';
+      if (videoUrl.isEmpty) {
+        downloadError = 'Video URL not found';
+        notifyListeners();
+        return null;
+      }
+
+      _currentVideoUrl = videoUrl;
       // Get public Downloads directory
       Directory? downloadsDir;
       if (Platform.isAndroid) {

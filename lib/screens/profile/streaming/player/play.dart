@@ -63,6 +63,7 @@ class _PlayPageState extends State<PlayPage> {
   // Current season and episode state
   late int _currentSeason;
   late int _currentEpisode;
+  List<String> _availableQualities = [];
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _PlayPageState extends State<PlayPage> {
     // Initialize current season/episode
     _currentSeason = widget.season;
     _currentEpisode = widget.episode;
+    _availableQualities = widget.availableQualities;
     
     _controller = VideoPlayerController(
       initialVideoUrl: widget.videoUrl,
@@ -122,6 +124,13 @@ class _PlayPageState extends State<PlayPage> {
         return;
       }
 
+      // Extract available qualities from streams
+      final qualities = streams
+          .map((s) => s['resolutions'] as String?)
+          .where((q) => q != null && q.isNotEmpty)
+          .map((q) => '${q}p')
+          .toList();
+
       final prefs = await SharedPreferences.getInstance();
       final savedQuality = prefs.getString('preferred_quality') ?? '720';
 
@@ -139,6 +148,7 @@ class _PlayPageState extends State<PlayPage> {
         setState(() {
           _currentSeason = season;
           _currentEpisode = episode;
+          _availableQualities = qualities.cast<String>();
           _isLoadingEpisode = false;
         });
       }
@@ -575,7 +585,9 @@ class _PlayPageState extends State<PlayPage> {
               title: widget.title ?? 'Episode',
               season: _currentSeason,
               episode: _currentEpisode,
-              availableQualities: widget.availableQualities,
+              availableQualities: _availableQualities,
+              subjectId: widget.subjectId,
+              detailPath: widget.detailPath,
             );
           }),
           const SizedBox(width: 12),

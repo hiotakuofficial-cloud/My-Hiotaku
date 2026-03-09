@@ -48,6 +48,8 @@ class ActionButtonController {
     required int season,
     required int episode,
     required List<String> availableQualities,
+    required String subjectId,
+    required String detailPath,
   }) {
     showModalBottomSheet(
       context: context,
@@ -59,10 +61,12 @@ class ActionButtonController {
         onDownload: (quality) async {
           final controller = DownloadController();
           await controller.downloadEpisode(
-            videoUrl: videoUrl,
+            subjectId: subjectId,
+            detailPath: detailPath,
             title: title,
             season: season,
             episode: episode,
+            quality: quality,
             context: context,
           );
         },
