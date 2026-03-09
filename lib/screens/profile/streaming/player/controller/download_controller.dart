@@ -79,8 +79,9 @@ class DownloadController extends ChangeNotifier {
   Future<void> _showDownloadNotification() async {
     final speedMB = (downloadSpeed / 1024 / 1024).toStringAsFixed(2);
     final progressPercent = (downloadProgress * 100).toStringAsFixed(1);
+    final progressInt = (downloadProgress * 100).toInt();
     
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'download_channel',
       'Downloads',
       channelDescription: 'Episode download progress',
@@ -88,7 +89,7 @@ class DownloadController extends ChangeNotifier {
       priority: Priority.low,
       showProgress: true,
       maxProgress: 100,
-      progress: 0,
+      progress: progressInt,
       ongoing: true,
       autoCancel: false,
     );
@@ -97,7 +98,7 @@ class DownloadController extends ChangeNotifier {
       0,
       'Downloading Episode',
       '$progressPercent% • $speedMB MB/s',
-      const NotificationDetails(android: androidDetails),
+      NotificationDetails(android: androidDetails),
       payload: 'download',
     );
   }
