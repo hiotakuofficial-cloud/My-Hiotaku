@@ -119,45 +119,43 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Widget _buildFullscreenPlayer() {
-    return SafeArea(
-      child: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) {
-          return Stack(
-            children: [
-              Center(
-                child: Video(
-                  controller: _controller.videoController,
-                  controls: NoVideoControls,
-                ),
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) {
+        return Stack(
+          children: [
+            Center(
+              child: Video(
+                controller: _controller.videoController,
+                controls: NoVideoControls,
               ),
-              // Tap to toggle controls
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: _controller.toggleControls,
-                  behavior: HitTestBehavior.translucent,
-                  child: Container(color: Colors.transparent),
-                ),
+            ),
+            // Tap to toggle controls
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _controller.toggleControls,
+                behavior: HitTestBehavior.translucent,
+                child: Container(color: Colors.transparent),
               ),
-              // Gestures only in fullscreen when controls hidden
-              if (!_controller.showControls)
-                BrightnessGesture(showControls: _controller.showControls),
-              if (!_controller.showControls)
-                VolumeGesture(showControls: _controller.showControls),
-              Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
-              // Controls with fade animation
-              AnimatedOpacity(
-                opacity: _controller.showControls ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 300),
-                child: IgnorePointer(
-                  ignoring: !_controller.showControls,
-                  child: _buildControls(),
-                ),
+            ),
+            // Gestures only in fullscreen when controls hidden
+            if (!_controller.showControls)
+              BrightnessGesture(showControls: _controller.showControls),
+            if (!_controller.showControls)
+              VolumeGesture(showControls: _controller.showControls),
+            Center(child: BufferingLoader(isVisible: _controller.isBuffering)),
+            // Controls with fade animation
+            AnimatedOpacity(
+              opacity: _controller.showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: IgnorePointer(
+                ignoring: !_controller.showControls,
+                child: _buildControls(),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -165,49 +163,31 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: MediaQuery.of(context).padding.top),
+        SizedBox(height: MediaQuery.of(context).padding.top), // Status bar spacing
         _buildVideoPlayer(),
+        const SizedBox(height: 16),
+        _buildActionButtons(), // Fixed below video
+        const SizedBox(height: 8),
         Expanded(
-          child: CustomScrollView(
+          child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    _buildTitle(),
-                    const SizedBox(height: 12),
-                    _buildRatingAndGenres(),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyButtonsDelegate(
-                  child: Container(
-                    color: const Color(0xFF0B0B0B),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: _buildActionButtons(),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    if (widget.subjectType == 2) ...[
-                      _buildSeasonSelection(),
-                      const SizedBox(height: 24),
-                    ],
-                    _buildRecommendations(),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                _buildTitle(),
+                const SizedBox(height: 12),
+                _buildRatingAndGenres(),
+                const SizedBox(height: 24),
+                // Only show season selection for series
+                if (widget.subjectType == 2) ...[
+                  _buildSeasonSelection(),
+                  const SizedBox(height: 24),
+                ],
+                _buildRecommendations(),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ],
@@ -814,22 +794,4 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       ],
     );
   }
-}
-
-class _StickyButtonsDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-  _StickyButtonsDelegate({required this.child});
-
-  @override
-  double get minExtent => 64;
-  @override
-  double get maxExtent => 64;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-
-  @override
-  bool shouldRebuild(_StickyButtonsDelegate oldDelegate) => false;
 }
