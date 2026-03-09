@@ -8,6 +8,7 @@ class VideoLifecycleController extends WidgetsBindingObserver {
   final VoidCallback onEnterPiP;
   final VoidCallback onPauseForCall;
   final VoidCallback onResumeAfterCall;
+  final bool Function() isPlaying; // Check if video is actually playing
   
   bool _wasPlayingBeforeInactive = false;
 
@@ -15,6 +16,7 @@ class VideoLifecycleController extends WidgetsBindingObserver {
     required this.onEnterPiP,
     required this.onPauseForCall,
     required this.onResumeAfterCall,
+    required this.isPlaying,
   });
 
   void initialize() {
@@ -33,9 +35,11 @@ class VideoLifecycleController extends WidgetsBindingObserver {
         break;
         
       case AppLifecycleState.paused:
-        // Mark as was playing and duck audio
-        _wasPlayingBeforeInactive = true;
-        onPauseForCall();
+        // Only mark if video was actually playing
+        _wasPlayingBeforeInactive = isPlaying();
+        if (_wasPlayingBeforeInactive) {
+          onPauseForCall();
+        }
         break;
         
       case AppLifecycleState.resumed:

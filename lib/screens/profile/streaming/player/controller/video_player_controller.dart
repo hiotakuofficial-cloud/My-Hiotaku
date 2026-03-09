@@ -59,8 +59,10 @@ class VideoPlayerController extends ChangeNotifier {
         // Restore full volume and resume playback
         player.setVolume(_savedVolume);
         player.play();
+        notifyListeners(); // Update UI
         debugPrint('Audio restored and video resumed');
       },
+      isPlaying: () => player.state.playing, // Check actual playing state
     );
     lifecycleController.initialize();
     

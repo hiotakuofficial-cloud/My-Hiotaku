@@ -9,6 +9,22 @@ import '../dialogs/file_exists_dialog.dart';
 import '../../../../../services/moviebox_service.dart';
 
 class DownloadController extends ChangeNotifier {
+  // Singleton pattern
+  static DownloadController? _instance;
+  static DownloadController get instance {
+    _instance ??= DownloadController._internal();
+    return _instance!;
+  }
+
+  DownloadController._internal() {
+    _initNotifications();
+    _networkController.setOnConnectionRestored(() {
+      if (isPaused && _currentVideoUrl != null) {
+        resumeDownload();
+      }
+    });
+  }
+
   final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 30),
@@ -37,15 +53,6 @@ class DownloadController extends ChangeNotifier {
   String? _currentTitle;
   int? _currentSeason;
   int? _currentEpisode;
-
-  DownloadController() {
-    _initNotifications();
-    _networkController.setOnConnectionRestored(() {
-      if (isPaused && _currentVideoUrl != null) {
-        resumeDownload();
-      }
-    });
-  }
 
   Future<bool> _requestStoragePermission() async {
     if (Platform.isAndroid) {

@@ -62,7 +62,7 @@ class ActionButtonController {
           Navigator.pop(context);
           Fluttertoast.showToast(msg: 'Starting download...');
           
-          final controller = DownloadController();
+          final controller = DownloadController.instance;
           controller.downloadEpisode(
             subjectId: subjectId,
             detailPath: detailPath,
