@@ -58,6 +58,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   late RecommendationController _recommendationController;
   late SeasonEpisodeController _seasonEpisodeController;
   bool _isFullscreen = false;
+  bool _isLoadingEpisode = false;
 
   @override
   void initState() {
@@ -93,6 +94,10 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Future<void> _loadEpisode(int season, int episode) async {
+    if (_isLoadingEpisode) return; // Prevent multiple clicks
+    
+    setState(() => _isLoadingEpisode = true);
+    
     try {
       final playData = await MovieBoxService.getPlayUrls(
         id: widget.subjectId,
@@ -102,7 +107,10 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       );
 
       final streams = playData['data']?['streams'] as List? ?? [];
-      if (streams.isEmpty) return;
+      if (streams.isEmpty) {
+        if (mounted) setState(() => _isLoadingEpisode = false);
+        return;
+      }
 
       final prefs = await SharedPreferences.getInstance();
       final savedQuality = prefs.getString('preferred_quality') ?? '720';
@@ -135,6 +143,10 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       }
     } catch (e) {
       debugPrint('Load episode error: $e');
+      if (mounted) {
+        setState(() => _isLoadingEpisode = false);
+        Fluttertoast.showToast(msg: 'Failed to load episode');
+      }
     }
   }
 
@@ -657,7 +669,9 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                     final isSelected = seasonNum == widget.season;
                     return GestureDetector(
                       onTap: () {
-                        // TODO: Load season
+                        if (seasonNum != widget.season) {
+                          _loadEpisode(seasonNum, 1); // Load first episode of new season
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
