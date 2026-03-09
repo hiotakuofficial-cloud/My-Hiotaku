@@ -132,11 +132,11 @@ class VideoPlayerController extends ChangeNotifier {
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
       
       if (savedPosition > 5) {
-        // Wait for player to be ready and buffering to complete
-        await Future.delayed(const Duration(milliseconds: 3000));
+        // Wait for video to load
+        await Future.delayed(const Duration(milliseconds: 500));
+        // Pause-seek-play pattern for proper timeline resume
         await player.pause();
         await player.seek(Duration(seconds: savedPosition));
-        await Future.delayed(const Duration(milliseconds: 500));
         await player.play();
       }
 
