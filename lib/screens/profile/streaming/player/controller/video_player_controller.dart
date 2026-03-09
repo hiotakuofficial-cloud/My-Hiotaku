@@ -130,14 +130,10 @@ class VideoPlayerController extends ChangeNotifier {
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
       
       if (savedPosition > 5) {
-        // Wait for video to load, then seek and play
-        await player.play();
+        // Wait for video duration to be available (video loaded)
+        await player.stream.duration.firstWhere((d) => d.inSeconds > 0);
         
-        // Wait for video to actually start playing
-        await player.stream.playing.firstWhere((playing) => playing);
-        
-        // Pause, seek, play instantly
-        await player.pause();
+        // Seek and play
         await player.seek(Duration(seconds: savedPosition));
         await player.play();
       } else {
