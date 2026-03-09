@@ -1,4 +1,8 @@
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/material.dart';
+import '../widgets/feedback.dart';
+import '../widgets/download_options.dart';
+import '../controller/download_controller.dart';
 
 class ActionButtonController {
   /// Share content with Android share dialog
@@ -9,7 +13,7 @@ class ActionButtonController {
     final message = '''
 🎬 Watch $type: $title
 
-📱 Download HiOtaku App
+📱 Download Hiotaku App
 🔗 https://www.hiotaku.in/
 
 📋 Instructions:
@@ -22,18 +26,48 @@ class ActionButtonController {
 
     await Share.share(
       message,
-      subject: 'Watch $title on HiOtaku',
+      subject: 'Watch $title on Hiotaku',
     );
   }
 
-  /// Show feedback dialog (placeholder)
-  static void feedback() {
-    // TODO: Implement feedback functionality
+  /// Show feedback dialog
+  static void feedback(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const FeedbackWidget(),
+    );
   }
 
-  /// Start download (placeholder)
-  static void download() {
-    // TODO: Implement download functionality
+  /// Start download
+  static void download(
+    BuildContext context, {
+    required String videoUrl,
+    required String title,
+    required int season,
+    required int episode,
+    required List<String> availableQualities,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DownloadOptionsBottomSheet(
+        title: title,
+        availableQualities: availableQualities,
+        onDownload: (quality) async {
+          final controller = DownloadController();
+          await controller.downloadEpisode(
+            videoUrl: videoUrl,
+            title: title,
+            season: season,
+            episode: episode,
+            context: context,
+          );
+        },
+      ),
+    );
   }
 
   /// Open downloads folder (placeholder)

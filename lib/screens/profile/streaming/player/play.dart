@@ -565,11 +565,18 @@ class _PlayPageState extends State<PlayPage> {
           }),
           const SizedBox(width: 12),
           _buildPillButton(Icons.chat_bubble_outline, 'Feedback', () {
-            ActionButtonController.feedback();
+            ActionButtonController.feedback(context);
           }),
           const SizedBox(width: 12),
           _buildPillButton(Icons.file_download, 'Download', () {
-            ActionButtonController.download();
+            ActionButtonController.download(
+              context,
+              videoUrl: _controller.currentVideoUrl,
+              title: widget.title ?? 'Episode',
+              season: _currentSeason,
+              episode: _currentEpisode,
+              availableQualities: widget.availableQualities,
+            );
           }),
           const SizedBox(width: 12),
           _buildPillButton(Icons.folder_open, 'View Downloads', () {
