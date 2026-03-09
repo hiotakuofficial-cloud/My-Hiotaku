@@ -165,18 +165,19 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       children: [
         SizedBox(height: MediaQuery.of(context).padding.top), // Status bar spacing
         _buildVideoPlayer(),
+        const SizedBox(height: 16),
+        _buildActionButtons(), // Fixed below video
+        const SizedBox(height: 8),
         Expanded(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 _buildTitle(),
                 const SizedBox(height: 12),
                 _buildRatingAndGenres(),
-                const SizedBox(height: 24),
-                _buildActionButtons(),
                 const SizedBox(height: 24),
                 // Only show season selection for series
                 if (widget.subjectType == 2) ...[
