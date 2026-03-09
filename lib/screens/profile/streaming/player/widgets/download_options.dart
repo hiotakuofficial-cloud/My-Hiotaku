@@ -24,13 +24,15 @@ class DownloadQuality {
 class DownloadOptionsBottomSheet extends StatefulWidget {
   final String title;
   final List<String> availableQualities;
-  final Function(String quality) onDownload;
+  final List<Map<String, dynamic>> availableLanguages;
+  final Function(String quality, String subjectId, String detailPath) onDownload;
   final bool isLoading;
 
   const DownloadOptionsBottomSheet({
     Key? key,
     required this.title,
     required this.availableQualities,
+    required this.availableLanguages,
     required this.onDownload,
     this.isLoading = false,
   }) : super(key: key);
@@ -41,6 +43,7 @@ class DownloadOptionsBottomSheet extends StatefulWidget {
 
 class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet> {
   late String _selectedQuality;
+  late Map<String, dynamic> _selectedLanguage;
   bool _isDownloading = false;
 
   @override
@@ -49,6 +52,9 @@ class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet>
     _selectedQuality = widget.availableQualities.isNotEmpty 
         ? widget.availableQualities.first 
         : '720p';
+    _selectedLanguage = widget.availableLanguages.isNotEmpty
+        ? widget.availableLanguages.first
+        : {};
   }
 
   Future<bool> _requestPermissions() async {
@@ -83,8 +89,11 @@ class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet>
       return;
     }
 
+    final subjectId = _selectedLanguage['subjectId'] as String? ?? '';
+    final detailPath = _selectedLanguage['detailPath'] as String? ?? '';
+    
     // Trigger download
-    widget.onDownload(_selectedQuality);
+    widget.onDownload(_selectedQuality, subjectId, detailPath);
   }
 
   @override
@@ -116,7 +125,22 @@ class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet>
             ),
             const Divider(color: Color(0xFF333333), height: 1),
             const SizedBox(height: 20),
+            // Quality Section
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Select Quality',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'MazzardH',
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Expanded(
+              flex: 2,
               child: widget.isLoading
                   ? _buildShimmerLoading()
                   : ListView.builder(
@@ -189,6 +213,95 @@ class _DownloadOptionsBottomSheetState extends State<DownloadOptionsBottomSheet>
                 },
               ),
             ),
+            if (widget.availableLanguages.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Select Language',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'MazzardH',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                flex: 1,
+                child: ListView.builder(
+                  itemCount: widget.availableLanguages.length,
+                  itemBuilder: (context, index) {
+                    final lang = widget.availableLanguages[index];
+                    final isSelected = lang['subjectId'] == _selectedLanguage['subjectId'];
+                    final lanName = lang['lanName'] as String? ?? 'Unknown';
+                    
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedLanguage = lang),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        height: 50,
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFFDC143C).withOpacity(0.2)
+                              : const Color(0xFF1E1E1E),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFFDC143C)
+                                : const Color(0xFF333333),
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Text(
+                                lanName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'MazzardH',
+                                ),
+                              ),
+                              const Spacer(),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isSelected
+                                      ? const Color(0xFFDC143C)
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFFDC143C)
+                                        : const Color(0xFFB0B0B0),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: isSelected
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: Colors.white,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             Row(
               children: [

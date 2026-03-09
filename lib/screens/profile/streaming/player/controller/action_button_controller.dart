@@ -48,8 +48,7 @@ class ActionButtonController {
     required int season,
     required int episode,
     required List<String> availableQualities,
-    required String subjectId,
-    required String detailPath,
+    required List<Map<String, dynamic>> availableLanguages,
   }) {
     showModalBottomSheet(
       context: context,
@@ -58,8 +57,9 @@ class ActionButtonController {
       builder: (context) => DownloadOptionsBottomSheet(
         title: title,
         availableQualities: availableQualities,
-        onDownload: (quality) async {
-          Navigator.pop(context); // Close sheet immediately
+        availableLanguages: availableLanguages,
+        onDownload: (quality, subjectId, detailPath) async {
+          Navigator.pop(context);
           Fluttertoast.showToast(msg: 'Starting download...');
           
           final controller = DownloadController();

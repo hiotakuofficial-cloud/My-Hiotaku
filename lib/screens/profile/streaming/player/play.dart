@@ -64,6 +64,7 @@ class _PlayPageState extends State<PlayPage> {
   late int _currentSeason;
   late int _currentEpisode;
   List<String> _availableQualities = [];
+  List<Map<String, dynamic>> _availableLanguages = [];
 
   @override
   void initState() {
@@ -90,6 +91,23 @@ class _PlayPageState extends State<PlayPage> {
     // Load seasons in background
     _seasonEpisodeController = SeasonEpisodeController();
     _seasonEpisodeController.loadSeasons(widget.subjectId);
+    
+    // Load languages (dubs)
+    _loadLanguages();
+  }
+
+  Future<void> _loadLanguages() async {
+    try {
+      final response = await MovieBoxService.getDetail(id: widget.subjectId);
+      final dubs = response['data']?['subject']?['dubs'] as List? ?? [];
+      if (mounted) {
+        setState(() {
+          _availableLanguages = dubs.cast<Map<String, dynamic>>();
+        });
+      }
+    } catch (e) {
+      debugPrint('Load languages error: $e');
+    }
   }
 
   @override
@@ -585,8 +603,7 @@ class _PlayPageState extends State<PlayPage> {
               season: _currentSeason,
               episode: _currentEpisode,
               availableQualities: _availableQualities,
-              subjectId: widget.subjectId,
-              detailPath: widget.detailPath,
+              availableLanguages: _availableLanguages,
             );
           }),
           const SizedBox(width: 12),

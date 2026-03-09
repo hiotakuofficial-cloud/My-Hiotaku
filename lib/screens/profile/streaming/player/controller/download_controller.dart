@@ -129,6 +129,24 @@ class DownloadController extends ChangeNotifier {
     );
   }
 
+  Future<void> _showDownloadCompleteNotification() async {
+    const androidDetails = AndroidNotificationDetails(
+      'download_channel',
+      'Downloads',
+      channelDescription: 'Episode download progress',
+      importance: Importance.high,
+      priority: Priority.high,
+      autoCancel: true,
+    );
+
+    await _notifications.show(
+      0,
+      'Download Complete',
+      'Episode downloaded successfully',
+      const NotificationDetails(android: androidDetails),
+    );
+  }
+
   void _calculateSpeed(int received) {
     final now = DateTime.now();
     final timeDiff = now.difference(_lastUpdateTime).inMilliseconds;
@@ -277,8 +295,9 @@ class DownloadController extends ChangeNotifier {
         deleteOnError: false,
       );
 
+      // Download complete
       isDownloading = false;
-      await _notifications.cancel(0);
+      await _showDownloadCompleteNotification();
       notifyListeners();
       return _currentFilePath;
     } catch (e) {
