@@ -898,8 +898,6 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
               ),
               TextButton(
                 onPressed: () {
-                  Fluttertoast.showToast(msg: 'Show All clicked. Seasons: ${_seasonEpisodeController.seasons.length}, Loading: ${_seasonEpisodeController.isLoading}');
-                  
                   if (_seasonEpisodeController.seasons.isNotEmpty) {
                     showModalBottomSheet(
                       context: context,
@@ -914,8 +912,6 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
                         },
                       ),
                     );
-                  } else {
-                    Fluttertoast.showToast(msg: 'Seasons not loaded yet or empty');
                   }
                 },
                 child: const Text(

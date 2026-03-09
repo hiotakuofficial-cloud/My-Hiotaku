@@ -23,13 +23,9 @@ class SeasonEpisodeController extends ChangeNotifier {
         _seasons = (resource['seasons'] as List)
             .map((s) => s as Map<String, dynamic>)
             .toList();
-        debugPrint('✅ Seasons loaded: ${_seasons.length}');
-      } else {
-        debugPrint('❌ No seasons in response');
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ Error loading seasons: $e');
     }
 
     _isLoading = false;
@@ -42,7 +38,6 @@ class SeasonEpisodeController extends ChangeNotifier {
       orElse: () => {'maxEp': 0},
     );
     final maxEp = seasonData['maxEp'] ?? 0;
-    debugPrint('Episodes for season $season: $maxEp');
     return List.generate(maxEp, (index) => index + 1);
   }
 }
