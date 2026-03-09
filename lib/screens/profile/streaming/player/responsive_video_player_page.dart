@@ -4,6 +4,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shimmer/shimmer.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
+import 'controller/action_button_controller.dart';
 import 'widgets/seekbar.dart';
 import 'widgets/subtitle_selector.dart';
 import 'widgets/audio_track_selector.dart';
@@ -475,6 +476,8 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Widget _buildActionButtons() {
+    final typeLabel = widget.subjectType == 1 ? 'Movie' : 'Series';
+    
     return SizedBox(
       height: 48,
       child: ListView(
@@ -482,19 +485,30 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         children: [
-          _buildPillButton(Icons.share, 'Share'),
+          _buildPillButton(Icons.share, 'Share', () {
+            ActionButtonController.share(
+              title: widget.title ?? 'Video',
+              type: typeLabel,
+            );
+          }),
           const SizedBox(width: 12),
-          _buildPillButton(Icons.chat_bubble_outline, 'Feedback'),
+          _buildPillButton(Icons.chat_bubble_outline, 'Feedback', () {
+            ActionButtonController.feedback();
+          }),
           const SizedBox(width: 12),
-          _buildPillButton(Icons.file_download, 'Download'),
+          _buildPillButton(Icons.file_download, 'Download', () {
+            ActionButtonController.download();
+          }),
           const SizedBox(width: 12),
-          _buildPillButton(Icons.folder_open, 'View Downloads'),
+          _buildPillButton(Icons.folder_open, 'View Downloads', () {
+            ActionButtonController.viewDownloads();
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildPillButton(IconData icon, String label) {
+  Widget _buildPillButton(IconData icon, String label, VoidCallback onTap) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
@@ -504,7 +518,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
-          onTap: () {},
+          onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
