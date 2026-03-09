@@ -43,7 +43,6 @@ class ActionButtonController {
   /// Start download
   static void download(
     BuildContext context, {
-    required String videoUrl,
     required String title,
     required int season,
     required int episode,

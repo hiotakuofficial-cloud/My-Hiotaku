@@ -581,7 +581,6 @@ class _PlayPageState extends State<PlayPage> {
           _buildPillButton(Icons.file_download, 'Download', () {
             ActionButtonController.download(
               context,
-              videoUrl: _controller.currentVideoUrl,
               title: widget.title ?? 'Episode',
               season: _currentSeason,
               episode: _currentEpisode,
