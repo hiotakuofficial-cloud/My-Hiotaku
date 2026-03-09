@@ -13,7 +13,6 @@ import 'widgets/volume_gesture.dart';
 import 'widgets/quality_selector.dart';
 import 'widgets/pip_button.dart';
 import 'widgets/custom_buffering_loader.dart';
-import 'video_player_page.dart';
 
 class ResponsiveVideoPlayerPage extends StatefulWidget {
   final String videoUrl;
