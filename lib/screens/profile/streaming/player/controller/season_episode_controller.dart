@@ -17,7 +17,7 @@ class SeasonEpisodeController extends ChangeNotifier {
 
     try {
       final response = await MovieBoxService.getDetail(id: subjectId);
-      final resource = response['data']?['subject']?['resource'];
+      final resource = response['data']?['resource'];
       
       if (resource != null && resource['seasons'] != null) {
         _seasons = (resource['seasons'] as List)
