@@ -11,8 +11,8 @@ class VideoPlayerController extends ChangeNotifier {
   final String initialVideoUrl;
   final String subjectId;
   final String detailPath;
-  final int season;
-  final int episode;
+  int season;
+  int episode;
   final List<String> availableQualities;
 
   late Player player;
@@ -325,6 +325,39 @@ class VideoPlayerController extends ChangeNotifier {
     } catch (e) {
       debugPrint('Clear progress error: $e');
     }
+  }
+
+  Future<void> changeVideoUrl(String newUrl, int newSeason, int newEpisode) async {
+    isBuffering = true;
+    notifyListeners();
+
+    try {
+      // Update season and episode
+      season = newSeason;
+      episode = newEpisode;
+      
+      // Open new video
+      await player.open(
+        Media(
+          newUrl,
+          httpHeaders: {
+            'Referer': 'https://themoviebox.org/',
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+          },
+        ),
+      );
+
+      // Wait for duration then play
+      await player.stream.duration.firstWhere((d) => d.inSeconds > 0);
+      await player.play();
+
+      currentVideoUrl = newUrl;
+    } catch (e) {
+      debugPrint('Change video URL error: $e');
+    }
+
+    isBuffering = false;
+    notifyListeners();
   }
 
   @override

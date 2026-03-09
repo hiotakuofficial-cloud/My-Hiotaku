@@ -94,7 +94,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
   }
 
   Future<void> _loadEpisode(int season, int episode) async {
-    if (_isLoadingEpisode) return; // Prevent multiple clicks
+    if (_isLoadingEpisode) return;
     
     setState(() => _isLoadingEpisode = true);
     
@@ -109,6 +109,7 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
       final streams = playData['data']?['streams'] as List? ?? [];
       if (streams.isEmpty) {
         if (mounted) setState(() => _isLoadingEpisode = false);
+        Fluttertoast.showToast(msg: 'No video available');
         return;
       }
 
@@ -122,24 +123,9 @@ class _ResponsiveVideoPlayerPageState extends State<ResponsiveVideoPlayerPage> {
 
       final videoUrl = stream['url'] as String? ?? '';
       if (videoUrl.isNotEmpty && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ResponsiveVideoPlayerPage(
-              videoUrl: videoUrl,
-              subjectId: widget.subjectId,
-              detailPath: widget.detailPath,
-              season: season,
-              episode: episode,
-              title: widget.title,
-              posterUrl: widget.posterUrl,
-              availableQualities: widget.availableQualities,
-              subjectType: widget.subjectType,
-              rating: widget.rating,
-              genres: widget.genres,
-            ),
-          ),
-        );
+        // Update video URL in controller
+        await _controller.changeVideoUrl(videoUrl, season, episode);
+        setState(() => _isLoadingEpisode = false);
       }
     } catch (e) {
       debugPrint('Load episode error: $e');
