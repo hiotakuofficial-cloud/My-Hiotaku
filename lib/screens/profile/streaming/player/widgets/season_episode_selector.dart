@@ -176,12 +176,13 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               itemBuilder: (context, index) {
                 final season = widget.seasons[index]['se'] as int;
                 final isActive = season == _selectedSeason;
+                final isDisabled = _loadingEpisode != null;
 
                 return GestureDetector(
-                  onTap: () {
+                  onTap: isDisabled ? null : () {
                     setState(() {
                       _selectedSeason = season;
-                      _loadingEpisode = null; // Clear loading state
+                      _loadingEpisode = null;
                     });
                   },
                   child: AnimatedContainer(
@@ -199,13 +200,16 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     ),
                     transform: Matrix4.identity()..scale(isActive ? 1.05 : 1.0),
                     alignment: Alignment.center,
-                    child: Text(
-                      'Season $season',
-                      style: TextStyle(
-                        color: isActive ? Colors.white : Colors.white.withOpacity(0.8),
-                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 15,
-                        fontFamily: 'MazzardH',
+                    child: Opacity(
+                      opacity: isDisabled ? 0.3 : 1.0,
+                      child: Text(
+                        'Season $season',
+                        style: TextStyle(
+                          color: isActive ? Colors.white : Colors.white.withOpacity(0.8),
+                          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 15,
+                          fontFamily: 'MazzardH',
+                        ),
                       ),
                     ),
                   ),
@@ -236,9 +240,10 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
           final episode = episodes[index];
           final isCurrentlyPlaying = episode == widget.currentEpisode && _selectedSeason == widget.currentSeason;
           final isLoading = episode == _loadingEpisode && _selectedSeason == widget.currentSeason;
+          final isDisabled = _loadingEpisode != null && !isLoading;
 
           return GestureDetector(
-            onTap: () {
+            onTap: isDisabled ? null : () {
               setState(() => _loadingEpisode = episode);
               widget.onSelect(_selectedSeason, episode);
               Navigator.pop(context);
@@ -248,13 +253,19 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               curve: Curves.easeOut,
               height: 48,
               decoration: BoxDecoration(
-                color: isCurrentlyPlaying ? const Color(0xFFDC143C) : const Color(0xFF222222),
+                color: isLoading 
+                    ? const Color(0xFFDC143C).withOpacity(0.8)
+                    : isCurrentlyPlaying 
+                        ? const Color(0xFFDC143C) 
+                        : isDisabled
+                            ? const Color(0xFF1A1A1A)
+                            : const Color(0xFF222222),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isCurrentlyPlaying ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
+                  color: (isCurrentlyPlaying || isLoading) ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
                   width: 1,
                 ),
-                boxShadow: isCurrentlyPlaying
+                boxShadow: (isCurrentlyPlaying || isLoading)
                     ? [
                         BoxShadow(
                           color: const Color(0xFFDC143C).withOpacity(0.4),
@@ -266,18 +277,37 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               ),
               alignment: Alignment.center,
               child: isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'EP $episode',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            fontFamily: 'MazzardH',
+                          ),
+                        ),
+                      ],
                     )
                   : Text(
                       'EP $episode',
                       style: TextStyle(
-                        color: isCurrentlyPlaying ? Colors.white : Colors.white.withOpacity(0.8),
+                        color: isDisabled 
+                            ? Colors.white.withOpacity(0.3)
+                            : isCurrentlyPlaying 
+                                ? Colors.white 
+                                : Colors.white.withOpacity(0.8),
                         fontWeight: isCurrentlyPlaying ? FontWeight.bold : FontWeight.normal,
                         fontSize: 14,
                         fontFamily: 'MazzardH',
