@@ -21,7 +21,7 @@ class SeasonEpisodeSelector extends StatefulWidget {
 
 class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
   late int _selectedSeason;
-  int? _selectedEpisode;
+  int? _loadingEpisode; // Track which episode is loading
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
 
@@ -29,7 +29,7 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
   void initState() {
     super.initState();
     _selectedSeason = widget.currentSeason;
-    _selectedEpisode = null;
+    _loadingEpisode = null;
     _loadData();
   }
 
@@ -181,7 +181,7 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                   onTap: () {
                     setState(() {
                       _selectedSeason = season;
-                      _selectedEpisode = null;
+                      _loadingEpisode = null; // Clear loading state
                     });
                   },
                   child: AnimatedContainer(
@@ -234,11 +234,12 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
         itemCount: episodes.length,
         itemBuilder: (context, index) {
           final episode = episodes[index];
-          final isActive = episode == _selectedEpisode;
+          final isCurrentlyPlaying = episode == widget.currentEpisode && _selectedSeason == widget.currentSeason;
+          final isLoading = episode == _loadingEpisode && _selectedSeason == widget.currentSeason;
 
           return GestureDetector(
             onTap: () {
-              setState(() => _selectedEpisode = episode);
+              setState(() => _loadingEpisode = episode);
               widget.onSelect(_selectedSeason, episode);
               Navigator.pop(context);
             },
@@ -247,13 +248,13 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               curve: Curves.easeOut,
               height: 48,
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFFDC143C) : const Color(0xFF222222),
+                color: isCurrentlyPlaying ? const Color(0xFFDC143C) : const Color(0xFF222222),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isActive ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
+                  color: isCurrentlyPlaying ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
                   width: 1,
                 ),
-                boxShadow: isActive
+                boxShadow: isCurrentlyPlaying
                     ? [
                         BoxShadow(
                           color: const Color(0xFFDC143C).withOpacity(0.4),
@@ -264,15 +265,24 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     : null,
               ),
               alignment: Alignment.center,
-              child: Text(
-                'EP $episode',
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.white.withOpacity(0.8),
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 14,
-                  fontFamily: 'MazzardH',
-                ),
-              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      'EP $episode',
+                      style: TextStyle(
+                        color: isCurrentlyPlaying ? Colors.white : Colors.white.withOpacity(0.8),
+                        fontWeight: isCurrentlyPlaying ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 14,
+                        fontFamily: 'MazzardH',
+                      ),
+                    ),
             ),
           );
         },
