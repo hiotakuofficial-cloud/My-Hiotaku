@@ -50,7 +50,7 @@ class VideoPlayerController extends ChangeNotifier {
         debugPrint('Entered PiP mode');
       },
       onPauseForCall: () {
-        // Pause video when app goes to background
+        // Pause video when app goes to background to prevent UI stuck
         if (player.state.playing) {
           player.pause();
           debugPrint('Video paused for background');

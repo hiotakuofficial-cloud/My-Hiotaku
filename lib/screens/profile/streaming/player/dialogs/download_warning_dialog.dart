@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// iOS-style warning dialog for download limitations
 Future<bool?> showDownloadWarningDialog(BuildContext context) {
   return showDialog<bool>(
     context: context,
