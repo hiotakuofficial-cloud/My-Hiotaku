@@ -29,6 +29,8 @@ class VideoLifecycleController extends WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint('App lifecycle state: $state');
+    
     switch (state) {
       case AppLifecycleState.inactive:
         // Don't set flag here - wait for actual pause
@@ -36,16 +38,26 @@ class VideoLifecycleController extends WidgetsBindingObserver {
         
       case AppLifecycleState.paused:
         // Only mark if video was actually playing
-        _wasPlayingBeforeInactive = isPlaying();
-        if (_wasPlayingBeforeInactive) {
-          onPauseForCall();
+        try {
+          _wasPlayingBeforeInactive = isPlaying();
+          if (_wasPlayingBeforeInactive) {
+            onPauseForCall();
+          }
+        } catch (e) {
+          debugPrint('Error pausing video: $e');
+          _wasPlayingBeforeInactive = false;
         }
         break;
         
       case AppLifecycleState.resumed:
         // App resumed - restore audio if was playing
-        if (_wasPlayingBeforeInactive) {
-          onResumeAfterCall();
+        try {
+          if (_wasPlayingBeforeInactive) {
+            onResumeAfterCall();
+            _wasPlayingBeforeInactive = false;
+          }
+        } catch (e) {
+          debugPrint('Error resuming video: $e');
           _wasPlayingBeforeInactive = false;
         }
         break;

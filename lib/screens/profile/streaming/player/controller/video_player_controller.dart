@@ -57,10 +57,14 @@ class VideoPlayerController extends ChangeNotifier {
         }
       },
       onResumeAfterCall: () {
-        // Resume video when app comes back
-        player.play();
-        notifyListeners(); // Update UI
-        debugPrint('Video resumed from background');
+        // Resume video when app comes back - only if player is ready
+        if (player.state.playlist.medias.isNotEmpty) {
+          player.play();
+          notifyListeners(); // Update UI
+          debugPrint('Video resumed from background');
+        } else {
+          debugPrint('Player not ready, skipping resume');
+        }
       },
       isPlaying: () => player.state.playing, // Check actual playing state
     );
