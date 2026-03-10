@@ -277,24 +277,23 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               ),
               alignment: Alignment.center,
               child: isLoading
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ? Stack(
+                      alignment: Alignment.center,
                       children: [
                         SizedBox(
-                          width: 14,
-                          height: 14,
+                          width: 32,
+                          height: 32,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                            strokeWidth: 2.5,
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         ),
-                        const SizedBox(width: 6),
                         Text(
                           'EP $episode',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                            fontSize: 12,
                             fontFamily: 'MazzardH',
                           ),
                         ),
