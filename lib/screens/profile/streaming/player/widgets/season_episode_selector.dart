@@ -22,7 +22,8 @@ class SeasonEpisodeSelector extends StatefulWidget {
 class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
   late int _selectedSeason;
   int? _loadingEpisode; // Track which episode is loading
-  int? _loadingSeason; // Track which season is loading
+  int? _loadingSeason; // Track which season is loading for episode
+  int? _loadingSeasonPill; // Track which season pill is loading
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
 
@@ -32,6 +33,7 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
     _selectedSeason = widget.currentSeason;
     _loadingEpisode = null;
     _loadingSeason = null;
+    _loadingSeasonPill = null;
     _loadData();
   }
   
@@ -44,6 +46,7 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
       setState(() {
         _loadingEpisode = null;
         _loadingSeason = null;
+        _loadingSeasonPill = null;
       });
     }
   }
@@ -191,12 +194,14 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               itemBuilder: (context, index) {
                 final season = widget.seasons[index]['se'] as int;
                 final isActive = season == _selectedSeason;
-                final isDisabled = _loadingEpisode != null;
+                final isLoadingSeason = season == _loadingSeasonPill;
+                final isDisabled = _loadingEpisode != null || _loadingSeasonPill != null;
 
                 return GestureDetector(
                   onTap: isDisabled ? null : () {
                     setState(() {
                       _selectedSeason = season;
+                      _loadingSeasonPill = season;
                       _loadingEpisode = null;
                       _loadingSeason = null;
                     });
@@ -205,18 +210,31 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFDC143C) : Colors.transparent,
+                      color: isLoadingSeason
+                          ? const Color(0xFFDC143C).withOpacity(0.8)
+                          : isActive 
+                              ? const Color(0xFFDC143C) 
+                              : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isActive ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
+                        color: (isActive || isLoadingSeason) ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
                         width: 1,
                       ),
                     ),
                     transform: Matrix4.identity()..scale(isActive ? 1.05 : 1.0),
                     alignment: Alignment.center,
-                    child: Opacity(
-                      opacity: isDisabled ? 0.3 : 1.0,
-                      child: Text(
+                    child: isLoadingSeason
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Opacity(
+                            opacity: isDisabled ? 0.3 : 1.0,
+                            child: Text(
                         'Season $season',
                         style: TextStyle(
                           color: isActive ? Colors.white : Colors.white.withOpacity(0.8),
