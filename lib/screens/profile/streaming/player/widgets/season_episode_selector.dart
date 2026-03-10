@@ -22,6 +22,7 @@ class SeasonEpisodeSelector extends StatefulWidget {
 class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
   late int _selectedSeason;
   int? _loadingEpisode; // Track which episode is loading
+  int? _loadingSeason; // Track which season is loading
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
 
@@ -30,7 +31,21 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
     super.initState();
     _selectedSeason = widget.currentSeason;
     _loadingEpisode = null;
+    _loadingSeason = null;
     _loadData();
+  }
+  
+  @override
+  void didUpdateWidget(SeasonEpisodeSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Clear loading state when episode actually changes
+    if (oldWidget.currentEpisode != widget.currentEpisode || 
+        oldWidget.currentSeason != widget.currentSeason) {
+      setState(() {
+        _loadingEpisode = null;
+        _loadingSeason = null;
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -239,12 +254,15 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
         itemBuilder: (context, index) {
           final episode = episodes[index];
           final isCurrentlyPlaying = episode == widget.currentEpisode && _selectedSeason == widget.currentSeason;
-          final isLoading = episode == _loadingEpisode && _selectedSeason == widget.currentSeason;
+          final isLoading = episode == _loadingEpisode && _selectedSeason == _loadingSeason;
           final isDisabled = _loadingEpisode != null && !isLoading;
 
           return GestureDetector(
             onTap: isDisabled ? null : () {
-              setState(() => _loadingEpisode = episode);
+              setState(() {
+                _loadingEpisode = episode;
+                _loadingSeason = _selectedSeason;
+              });
               widget.onSelect(_selectedSeason, episode);
               Navigator.pop(context);
             },
