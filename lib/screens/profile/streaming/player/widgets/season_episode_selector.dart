@@ -198,11 +198,10 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     setState(() {
                       _selectedSeason = season;
                       _loadingEpisode = null;
+                      _loadingSeason = null;
                     });
                   },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
+                  child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
