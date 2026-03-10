@@ -50,17 +50,17 @@ class VideoPlayerController extends ChangeNotifier {
         debugPrint('Entered PiP mode');
       },
       onPauseForCall: () {
-        // Lower volume for call (audio ducking)
-        _savedVolume = player.state.volume;
-        player.setVolume(_savedVolume * 0.2); // 20% volume during call
-        debugPrint('Audio ducked for call');
+        // Pause video when app goes to background
+        if (player.state.playing) {
+          player.pause();
+          debugPrint('Video paused for background');
+        }
       },
       onResumeAfterCall: () {
-        // Restore full volume and resume playback
-        player.setVolume(_savedVolume);
+        // Resume video when app comes back
         player.play();
         notifyListeners(); // Update UI
-        debugPrint('Audio restored and video resumed');
+        debugPrint('Video resumed from background');
       },
       isPlaying: () => player.state.playing, // Check actual playing state
     );

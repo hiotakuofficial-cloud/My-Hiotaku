@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import '../widgets/feedback.dart';
 import '../widgets/download_options.dart';
 import '../controller/download_controller.dart';
+import '../dialogs/download_warning_dialog.dart';
 
 class ActionButtonController {
   /// Share content with Android share dialog
@@ -61,6 +62,13 @@ class ActionButtonController {
         onDownload: (quality, subjectId, detailPath) async {
           Navigator.pop(context);
           Fluttertoast.showToast(msg: 'Starting download...');
+          
+          // Wait 3 seconds then show warning
+          await Future.delayed(const Duration(seconds: 3));
+          
+          if (context.mounted) {
+            await showDownloadWarningDialog(context);
+          }
           
           final controller = DownloadController.instance;
           controller.downloadEpisode(
