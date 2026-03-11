@@ -21,9 +21,6 @@ class SeasonEpisodeSelector extends StatefulWidget {
 
 class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
   late int _selectedSeason;
-  int? _loadingEpisode; // Track which episode is loading
-  int? _loadingSeason; // Track which season is loading for episode
-  int? _loadingSeasonPill; // Track which season pill is loading
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
 
@@ -31,24 +28,7 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
   void initState() {
     super.initState();
     _selectedSeason = widget.currentSeason;
-    _loadingEpisode = null;
-    _loadingSeason = null;
-    _loadingSeasonPill = null;
     _loadData();
-  }
-  
-  @override
-  void didUpdateWidget(SeasonEpisodeSelector oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Clear loading state when episode actually changes
-    if (oldWidget.currentEpisode != widget.currentEpisode || 
-        oldWidget.currentSeason != widget.currentSeason) {
-      setState(() {
-        _loadingEpisode = null;
-        _loadingSeason = null;
-        _loadingSeasonPill = null;
-      });
-    }
   }
 
   Future<void> _loadData() async {
@@ -194,15 +174,11 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               itemBuilder: (context, index) {
                 final season = widget.seasons[index]['se'] as int;
                 final isActive = season == _selectedSeason;
-                final isDisabled = _loadingEpisode != null || _loadingSeasonPill != null;
 
                 return GestureDetector(
-                  onTap: isDisabled ? null : () {
+                  onTap: () {
                     setState(() {
                       _selectedSeason = season;
-                      _loadingSeasonPill = season;
-                      _loadingEpisode = null;
-                      _loadingSeason = null;
                     });
                   },
                   child: Container(
@@ -220,11 +196,9 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     child: Text(
                       'Season $season',
                       style: TextStyle(
-                        color: isDisabled 
-                            ? Colors.white.withOpacity(0.3)
-                            : isActive 
-                                ? Colors.white 
-                                : Colors.white.withOpacity(0.8),
+                        color: isActive 
+                            ? Colors.white 
+                            : Colors.white.withOpacity(0.8),
                         fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                         fontSize: 15,
                         fontFamily: 'MazzardH',
@@ -257,15 +231,9 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
         itemBuilder: (context, index) {
           final episode = episodes[index];
           final isCurrentlyPlaying = episode == widget.currentEpisode && _selectedSeason == widget.currentSeason;
-          final isDisabled = _loadingEpisode != null || _loadingSeasonPill != null;
 
           return GestureDetector(
-            onTap: isDisabled ? null : () {
-              setState(() {
-                _loadingEpisode = episode;
-                _loadingSeason = _selectedSeason;
-                _loadingSeasonPill = null;
-              });
+            onTap: () {
               widget.onSelect(_selectedSeason, episode);
               Navigator.pop(context);
             },
@@ -275,9 +243,7 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                 decoration: BoxDecoration(
                   color: isCurrentlyPlaying 
                       ? const Color(0xFFDC143C) 
-                      : isDisabled
-                          ? const Color(0xFF1A1A1A)
-                          : const Color(0xFF222222),
+                      : const Color(0xFF222222),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isCurrentlyPlaying ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
@@ -288,11 +254,9 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                 child: Text(
                   'EP $episode',
                   style: TextStyle(
-                    color: isDisabled 
-                        ? const Color(0x4DFFFFFF)  // Direct hex color, no withOpacity
-                        : isCurrentlyPlaying 
-                            ? Colors.white 
-                            : const Color(0xCCFFFFFF),  // Direct hex color
+                    color: isCurrentlyPlaying 
+                        ? Colors.white 
+                        : const Color(0xCCFFFFFF),
                           fontWeight: isCurrentlyPlaying ? FontWeight.bold : FontWeight.normal,
                           fontSize: 14,
                           fontFamily: 'MazzardH',
