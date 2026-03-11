@@ -270,43 +270,36 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               widget.onSelect(_selectedSeason, episode);
               Navigator.pop(context);
             },
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: isCurrentlyPlaying 
-                    ? const Color(0xFFDC143C) 
-                    : isDisabled
-                        ? const Color(0xFF1A1A1A)
-                        : const Color(0xFF222222),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isCurrentlyPlaying ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
-                  width: 1,
+            child: RepaintBoundary(
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isCurrentlyPlaying 
+                      ? const Color(0xFFDC143C) 
+                      : isDisabled
+                          ? const Color(0xFF1A1A1A)
+                          : const Color(0xFF222222),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isCurrentlyPlaying ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
+                    width: 1,
+                  ),
                 ),
-                boxShadow: isCurrentlyPlaying
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFFDC143C).withOpacity(0.4),
-                          blurRadius: 10,
-                          spreadRadius: 2,
+                alignment: Alignment.center,
+                child: Text(
+                  'EP $episode',
+                  style: TextStyle(
+                    color: isDisabled 
+                        ? const Color(0x4DFFFFFF)  // Direct hex color, no withOpacity
+                        : isCurrentlyPlaying 
+                            ? Colors.white 
+                            : const Color(0xCCFFFFFF),  // Direct hex color
+                          fontWeight: isCurrentlyPlaying ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 14,
+                          fontFamily: 'MazzardH',
                         ),
-                      ]
-                    : null,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                'EP $episode',
-                style: TextStyle(
-                  color: isDisabled 
-                      ? Colors.white.withOpacity(0.3)
-                      : isCurrentlyPlaying 
-                          ? Colors.white 
-                          : Colors.white.withOpacity(0.8),
-                        fontWeight: isCurrentlyPlaying ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 14,
-                        fontFamily: 'MazzardH',
                       ),
-                    ),
+              ),
             ),
           );
         },
