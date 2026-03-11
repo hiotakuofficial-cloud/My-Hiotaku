@@ -82,6 +82,8 @@ class _PlayPageState extends State<PlayPage> {
       season: widget.season,
       episode: widget.episode,
       availableQualities: widget.availableQualities,
+      title: widget.title,
+      posterUrl: widget.posterUrl,
     );
     
     // Load recommendations in background

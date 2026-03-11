@@ -14,6 +14,8 @@ class VideoPlayerController extends ChangeNotifier {
   int season;
   int episode;
   final List<String> availableQualities;
+  final String? title;
+  final String? posterUrl;
 
   late Player player;
   late VideoController videoController;
@@ -39,6 +41,8 @@ class VideoPlayerController extends ChangeNotifier {
     required this.season,
     required this.episode,
     required this.availableQualities,
+    this.title,
+    this.posterUrl,
   }) {
     currentVideoUrl = initialVideoUrl;
     player = Player();
@@ -135,6 +139,9 @@ class VideoPlayerController extends ChangeNotifier {
       // Resume from saved position
       final prefs = await SharedPreferences.getInstance();
       final savedPosition = prefs.getInt('${subjectId}_s${season}_e${episode}_position') ?? 0;
+      
+      // Save metadata for history
+      await _saveMetadata();
       
       if (savedPosition > 5) {
         // Wait for video duration to be available (video loaded)
@@ -321,6 +328,25 @@ class VideoPlayerController extends ChangeNotifier {
       await prefs.setInt(key, seconds);
     } catch (e) {
       debugPrint('Save progress error: $e');
+    }
+  }
+
+  Future<void> _saveMetadata() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${subjectId}_s${season}_e${episode}_meta';
+      final duration = player.state.duration.inSeconds;
+      
+      final meta = {
+        'title': title ?? 'Unknown',
+        'posterUrl': posterUrl ?? '',
+        'duration': duration,
+        'lastWatched': DateTime.now().toIso8601String(),
+      };
+      
+      await prefs.setString(key, '{"title":"${meta['title']}","posterUrl":"${meta['posterUrl']}","duration":${meta['duration']},"lastWatched":"${meta['lastWatched']}"}');
+    } catch (e) {
+      debugPrint('Save metadata error: $e');
     }
   }
 
