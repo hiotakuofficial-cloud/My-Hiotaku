@@ -199,10 +199,10 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                 final isDisabled = (_loadingEpisode != null || _loadingSeasonPill != null) && !isLoading;
 
                 if (isLoading) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                     child: PillButton(
-                      text: 'Season $season',
+                      text: 'S$season',
                       onPressed: null,
                     ),
                   );

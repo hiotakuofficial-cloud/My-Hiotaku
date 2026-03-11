@@ -111,68 +111,66 @@ class _PillButtonState extends State<PillButton> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _onButtonPressed,
-      child: AnimatedBuilder(
-        // Listen to both animation controllers to rebuild the UI when values change
-        animation: Listenable.merge([_borderAnimationController, _dotAnimationController]),
-        builder: (BuildContext context, Widget? child) {
-          final double currentBorderWidth = _borderWidthAnimation.value;
-          final Color? currentBorderColor = _borderColorAnimation.value;
+    return AnimatedBuilder(
+      // Listen to both animation controllers to rebuild the UI when values change
+      animation: Listenable.merge([_borderAnimationController, _dotAnimationController]),
+      builder: (BuildContext context, Widget? child) {
+        final double currentBorderWidth = _borderWidthAnimation.value;
+        final Color? currentBorderColor = _borderColorAnimation.value;
 
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-            decoration: BoxDecoration(
-              color: Colors.black, // Button's background color
-              borderRadius: BorderRadius.circular(50.0), // Creates the pill shape
-              border: Border.all(
-                color: currentBorderColor ??
-                    Colors.red.shade900, // Fallback to crimson red
-                width: currentBorderWidth, // Animated border width
-              ),
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+          decoration: BoxDecoration(
+            color: Colors.black, // Button's background color
+            borderRadius: BorderRadius.circular(20.0), // Creates the pill shape
+            border: Border.all(
+              color: currentBorderColor ??
+                  Colors.red.shade900, // Fallback to crimson red
+              width: currentBorderWidth, // Animated border width
             ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return ScaleTransition(
-                    scale: animation, child: child); // Scale transition for content switch
-              },
-              child: _isButtonAnimating
-                  ? KeyedSubtree(
-                      key: const ValueKey<bool>(true), // Unique key for AnimatedSwitcher
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min, // Constrain row size to its children
-                        children: List<Widget>.generate(3, (int index) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                            child: ScaleTransition(
-                              scale: _dotScaleAnimations[index], // Animated scale for each dot
-                              child: Container(
-                                width: 8.0,
-                                height: 8.0,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white, // Color of the dots
-                                  shape: BoxShape.circle, // Circular dots
-                                ),
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return ScaleTransition(
+                  scale: animation, child: child); // Scale transition for content switch
+            },
+            child: _isButtonAnimating
+                ? KeyedSubtree(
+                    key: const ValueKey<bool>(true), // Unique key for AnimatedSwitcher
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // Constrain row size to its children
+                      children: List<Widget>.generate(3, (int index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                          child: ScaleTransition(
+                            scale: _dotScaleAnimations[index], // Animated scale for each dot
+                            child: Container(
+                              width: 6.0,
+                              height: 6.0,
+                              decoration: const BoxDecoration(
+                                color: Colors.white, // Color of the dots
+                                shape: BoxShape.circle, // Circular dots
                               ),
                             ),
-                          );
-                        }),
-                      ),
-                    )
-                  : KeyedSubtree(
-                      key: const ValueKey<bool>(false), // Unique key for AnimatedSwitcher
-                      child: Text(
-                        widget.text,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18.0), // Button's text style
-                      ),
+                          ),
+                        );
+                      }),
                     ),
-            ),
-          );
-        },
-      ),
+                  )
+                : KeyedSubtree(
+                    key: const ValueKey<bool>(false), // Unique key for AnimatedSwitcher
+                    child: Text(
+                      widget.text,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15.0,
+                          fontFamily: 'MazzardH'), // Button's text style
+                    ),
+                  ),
+          ),
+        );
+      },
     );
   }
 }
