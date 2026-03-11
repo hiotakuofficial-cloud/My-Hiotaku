@@ -190,15 +190,26 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFDC143C)))
+          ? _buildShimmerLoading()
           : _historyItems.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
                   onRefresh: _loadHistory,
                   color: const Color(0xFFDC143C),
-                  child: _viewType == ViewType.listView
-                      ? _buildListView()
-                      : _buildGridView(),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    switchInCurve: Curves.easeInOut,
+                    switchOutCurve: Curves.easeInOut,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      );
+                    },
+                    child: _viewType == ViewType.listView
+                        ? _buildListView()
+                        : _buildGridView(),
+                  ),
                 ),
       floatingActionButton: _historyItems.isNotEmpty
           ? FloatingActionButton(
@@ -212,16 +223,98 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
                           : ViewType.listView;
                 });
               },
-              child: Icon(
-                _viewType == ViewType.listView
-                    ? Icons.grid_on
-                    : _viewType == ViewType.gridViewCompact
-                        ? Icons.apps
-                        : Icons.list,
-                color: Colors.white,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                child: Icon(
+                  _viewType == ViewType.listView
+                      ? Icons.grid_on
+                      : _viewType == ViewType.gridViewCompact
+                          ? Icons.apps
+                          : Icons.list,
+                  key: ValueKey(_viewType),
+                  color: Colors.white,
+                ),
               ),
             )
           : null,
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 100,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 16,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 14,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 12,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 6,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -255,6 +348,28 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
             ),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC143C),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Browse Anime',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'MazzardH',
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -262,6 +377,7 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
 
   Widget _buildListView() {
     return ListView.builder(
+      key: const ValueKey('list_view'),
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemCount: _historyItems.length,
@@ -395,6 +511,7 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
     final childAspectRatio = _viewType == ViewType.gridViewCompact ? 0.6 : 0.7;
 
     return GridView.builder(
+      key: ValueKey('grid_view_${_viewType.name}'),
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
