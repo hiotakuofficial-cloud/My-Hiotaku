@@ -269,9 +269,7 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               widget.onSelect(_selectedSeason, episode);
               Navigator.pop(context);
             },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOut,
+            child: Container(
               height: 48,
               decoration: BoxDecoration(
                 color: isCurrentlyPlaying 
