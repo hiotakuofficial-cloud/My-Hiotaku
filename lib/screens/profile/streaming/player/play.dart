@@ -726,23 +726,14 @@ class _PlayPageState extends State<PlayPage> {
                             width: 1.5,
                           ),
                         ),
-                        child: _isLoadingEpisode && seasonNum == _currentSeason
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : Text(
-                                'Season $seasonNum',
-                                style: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.grey,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  fontFamily: 'MazzardH',
-                                ),
-                              ),
+                        child: Text(
+                          'Season $seasonNum',
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.grey,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontFamily: 'MazzardH',
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -1033,23 +1024,14 @@ class _PlayPageState extends State<PlayPage> {
                             width: 1.5,
                           ),
                         ),
-                        child: _isLoadingEpisode && episode == _currentEpisode
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : Text(
-                                'EP $episode',
-                                style: TextStyle(
-                                  color: isActive ? Colors.white : Colors.grey,
-                                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                                  fontFamily: 'MazzardH',
-                                ),
-                              ),
+                        child: Text(
+                          'EP $episode',
+                          style: TextStyle(
+                            color: isActive ? Colors.white : Colors.grey,
+                            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            fontFamily: 'MazzardH',
+                          ),
+                        ),
                       ),
                     );
                   },
