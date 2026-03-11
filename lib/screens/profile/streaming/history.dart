@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../../search/search.dart';
 
 class WatchHistoryScreen extends StatefulWidget {
   const WatchHistoryScreen({Key? key}) : super(key: key);
@@ -351,7 +352,10 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SearchPage()),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC143C),
