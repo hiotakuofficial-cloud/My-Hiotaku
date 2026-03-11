@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../animation/loading.dart';
 
 class SeasonEpisodeSelector extends StatefulWidget {
   final List<Map<String, dynamic>> seasons;
@@ -194,7 +195,18 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               itemBuilder: (context, index) {
                 final season = widget.seasons[index]['se'] as int;
                 final isActive = season == _selectedSeason;
-                final isDisabled = _loadingEpisode != null || _loadingSeasonPill != null;
+                final isLoading = season == _loadingSeasonPill;
+                final isDisabled = (_loadingEpisode != null || _loadingSeasonPill != null) && !isLoading;
+
+                if (isLoading) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: PillButton(
+                      text: 'Season $season',
+                      onPressed: null,
+                    ),
+                  );
+                }
 
                 return GestureDetector(
                   onTap: isDisabled ? null : () {
@@ -257,7 +269,15 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
         itemBuilder: (context, index) {
           final episode = episodes[index];
           final isCurrentlyPlaying = episode == widget.currentEpisode && _selectedSeason == widget.currentSeason;
-          final isDisabled = _loadingEpisode != null || _loadingSeasonPill != null;
+          final isLoading = episode == _loadingEpisode && _selectedSeason == _loadingSeason;
+          final isDisabled = (_loadingEpisode != null || _loadingSeasonPill != null) && !isLoading;
+
+          if (isLoading) {
+            return PillButton(
+              text: 'EP $episode',
+              onPressed: null,
+            );
+          }
 
           return GestureDetector(
             onTap: isDisabled ? null : () {
