@@ -218,16 +218,17 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     ),
                     transform: Matrix4.identity()..scale(isActive ? 1.05 : 1.0),
                     alignment: Alignment.center,
-                    child: Opacity(
-                      opacity: isDisabled ? 0.3 : 1.0,
-                      child: Text(
-                        'Season $season',
-                        style: TextStyle(
-                          color: isActive ? Colors.white : Colors.white.withOpacity(0.8),
-                          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 15,
-                          fontFamily: 'MazzardH',
-                        ),
+                    child: Text(
+                      'Season $season',
+                      style: TextStyle(
+                        color: isDisabled 
+                            ? Colors.white.withOpacity(0.3)
+                            : isActive 
+                                ? Colors.white 
+                                : Colors.white.withOpacity(0.8),
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 15,
+                        fontFamily: 'MazzardH',
                       ),
                     ),
                   ),
