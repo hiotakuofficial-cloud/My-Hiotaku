@@ -125,7 +125,12 @@ class _PlayPageState extends State<PlayPage> {
   Future<void> _loadEpisode(int season, int episode) async {
     if (_isLoadingEpisode) return;
     
-    setState(() => _isLoadingEpisode = true);
+    // Update UI state INSTANTLY on click
+    setState(() {
+      _currentSeason = season;
+      _currentEpisode = episode;
+      _isLoadingEpisode = true;
+    });
     
     try {
       final playData = await MovieBoxService.getPlayUrls(
@@ -162,10 +167,8 @@ class _PlayPageState extends State<PlayPage> {
         // Update video URL in controller
         await _controller.changeVideoUrl(videoUrl, season, episode);
         
-        // Update UI state
+        // Update qualities and clear loading
         setState(() {
-          _currentSeason = season;
-          _currentEpisode = episode;
           _availableQualities = qualities.cast<String>();
           _isLoadingEpisode = false;
         });
