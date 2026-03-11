@@ -194,7 +194,6 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               itemBuilder: (context, index) {
                 final season = widget.seasons[index]['se'] as int;
                 final isActive = season == _selectedSeason;
-                final isLoadingSeason = season == _loadingSeasonPill;
                 final isDisabled = _loadingEpisode != null || _loadingSeasonPill != null;
 
                 return GestureDetector(
@@ -210,31 +209,18 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
-                      color: isLoadingSeason
-                          ? const Color(0xFFDC143C).withOpacity(0.8)
-                          : isActive 
-                              ? const Color(0xFFDC143C) 
-                              : Colors.transparent,
+                      color: isActive ? const Color(0xFFDC143C) : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: (isActive || isLoadingSeason) ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
+                        color: isActive ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
                         width: 1,
                       ),
                     ),
                     transform: Matrix4.identity()..scale(isActive ? 1.05 : 1.0),
                     alignment: Alignment.center,
-                    child: isLoadingSeason
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Opacity(
-                            opacity: isDisabled ? 0.3 : 1.0,
-                            child: Text(
+                    child: Opacity(
+                      opacity: isDisabled ? 0.3 : 1.0,
+                      child: Text(
                         'Season $season',
                         style: TextStyle(
                           color: isActive ? Colors.white : Colors.white.withOpacity(0.8),
@@ -271,14 +257,14 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
         itemBuilder: (context, index) {
           final episode = episodes[index];
           final isCurrentlyPlaying = episode == widget.currentEpisode && _selectedSeason == widget.currentSeason;
-          final isLoading = episode == _loadingEpisode && _selectedSeason == _loadingSeason;
-          final isDisabled = _loadingEpisode != null && !isLoading;
+          final isDisabled = _loadingEpisode != null || _loadingSeasonPill != null;
 
           return GestureDetector(
             onTap: isDisabled ? null : () {
               setState(() {
                 _loadingEpisode = episode;
                 _loadingSeason = _selectedSeason;
+                _loadingSeasonPill = null;
               });
               widget.onSelect(_selectedSeason, episode);
               Navigator.pop(context);
@@ -288,19 +274,17 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
               curve: Curves.easeOut,
               height: 48,
               decoration: BoxDecoration(
-                color: isLoading 
-                    ? const Color(0xFFDC143C).withOpacity(0.8)
-                    : isCurrentlyPlaying 
-                        ? const Color(0xFFDC143C) 
-                        : isDisabled
-                            ? const Color(0xFF1A1A1A)
-                            : const Color(0xFF222222),
+                color: isCurrentlyPlaying 
+                    ? const Color(0xFFDC143C) 
+                    : isDisabled
+                        ? const Color(0xFF1A1A1A)
+                        : const Color(0xFF222222),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: (isCurrentlyPlaying || isLoading) ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
+                  color: isCurrentlyPlaying ? Colors.transparent : const Color(0xFF121212).withOpacity(0.6),
                   width: 1,
                 ),
-                boxShadow: (isCurrentlyPlaying || isLoading)
+                boxShadow: isCurrentlyPlaying
                     ? [
                         BoxShadow(
                           color: const Color(0xFFDC143C).withOpacity(0.4),
@@ -311,37 +295,14 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                     : null,
               ),
               alignment: Alignment.center,
-              child: isLoading
-                  ? Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                        Text(
-                          'EP $episode',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            fontFamily: 'MazzardH',
-                          ),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      'EP $episode',
-                      style: TextStyle(
-                        color: isDisabled 
-                            ? Colors.white.withOpacity(0.3)
-                            : isCurrentlyPlaying 
-                                ? Colors.white 
-                                : Colors.white.withOpacity(0.8),
+              child: Text(
+                'EP $episode',
+                style: TextStyle(
+                  color: isDisabled 
+                      ? Colors.white.withOpacity(0.3)
+                      : isCurrentlyPlaying 
+                          ? Colors.white 
+                          : Colors.white.withOpacity(0.8),
                         fontWeight: isCurrentlyPlaying ? FontWeight.bold : FontWeight.normal,
                         fontSize: 14,
                         fontFamily: 'MazzardH',
