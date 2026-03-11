@@ -216,7 +216,6 @@ class _SeasonEpisodeSelectorState extends State<SeasonEpisodeSelector> {
                         width: 1,
                       ),
                     ),
-                    transform: Matrix4.identity()..scale(isActive ? 1.05 : 1.0),
                     alignment: Alignment.center,
                     child: Text(
                       'Season $season',
