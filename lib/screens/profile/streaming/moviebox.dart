@@ -8,6 +8,7 @@ import 'components/bottom_nav.dart';
 import 'moviebox_detail.dart';
 import 'moviebox_search.dart';
 import 'history.dart';
+import 'downloads.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN TOKENS
@@ -266,7 +267,12 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
       bottomNavigationBar: StreamingBottomNav(
         currentIndex: _currentNavIdx,
         onTap: (i) {
-          if (i == 3) {
+          if (i == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const DownloadsScreen()),
+            );
+          } else if (i == 3) {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const WatchHistoryScreen()),
