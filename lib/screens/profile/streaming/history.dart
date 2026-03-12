@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../../search/search.dart';
+import 'moviebox_search.dart';
 
 class WatchHistoryScreen extends StatefulWidget {
   const WatchHistoryScreen({Key? key}) : super(key: key);
@@ -354,7 +354,7 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SearchPage()),
+                MaterialPageRoute(builder: (context) => const MovieBoxSearch()),
               );
             },
             style: ElevatedButton.styleFrom(
