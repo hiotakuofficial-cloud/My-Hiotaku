@@ -126,60 +126,13 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> with TickerProv
   }
 
   Future<void> _playVideo(HistoryItem item) async {
-    try {
-      final playData = await MovieBoxService.getPlayUrls(
-        id: item.subjectId,
-        path: '',
-        season: item.season,
-        episode: item.episode,
-      );
-
-      final streams = playData['data']?['streams'] as List? ?? [];
-      if (streams.isEmpty) {
-        Fluttertoast.showToast(msg: 'Video not available');
-        return;
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      final savedQuality = prefs.getString('preferred_quality') ?? '720';
-      final stream = streams.firstWhere(
-        (s) => s['resolutions'] == savedQuality,
-        orElse: () => streams.first,
-      );
-
-      final videoUrl = stream['url'] as String? ?? '';
-      if (videoUrl.isEmpty) {
-        Fluttertoast.showToast(msg: 'Video URL not found');
-        return;
-      }
-
-      final qualities = streams.map((s) => '${s['resolutions']}p').toList().cast<String>();
-
-      if (!mounted) return;
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (c) => PlayPage(
-            videoUrl: videoUrl,
-            subjectId: item.subjectId,
-            detailPath: '',
-            season: item.season,
-            episode: item.episode,
-            title: item.title,
-            posterUrl: item.posterUrl,
-            availableQualities: qualities,
-            recommendations: const [],
-            subjectType: 2,
-            rating: 0.0,
-            genres: '',
-          ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('Play video error: $e');
-      Fluttertoast.showToast(msg: 'Failed to load video');
-    }
+    // Navigate to detail page which will handle play
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (c) => MovieBoxDetail(subjectId: item.subjectId),
+      ),
+    );
   }
 
   @override

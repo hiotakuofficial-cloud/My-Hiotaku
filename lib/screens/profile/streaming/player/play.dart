@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../../../services/moviebox_service.dart';
+import '../moviebox_detail.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
 import 'controller/action_button_controller.dart';
@@ -856,18 +857,30 @@ class _PlayPageState extends State<PlayPage> {
           rec['imageUrl'] ?? '',
           rec['rating'] ?? 0.0,
           rec['title'] ?? '',
+          rec['id'] ?? '',
         );
       },
     );
   }
 
-  Widget _buildMovieCard(String imageUrl, double rating, String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
+  Widget _buildMovieCard(String imageUrl, double rating, String title, String subjectId) {
+    return GestureDetector(
+      onTap: () {
+        if (subjectId.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MovieBoxDetail(subjectId: subjectId),
+            ),
+          );
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
@@ -934,6 +947,7 @@ class _PlayPageState extends State<PlayPage> {
           ),
         ),
       ],
+    ),
     );
   }
 
