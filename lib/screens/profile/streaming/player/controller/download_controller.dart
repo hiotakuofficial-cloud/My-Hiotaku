@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'network_controller.dart';
 import '../dialogs/file_exists_dialog.dart';
 import '../../../../../services/moviebox_service.dart';
@@ -304,6 +306,7 @@ class DownloadController extends ChangeNotifier {
 
       // Download complete
       isDownloading = false;
+      await _saveDownloadInfo();
       await _showDownloadCompleteNotification();
       notifyListeners();
       return _currentFilePath;
@@ -404,6 +407,42 @@ class DownloadController extends ChangeNotifier {
     
     _notifications.cancel(0);
     notifyListeners();
+  }
+
+  Future<void> _saveDownloadInfo() async {
+    if (_currentFilePath == null || _currentTitle == null) return;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Get existing downloads list
+      final downloadsJson = prefs.getString('downloads_list') ?? '[]';
+      final List<dynamic> downloads = json.decode(downloadsJson);
+      
+      // Create download info
+      final downloadInfo = {
+        'title': _currentTitle,
+        'season': _currentSeason,
+        'episode': _currentEpisode,
+        'filePath': _currentFilePath,
+        'downloadedAt': DateTime.now().toIso8601String(),
+        'fileSize': await File(_currentFilePath!).length(),
+      };
+      
+      // Add to list (avoid duplicates)
+      downloads.removeWhere((d) => 
+        d['title'] == _currentTitle && 
+        d['season'] == _currentSeason && 
+        d['episode'] == _currentEpisode
+      );
+      downloads.insert(0, downloadInfo);
+      
+      // Save back
+      await prefs.setString('downloads_list', json.encode(downloads));
+      debugPrint('Download saved: $_currentTitle S${_currentSeason}E${_currentEpisode} at $_currentFilePath');
+    } catch (e) {
+      debugPrint('Save download info error: $e');
+    }
   }
 
   @override
