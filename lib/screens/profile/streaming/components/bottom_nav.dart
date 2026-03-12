@@ -108,10 +108,10 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
 
@@ -135,31 +135,47 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.isActive ? 16 : 12,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: widget.isActive
+                    ? const Color(0xFFDC143C).withOpacity(0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     widget.icon,
                     color: widget.isActive
-                        ? const Color(0xFFFF3B5C)
-                        : Colors.white.withOpacity(0.5),
-                    size: 26,
+                        ? const Color(0xFFDC143C)
+                        : Colors.white.withOpacity(0.6),
+                    size: 24,
                   ),
-                  if (widget.isActive) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.label,
-                      style: const TextStyle(
-                        color: Color(0xFFFF3B5C),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'MazzardH',
-                      ),
-                    ),
-                  ],
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: widget.isActive
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              widget.label,
+                              style: const TextStyle(
+                                color: Color(0xFFDC143C),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'MazzardH',
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                 ],
               ),
             ),
