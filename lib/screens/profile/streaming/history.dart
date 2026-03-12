@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'moviebox_search.dart';
 import 'moviebox_detail.dart';
+import 'player/play.dart';
 import 'components/bottom_nav.dart';
+import '../../../services/moviebox_service.dart';
 
 class WatchHistoryScreen extends StatefulWidget {
   const WatchHistoryScreen({Key? key}) : super(key: key);
@@ -118,6 +121,63 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> with TickerProv
       setState(() => _historyItems.clear());
     } catch (e) {
       debugPrint('Clear all error: $e');
+    }
+  }
+
+  Future<void> _playVideo(HistoryItem item) async {
+    try {
+      final playData = await MovieBoxService.getPlayUrls(
+        id: item.subjectId,
+        path: '',
+        season: item.season,
+        episode: item.episode,
+      );
+
+      final streams = playData['data']?['streams'] as List? ?? [];
+      if (streams.isEmpty) {
+        Fluttertoast.showToast(msg: 'Video not available');
+        return;
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final savedQuality = prefs.getString('preferred_quality') ?? '720';
+      final stream = streams.firstWhere(
+        (s) => s['resolutions'] == savedQuality,
+        orElse: () => streams.first,
+      );
+
+      final videoUrl = stream['url'] as String? ?? '';
+      if (videoUrl.isEmpty) {
+        Fluttertoast.showToast(msg: 'Video URL not found');
+        return;
+      }
+
+      final qualities = streams.map((s) => '${s['resolutions']}p').toList().cast<String>();
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (c) => PlayPage(
+            videoUrl: videoUrl,
+            subjectId: item.subjectId,
+            detailPath: '',
+            season: item.season,
+            episode: item.episode,
+            title: item.title,
+            posterUrl: item.posterUrl,
+            availableQualities: qualities,
+            recommendations: const [],
+            subjectType: 2,
+            rating: 0.0,
+            genres: '',
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Play video error: $e');
+      Fluttertoast.showToast(msg: 'Failed to load video');
     }
   }
 
@@ -284,7 +344,7 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> with TickerProv
                   valueColor: const AlwaysStoppedAnimation(Color(0xFFDC143C)), minHeight: 6, borderRadius: BorderRadius.circular(3)),
               ])),
               IconButton(icon: const Icon(Icons.play_circle_fill, color: Color(0xFFDC143C), size: 32), 
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => MovieBoxDetail(subjectId: item.subjectId)))),
+                onPressed: () => _playVideo(item)),
             ]))));
       });
   }
@@ -297,7 +357,7 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> with TickerProv
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: count, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: ratio),
       itemBuilder: (c, i) {
         final item = _historyItems[i];
-        return GestureDetector(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => MovieBoxDetail(subjectId: item.subjectId))),
+        return GestureDetector(onTap: () => _playVideo(item),
           child: Container(decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: Stack(children: [
