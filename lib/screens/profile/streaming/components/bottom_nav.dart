@@ -17,7 +17,7 @@ class StreamingBottomNav extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       height: 65,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(35),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.5),
@@ -27,7 +27,7 @@ class StreamingBottomNav extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(35),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
           child: Container(
@@ -40,7 +40,7 @@ class StreamingBottomNav extends StatelessWidget {
                   Colors.white.withOpacity(0.05),
                 ],
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(35),
               border: Border.all(
                 color: Colors.white.withOpacity(0.3),
                 width: 1.5,
