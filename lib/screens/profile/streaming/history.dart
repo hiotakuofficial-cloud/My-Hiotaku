@@ -6,6 +6,7 @@ import 'dart:async';
 import 'moviebox_search.dart';
 import 'moviebox_detail.dart';
 import 'player/play.dart';
+import 'downloads.dart';
 import 'components/bottom_nav.dart';
 import '../../../services/moviebox_service.dart';
 
@@ -199,7 +200,19 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> with TickerProv
           if (_pendingDeleteItem != null) _buildToast(),
         ],
       ),
-      bottomNavigationBar: StreamingBottomNav(currentIndex: 3, onTap: (i) { if (i != 3) Navigator.pop(context); }),
+      bottomNavigationBar: StreamingBottomNav(
+        currentIndex: 3,
+        onTap: (i) {
+          if (i == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const DownloadsScreen()),
+            );
+          } else if (i != 3) {
+            Navigator.pop(context);
+          }
+        },
+      ),
     );
   }
 

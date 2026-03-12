@@ -5,6 +5,7 @@ import 'dart:io';
 import 'moviebox_search.dart';
 import 'moviebox_detail.dart';
 import 'player/play.dart';
+import 'history.dart';
 import 'components/bottom_nav.dart';
 
 class DownloadsScreen extends StatefulWidget {
@@ -177,7 +178,14 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       bottomNavigationBar: StreamingBottomNav(
         currentIndex: 2,
         onTap: (index) {
-          if (index != 2) Navigator.pop(context);
+          if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const WatchHistoryScreen()),
+            );
+          } else if (index != 2) {
+            Navigator.pop(context);
+          }
         },
       ),
     );
