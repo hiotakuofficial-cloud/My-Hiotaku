@@ -48,6 +48,7 @@ class ActionButtonController {
     required String title,
     required int season,
     required int episode,
+    required String posterUrl,
     required List<String> availableQualities,
     required List<Map<String, dynamic>> availableLanguages,
   }) {
@@ -78,6 +79,7 @@ class ActionButtonController {
             season: season,
             episode: episode,
             quality: quality,
+            posterUrl: posterUrl,
             context: context,
           );
         },

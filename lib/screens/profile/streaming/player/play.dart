@@ -611,6 +611,7 @@ class _PlayPageState extends State<PlayPage> {
               title: widget.title ?? 'Episode',
               season: _currentSeason,
               episode: _currentEpisode,
+              posterUrl: widget.posterUrl ?? '',
               availableQualities: _availableQualities,
               availableLanguages: _availableLanguages,
             );

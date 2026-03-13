@@ -53,6 +53,7 @@ class DownloadController extends ChangeNotifier {
   String? _currentVideoUrl;
   String? _currentFilePath;
   String? _currentTitle;
+  String? _currentPosterUrl;
   int? _currentSeason;
   int? _currentEpisode;
 
@@ -175,12 +176,14 @@ class DownloadController extends ChangeNotifier {
     required int season,
     required int episode,
     required String quality,
+    required String posterUrl,
     required BuildContext context,
   }) async {
     if (isDownloading) return null;
 
     // Save current download info
     _currentTitle = title;
+    _currentPosterUrl = posterUrl;
     _currentSeason = season;
     _currentEpisode = episode;
 
@@ -425,6 +428,7 @@ class DownloadController extends ChangeNotifier {
         'season': _currentSeason,
         'episode': _currentEpisode,
         'filePath': _currentFilePath,
+        'posterUrl': _currentPosterUrl ?? '',
         'downloadedAt': DateTime.now().toIso8601String(),
         'fileSize': await File(_currentFilePath!).length(),
       };

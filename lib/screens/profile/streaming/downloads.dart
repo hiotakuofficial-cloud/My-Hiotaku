@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'moviebox_search.dart';
 import 'moviebox_detail.dart';
 import 'player/play.dart';
@@ -52,6 +53,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
               season: d['season'] ?? 1,
               episode: d['episode'] ?? 1,
               filePath: filePath,
+              posterUrl: d['posterUrl'] ?? '',
               fileSize: size,
               quality: '720p',
               language: 'Sub',
@@ -61,11 +63,27 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         }
       }
       
+      // Get real device storage
+      final directory = await getExternalStorageDirectory();
+      if (directory != null) {
+        final stat = await directory.stat();
+        final path = directory.path;
+        final result = await Process.run('df', [path]);
+        final lines = result.stdout.toString().split('\n');
+        if (lines.length > 1) {
+          final parts = lines[1].split(RegExp(r'\s+'));
+          if (parts.length >= 4) {
+            final total = int.tryParse(parts[1]) ?? 0;
+            final used = int.tryParse(parts[2]) ?? 0;
+            _totalStorageGB = total / (1024 * 1024);
+            _usedStorageGB = used / (1024 * 1024);
+          }
+        }
+      }
+      
       if (mounted) {
         setState(() {
           _downloads = items;
-          _usedStorageGB = totalSize / (1024 * 1024 * 1024);
-          _totalStorageGB = 10.0; // Can be fetched from device
           _isLoading = false;
         });
       }
@@ -269,12 +287,25 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      width: 90,
-                      height: 130,
-                      color: const Color(0xFF2A2A2A),
-                      child: const Icon(Icons.movie, color: Colors.white54),
-                    ),
+                    child: item.posterUrl.isNotEmpty
+                        ? Image.network(
+                            item.posterUrl,
+                            width: 90,
+                            height: 130,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 90,
+                              height: 130,
+                              color: const Color(0xFF2A2A2A),
+                              child: const Icon(Icons.movie, color: Colors.white54),
+                            ),
+                          )
+                        : Container(
+                            width: 90,
+                            height: 130,
+                            color: const Color(0xFF2A2A2A),
+                            child: const Icon(Icons.movie, color: Colors.white54),
+                          ),
                   ),
                   Positioned(
                     top: 4,
@@ -675,6 +706,7 @@ class DownloadItem {
   final int season;
   final int episode;
   final String filePath;
+  final String posterUrl;
   final int fileSize;
   final String quality;
   final String language;
@@ -685,6 +717,7 @@ class DownloadItem {
     required this.season,
     required this.episode,
     required this.filePath,
+    required this.posterUrl,
     required this.fileSize,
     required this.quality,
     required this.language,
