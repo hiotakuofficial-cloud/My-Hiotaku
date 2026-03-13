@@ -438,10 +438,8 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 // Get available languages and select best one
                 final dubs = subject?['dubs'] as List? ?? [];
                 final availableLanguages = dubs.cast<Map<String, dynamic>>();
-                final savedLang = await LanguagePreference.getPreference();
-                final selectedLang = LanguagePreference.selectLanguage(
+                final selectedLang = await LanguagePreference.selectLanguageWithHistory(
                   availableLanguages: availableLanguages,
-                  savedPreference: savedLang,
                 );
                 
                 final playData = await MovieBoxService.getPlayUrls(

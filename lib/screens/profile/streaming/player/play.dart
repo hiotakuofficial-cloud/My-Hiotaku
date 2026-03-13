@@ -141,12 +141,10 @@ class _PlayPageState extends State<PlayPage> {
     });
     
     try {
-      // Use saved language preference for next episode
-      final savedLang = await LanguagePreference.getPreference();
-      if (savedLang != null && savedLang != _currentLanguage && _availableLanguages.isNotEmpty) {
-        final selectedLang = LanguagePreference.selectLanguage(
+      // Use saved language preference with history for next episode
+      if (_availableLanguages.isNotEmpty) {
+        final selectedLang = await LanguagePreference.selectLanguageWithHistory(
           availableLanguages: _availableLanguages,
-          savedPreference: savedLang,
         );
         _currentLanguage = selectedLang;
       }
