@@ -432,9 +432,6 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 final season = subjectType == 1 ? 0 : 1;
                 final episode = subjectType == 1 ? 0 : 1;
                 
-                // Get detailPath from loaded data
-                final detailPath = subject?['detailPath'] ?? widget.detailPath ?? '';
-                
                 // Get available languages and select best one
                 final dubs = subject?['dubs'] as List? ?? [];
                 final availableLanguages = dubs.cast<Map<String, dynamic>>();
@@ -442,9 +439,23 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                   availableLanguages: availableLanguages,
                 );
                 
+                // Find the selected language's subjectId and detailPath
+                String playSubjectId = widget.subjectId;
+                String playDetailPath = subject?['detailPath'] ?? widget.detailPath ?? '';
+                
+                for (final dub in dubs) {
+                  final lanName = dub['lanName']?.toString() ?? '';
+                  if (lanName.toLowerCase().contains(selectedLang.toLowerCase()) ||
+                      selectedLang.toLowerCase().contains(lanName.toLowerCase())) {
+                    playSubjectId = dub['subjectId']?.toString() ?? widget.subjectId;
+                    playDetailPath = dub['detailPath']?.toString() ?? playDetailPath;
+                    break;
+                  }
+                }
+                
                 final playData = await MovieBoxService.getPlayUrls(
-                  id: widget.subjectId,
-                  path: detailPath,
+                  id: playSubjectId,
+                  path: playDetailPath,
                   season: season,
                   episode: episode,
                 );

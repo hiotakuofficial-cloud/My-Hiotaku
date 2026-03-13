@@ -48,17 +48,22 @@ class LanguagePreference {
   }) {
     if (availableLanguages.isEmpty) return 'Original';
     
-    // Extract language names
+    // Extract language names from lanName field
     final langNames = availableLanguages
-        .map((lang) => lang['name']?.toString() ?? '')
+        .map((lang) => lang['lanName']?.toString() ?? '')
         .where((name) => name.isNotEmpty)
         .toList();
     
     if (langNames.isEmpty) return 'Original';
     
     // 1. Check saved preference (last used)
-    if (savedPreference != null && langNames.contains(savedPreference)) {
-      return savedPreference;
+    if (savedPreference != null) {
+      for (final name in langNames) {
+        if (name.toLowerCase().contains(savedPreference.toLowerCase()) ||
+            savedPreference.toLowerCase().contains(name.toLowerCase())) {
+          return name;
+        }
+      }
     }
     
     // 2. Check history (user's frequently used languages)
@@ -75,7 +80,7 @@ class LanguagePreference {
     if (availableLanguages.isEmpty) return 'Original';
     
     final langNames = availableLanguages
-        .map((lang) => lang['name']?.toString() ?? '')
+        .map((lang) => lang['lanName']?.toString() ?? '')
         .where((name) => name.isNotEmpty)
         .toList();
     
@@ -83,21 +88,33 @@ class LanguagePreference {
     
     // 1. Check last used
     final lastUsed = await getPreference();
-    if (lastUsed != null && langNames.contains(lastUsed)) {
-      return lastUsed;
+    if (lastUsed != null) {
+      for (final name in langNames) {
+        if (name.toLowerCase().contains(lastUsed.toLowerCase()) ||
+            lastUsed.toLowerCase().contains(name.toLowerCase())) {
+          return name;
+        }
+      }
     }
     
     // 2. Check history (Hindi > Eng > Jap order based on user usage)
     final history = await getHistory();
     for (final lang in history) {
-      if (langNames.contains(lang)) {
-        return lang;
+      for (final name in langNames) {
+        if (name.toLowerCase().contains(lang.toLowerCase()) ||
+            lang.toLowerCase().contains(name.toLowerCase())) {
+          return name;
+        }
       }
     }
     
     // 3. Fallback: English > Original > First available
-    if (langNames.contains('English')) return 'English';
-    if (langNames.contains('Original')) return 'Original';
+    for (final name in langNames) {
+      if (name.toLowerCase().contains('english')) return name;
+    }
+    for (final name in langNames) {
+      if (name.toLowerCase().contains('original')) return name;
+    }
     
     return langNames.first;
   }
