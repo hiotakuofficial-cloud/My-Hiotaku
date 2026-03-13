@@ -5,6 +5,7 @@ import '../widgets/feedback.dart';
 import '../widgets/download_options.dart';
 import '../controller/download_controller.dart';
 import '../dialogs/download_warning_dialog.dart';
+import '../../downloads.dart';
 
 class ActionButtonController {
   /// Share content with Android share dialog
@@ -87,8 +88,11 @@ class ActionButtonController {
     );
   }
 
-  /// Open downloads folder (placeholder)
-  static void viewDownloads() {
-    // TODO: Implement view downloads functionality
+  /// Open downloads folder
+  static void viewDownloads(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const DownloadsScreen()),
+    );
   }
 }

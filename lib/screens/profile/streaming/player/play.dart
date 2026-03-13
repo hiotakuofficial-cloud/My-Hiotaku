@@ -674,7 +674,7 @@ class _PlayPageState extends State<PlayPage> {
           }),
           const SizedBox(width: 12),
           _buildPillButton(Icons.folder_open, 'View Downloads', () {
-            ActionButtonController.viewDownloads();
+            ActionButtonController.viewDownloads(context);
           }),
         ],
       ),
