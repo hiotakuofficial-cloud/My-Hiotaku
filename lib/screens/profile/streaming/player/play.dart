@@ -21,6 +21,7 @@ import 'widgets/quality_selector.dart';
 import 'widgets/pip_button.dart';
 import 'widgets/custom_buffering_loader.dart';
 import 'widgets/season_episode_selector.dart';
+import 'widgets/forward_backward_buttons.dart';
 
 class PlayPage extends StatefulWidget {
   final String videoUrl;
@@ -486,6 +487,14 @@ class _PlayPageState extends State<PlayPage> {
             player: _controller.player,
             onSeek: _controller.startHideTimer,
           ),
+          // Forward/Backward buttons (only in fullscreen)
+          if (_isFullscreen) ...[
+            const SizedBox(height: 12),
+            ForwardBackwardButtons(
+              player: _controller.player,
+              onTap: _controller.startHideTimer,
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

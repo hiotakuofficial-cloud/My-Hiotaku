@@ -20,43 +20,59 @@ class AutoPlay {
   static bool hasNextEpisode({
     required int currentSeason,
     required int currentEpisode,
-    required Map<int, List<int>> seasons, // season -> list of episodes
+    required List<Map<String, dynamic>> seasons,
   }) {
-    final currentSeasonEpisodes = seasons[currentSeason] ?? [];
+    // Find current season data
+    final currentSeasonData = seasons.firstWhere(
+      (s) => s['season'] == currentSeason,
+      orElse: () => {},
+    );
+    
+    if (currentSeasonData.isEmpty) return false;
+    
+    final episodes = currentSeasonData['episodes'] as List? ?? [];
     
     // Check if there's next episode in current season
-    if (currentSeasonEpisodes.contains(currentEpisode + 1)) {
+    if (episodes.any((ep) => ep['episode'] == currentEpisode + 1)) {
       return true;
     }
     
     // Check if there's next season
-    final nextSeason = currentSeason + 1;
-    if (seasons.containsKey(nextSeason) && (seasons[nextSeason]?.isNotEmpty ?? false)) {
-      return true;
-    }
-    
-    return false;
+    return seasons.any((s) => s['season'] == currentSeason + 1);
   }
   
   /// Get next episode details
   static Map<String, int>? getNextEpisode({
     required int currentSeason,
     required int currentEpisode,
-    required Map<int, List<int>> seasons,
+    required List<Map<String, dynamic>> seasons,
   }) {
-    final currentSeasonEpisodes = seasons[currentSeason] ?? [];
+    // Find current season data
+    final currentSeasonData = seasons.firstWhere(
+      (s) => s['season'] == currentSeason,
+      orElse: () => {},
+    );
     
-    // Try next episode in current season
-    if (currentSeasonEpisodes.contains(currentEpisode + 1)) {
-      return {'season': currentSeason, 'episode': currentEpisode + 1};
+    if (currentSeasonData.isNotEmpty) {
+      final episodes = currentSeasonData['episodes'] as List? ?? [];
+      
+      // Try next episode in current season
+      if (episodes.any((ep) => ep['episode'] == currentEpisode + 1)) {
+        return {'season': currentSeason, 'episode': currentEpisode + 1};
+      }
     }
     
     // Try first episode of next season
-    final nextSeason = currentSeason + 1;
-    if (seasons.containsKey(nextSeason)) {
-      final nextSeasonEpisodes = seasons[nextSeason] ?? [];
-      if (nextSeasonEpisodes.isNotEmpty) {
-        return {'season': nextSeason, 'episode': nextSeasonEpisodes.first};
+    final nextSeasonData = seasons.firstWhere(
+      (s) => s['season'] == currentSeason + 1,
+      orElse: () => {},
+    );
+    
+    if (nextSeasonData.isNotEmpty) {
+      final episodes = nextSeasonData['episodes'] as List? ?? [];
+      if (episodes.isNotEmpty) {
+        final firstEp = episodes.first['episode'] as int? ?? 1;
+        return {'season': currentSeason + 1, 'episode': firstEp};
       }
     }
     
