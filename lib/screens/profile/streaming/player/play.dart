@@ -142,16 +142,30 @@ class _PlayPageState extends State<PlayPage> {
     
     try {
       // Use saved language preference with history for next episode
+      String playSubjectId = widget.subjectId;
+      String playDetailPath = widget.detailPath;
+      
       if (_availableLanguages.isNotEmpty) {
         final selectedLang = await LanguagePreference.selectLanguageWithHistory(
           availableLanguages: _availableLanguages,
         );
         _currentLanguage = selectedLang;
+        
+        // Find the selected language's subjectId and detailPath
+        for (final dub in _availableLanguages) {
+          final lanName = dub['lanName']?.toString() ?? '';
+          if (lanName.toLowerCase().contains(selectedLang.toLowerCase()) ||
+              selectedLang.toLowerCase().contains(lanName.toLowerCase())) {
+            playSubjectId = dub['subjectId']?.toString() ?? widget.subjectId;
+            playDetailPath = dub['detailPath']?.toString() ?? widget.detailPath;
+            break;
+          }
+        }
       }
       
       final playData = await MovieBoxService.getPlayUrls(
-        id: widget.subjectId,
-        path: widget.detailPath,
+        id: playSubjectId,
+        path: playDetailPath,
         season: season,
         episode: episode,
       );
