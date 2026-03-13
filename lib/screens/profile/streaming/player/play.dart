@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import '../../../../services/moviebox_service.dart';
 import '../moviebox_detail.dart';
 import '../components/lang_preference.dart';
+import '../components/auto_play.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
 import 'controller/action_button_controller.dart';
@@ -91,6 +92,9 @@ class _PlayPageState extends State<PlayPage> {
       title: widget.title,
       posterUrl: widget.posterUrl,
     );
+    
+    // Setup auto-play for next episode
+    _controller.onEpisodeEnd = _handleEpisodeEnd;
     
     // Load recommendations in background
     _recommendationController = RecommendationController();
@@ -208,6 +212,27 @@ class _PlayPageState extends State<PlayPage> {
       if (mounted) {
         setState(() => _isLoadingEpisode = false);
         Fluttertoast.showToast(msg: 'Failed to load episode');
+      }
+    }
+  }
+
+  Future<void> _handleEpisodeEnd() async {
+    // Check if auto-play is enabled
+    final autoPlayEnabled = await AutoPlay.isEnabled();
+    if (!autoPlayEnabled) return;
+    
+    // Get next episode
+    final nextEp = AutoPlay.getNextEpisode(
+      currentSeason: _currentSeason,
+      currentEpisode: _currentEpisode,
+      seasons: _seasonEpisodeController.seasons,
+    );
+    
+    if (nextEp != null) {
+      // Auto-play next episode
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        _loadEpisode(nextEp['season']!, nextEp['episode']!);
       }
     }
   }
