@@ -431,9 +431,12 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 final season = subjectType == 1 ? 0 : 1;
                 final episode = subjectType == 1 ? 0 : 1;
                 
+                // Get detailPath from loaded data
+                final detailPath = subject?['detailPath'] ?? widget.detailPath ?? '';
+                
                 final playData = await MovieBoxService.getPlayUrls(
                   id: widget.subjectId,
-                  path: widget.detailPath ?? '',
+                  path: detailPath,
                   season: season,
                   episode: episode,
                 );
