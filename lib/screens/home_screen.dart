@@ -4,8 +4,6 @@ import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'dart:async';
 import 'dart:io';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/api_service.dart';
 import '../models/api_models.dart';
 import 'profile/handler/profile_handler.dart';

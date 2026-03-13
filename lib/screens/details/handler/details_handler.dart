@@ -1,8 +1,6 @@
 import '../../../services/api_service.dart';
-import '../../../models/api_models.dart';
 import '../../../services/notification_service.dart';
 import '../../auth/handler/supabase.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class DetailsHandler {
   // Determine which API to use based on anime type and get details

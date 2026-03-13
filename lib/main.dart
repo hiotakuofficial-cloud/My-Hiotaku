@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:media_kit/media_kit.dart';
 import 'screens/landing/splash.dart';
 import 'screens/landing/onboarding.dart';
@@ -11,15 +10,12 @@ import 'screens/home_screen.dart';
 import 'screens/profile/profile.dart';
 import 'screens/search/search.dart';
 import 'screens/favourite/favourite.dart';
-import 'config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'notifications/handler/local_notification_handler.dart';
-import 'notifications/handler/firebase_messaging_handler.dart';
 import 'screens/auth/handler/firebase_handler.dart';
 import 'database/migrations.dart';
-import 'services/websocket_service.dart';
 
 // Background message handler (must be top-level function)
 @pragma('vm:entry-point')

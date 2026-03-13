@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'moviebox_search.dart';
 import 'moviebox_detail.dart';
-import 'player/play.dart';
 import 'history.dart';
 import 'components/bottom_nav.dart';
 

@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:ui';
 import 'handler/download_handler.dart';
-import '../../errors/loading_error.dart';
-import '../../errors/no_internet.dart';
 import 'widget/widget_download.dart';
 
 class DownloadsScreen extends StatefulWidget {

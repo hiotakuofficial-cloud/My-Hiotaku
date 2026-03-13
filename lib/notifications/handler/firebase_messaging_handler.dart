@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../screens/auth/handler/supabase.dart';
-import '../models/notification_model.dart';
 import 'local_notification_handler.dart';
 
 class FirebaseMessagingHandler {
