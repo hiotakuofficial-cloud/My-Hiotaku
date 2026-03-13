@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../../../services/moviebox_service.dart';
 import '../moviebox_detail.dart';
+import '../components/lang_preference.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
 import 'controller/action_button_controller.dart';
@@ -33,6 +34,7 @@ class PlayPage extends StatefulWidget {
   final int subjectType; // 1 = Movie, 2 = Series
   final double rating; // IMDb rating
   final String genres; // Comma-separated genres
+  final String? initialLanguage; // Auto-selected language
 
   const PlayPage({
     Key? key,
@@ -48,6 +50,7 @@ class PlayPage extends StatefulWidget {
     this.subjectType = 2, // Default to Series
     this.rating = 0.0,
     this.genres = '',
+    this.initialLanguage,
   }) : super(key: key);
 
   @override
@@ -66,6 +69,7 @@ class _PlayPageState extends State<PlayPage> {
   late int _currentEpisode;
   List<String> _availableQualities = [];
   List<Map<String, dynamic>> _availableLanguages = [];
+  String? _currentLanguage;
 
   @override
   void initState() {
@@ -75,6 +79,7 @@ class _PlayPageState extends State<PlayPage> {
     _currentSeason = widget.season;
     _currentEpisode = widget.episode;
     _availableQualities = widget.availableQualities;
+    _currentLanguage = widget.initialLanguage;
     
     _controller = VideoPlayerController(
       initialVideoUrl: widget.videoUrl,
@@ -136,6 +141,16 @@ class _PlayPageState extends State<PlayPage> {
     });
     
     try {
+      // Use saved language preference for next episode
+      final savedLang = await LanguagePreference.getPreference();
+      if (savedLang != null && savedLang != _currentLanguage && _availableLanguages.isNotEmpty) {
+        final selectedLang = LanguagePreference.selectLanguage(
+          availableLanguages: _availableLanguages,
+          savedPreference: savedLang,
+        );
+        _currentLanguage = selectedLang;
+      }
+      
       final playData = await MovieBoxService.getPlayUrls(
         id: widget.subjectId,
         path: widget.detailPath,
@@ -407,7 +422,11 @@ class _PlayPageState extends State<PlayPage> {
           AudioTrackSelector(
             subjectId: widget.subjectId,
             detailPath: widget.detailPath,
-            onAudioSelect: (id, path, lang) => _controller.changeAudioTrack(id, path),
+            onAudioSelect: (id, path, lang) {
+              _controller.changeAudioTrack(id, path);
+              setState(() => _currentLanguage = lang);
+              LanguagePreference.savePreference(lang);
+            },
             onTap: _controller.startHideTimer,
           ),
           const SizedBox(width: 8),

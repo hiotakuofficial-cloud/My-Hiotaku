@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/moviebox_service.dart';
 import 'player/play.dart';
+import 'components/lang_preference.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -434,6 +435,15 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 // Get detailPath from loaded data
                 final detailPath = subject?['detailPath'] ?? widget.detailPath ?? '';
                 
+                // Get available languages and select best one
+                final dubs = subject?['dubs'] as List? ?? [];
+                final availableLanguages = dubs.cast<Map<String, dynamic>>();
+                final savedLang = await LanguagePreference.getPreference();
+                final selectedLang = LanguagePreference.selectLanguage(
+                  availableLanguages: availableLanguages,
+                  savedPreference: savedLang,
+                );
+                
                 final playData = await MovieBoxService.getPlayUrls(
                   id: widget.subjectId,
                   path: detailPath,
@@ -485,6 +495,7 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                       subjectType: subjectType,
                       rating: rating,
                       genres: genres.join(', '),
+                      initialLanguage: selectedLang,
                     ),
                   ),
                 );
