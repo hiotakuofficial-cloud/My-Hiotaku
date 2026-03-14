@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import '../../../../../services/moviebox_service.dart';
 import 'video_lifecycle_controller.dart';
@@ -45,7 +46,7 @@ class VideoPlayerController extends ChangeNotifier {
     this.posterUrl,
   }) {
     currentVideoUrl = initialVideoUrl;
-    player = Player();
+    player = Player(); // temp init, will be replaced in _initialize
     videoController = VideoController(player);
     
     // Initialize lifecycle controller
@@ -77,8 +78,16 @@ class VideoPlayerController extends ChangeNotifier {
     _initialize();
   }
 
+  /// Initialize player with adaptive buffer based on connection type
   Future<void> _initialize() async {
     try {
+      // Adaptive buffer based on connection type
+      final result = await Connectivity().checkConnectivity();
+      final isWifi = result == ConnectivityResult.wifi;
+      final bufferSize = isWifi ? 64 * 1024 * 1024 : 32 * 1024 * 1024;
+      player = Player(configuration: PlayerConfiguration(bufferSize: bufferSize));
+      videoController = VideoController(player);
+
       await player.open(
         Media(
           currentVideoUrl,
