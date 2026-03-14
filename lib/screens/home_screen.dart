@@ -13,6 +13,8 @@ import 'pages/upcoming.dart';
 import 'pages/anime_movies.dart';
 import 'pages/hindi_dubbed.dart';
 import 'pages/recently_added.dart';
+import '../dialogs/maintenance.dart';
+import 'profile/streaming/moviebox.dart';
 import 'auth/login.dart';
 import 'errors/no_internet.dart';
 import 'errors/loading_error.dart';
@@ -54,6 +56,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    // Show maintenance dialog immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      MaintenanceDialog.show(context, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MovieBoxHome()),
+        );
+      });
+    });
     
     // Check network first
     _checkNetworkAndLoad();

@@ -10,6 +10,7 @@ import 'cache/cache.dart';
 import 'moviebox_search.dart';
 import 'history.dart';
 import 'downloads.dart';
+import '../../../dialogs/maintenance.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN TOKENS
