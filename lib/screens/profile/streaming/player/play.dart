@@ -488,14 +488,6 @@ class _PlayPageState extends State<PlayPage> {
             player: _controller.player,
             onSeek: _controller.startHideTimer,
           ),
-          // Forward/Backward buttons (only in fullscreen)
-          if (_isFullscreen) ...[
-            const SizedBox(height: 12),
-            ForwardBackwardButtons(
-              player: _controller.player,
-              onTap: _controller.startHideTimer,
-            ),
-          ],
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -574,6 +566,14 @@ class _PlayPageState extends State<PlayPage> {
                   ),
                 ],
               ),
+              // Center: Forward/Backward (fullscreen only)
+              if (_isFullscreen)
+                ForwardBackwardButtons(
+                  player: _controller.player,
+                  onTap: _controller.startHideTimer,
+                )
+              else
+                const SizedBox.shrink(),
               // Right: PiP | Fullscreen
               Row(
                 children: [
