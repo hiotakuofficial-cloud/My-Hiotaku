@@ -7,6 +7,7 @@ import 'moviebox_detail.dart';
 import 'downloads.dart';
 import 'components/bottom_nav.dart';
 import '../../../services/moviebox_service.dart';
+import 'cache/cache.dart';
 
 class WatchHistoryScreen extends StatefulWidget {
   const WatchHistoryScreen({Key? key}) : super(key: key);
@@ -285,11 +286,13 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> with TickerProv
             decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12)),
             child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [
               Stack(children: [
-                ClipRRect(borderRadius: BorderRadius.circular(8), child: item.posterUrl.isNotEmpty
-                  ? Image.network(item.posterUrl, width: 100, height: 140, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(width: 100, height: 140, color: const Color(0xFF2A2A2A), 
-                        child: const Icon(Icons.movie, color: Colors.white54)))
-                  : Container(width: 100, height: 140, color: const Color(0xFF2A2A2A), child: const Icon(Icons.movie, color: Colors.white54))),
+                ClipRRect(borderRadius: BorderRadius.circular(8), child: CachedImage(
+                  url: item.posterUrl,
+                  width: 100,
+                  height: 140,
+                  fit: BoxFit.cover,
+                  errorWidget: Container(width: 100, height: 140, color: const Color(0xFF2A2A2A), child: const Icon(Icons.movie, color: Colors.white54)),
+                )),
                 if (item.duration > 0) Positioned(left: 0, right: 0, bottom: 0, child: LinearProgressIndicator(
                   value: item.position / item.duration, backgroundColor: Colors.black54, 
                   valueColor: const AlwaysStoppedAnimation(Color(0xFFDC143C)), minHeight: 4)),
@@ -326,10 +329,12 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> with TickerProv
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: Stack(children: [
                 ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), 
-                  child: item.posterUrl.isNotEmpty
-                    ? Image.network(item.posterUrl, width: double.infinity, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(color: const Color(0xFF2A2A2A), child: const Icon(Icons.movie, color: Colors.white54)))
-                    : Container(color: const Color(0xFF2A2A2A), child: const Icon(Icons.movie, color: Colors.white54))),
+                  child: CachedImage(
+                    url: item.posterUrl,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorWidget: Container(color: const Color(0xFF2A2A2A), child: const Icon(Icons.movie, color: Colors.white54)),
+                  )),
                 if (item.duration > 0) Positioned(left: 0, right: 0, bottom: 0, child: LinearProgressIndicator(
                   value: item.position / item.duration, backgroundColor: Colors.black54, 
                   valueColor: const AlwaysStoppedAnimation(Color(0xFFDC143C)), minHeight: 4)),

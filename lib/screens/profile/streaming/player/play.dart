@@ -8,6 +8,7 @@ import '../../../../services/moviebox_service.dart';
 import '../moviebox_detail.dart';
 import '../components/lang_preference.dart';
 import '../components/auto_play.dart';
+import '../cache/cache.dart';
 import 'controller/video_player_controller.dart';
 import 'controller/recommendation_controller.dart';
 import 'controller/action_button_controller.dart';
@@ -960,15 +961,12 @@ class _PlayPageState extends State<PlayPage> {
               borderRadius: BorderRadius.circular(14),
               child: Stack(
                 children: [
-                  Image.network(
-                    imageUrl,
+                  CachedImage(
+                    url: imageUrl,
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey[800],
-                      child: const Icon(Icons.broken_image, color: Colors.white),
-                    ),
+                    errorWidget: Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white)),
                   ),
                   Positioned(
                     top: 8,

@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../services/moviebox_service.dart';
 import 'components/bottom_nav.dart';
 import 'moviebox_detail.dart';
+import 'cache/cache.dart';
 import 'moviebox_search.dart';
 import 'history.dart';
 import 'downloads.dart';
@@ -542,11 +543,10 @@ class _HeroSlide extends StatelessWidget {
               animation: zoomAnim,
               builder: (_, __) => Transform.scale(
                 scale: zoomAnim.value,
-                child: Image.network(
-                  imageUrl,
+                child: CachedImage(
+                  url: imageUrl,
                   fit: BoxFit.cover,
-                  alignment: const Alignment(0, -0.2),
-                  errorBuilder: (_, __, ___) => Container(
+                  errorWidget: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Color(0xFF1E1E2E), _T.bg],
@@ -932,13 +932,10 @@ class _MovieCardState extends State<_MovieCard> with SingleTickerProviderStateMi
         fit: StackFit.expand,
         children: [
           // Poster
-          Image.network(
-            widget.imageUrl,
+          CachedImage(
+            url: widget.imageUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: _T.card,
-              child: const Icon(Icons.movie_outlined, color: _T.grey30, size: 38),
-            ),
+            errorWidget: Container(color: _T.card, child: const Icon(Icons.movie_outlined, color: _T.grey30, size: 38)),
           ),
 
           // Gradient

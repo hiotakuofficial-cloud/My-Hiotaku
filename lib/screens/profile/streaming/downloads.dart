@@ -7,6 +7,7 @@ import 'moviebox_search.dart';
 import 'moviebox_detail.dart';
 import 'history.dart';
 import 'components/bottom_nav.dart';
+import 'cache/cache.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({Key? key}) : super(key: key);
@@ -286,25 +287,13 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: item.posterUrl.isNotEmpty
-                        ? Image.network(
-                            item.posterUrl,
-                            width: 90,
-                            height: 130,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 90,
-                              height: 130,
-                              color: const Color(0xFF2A2A2A),
-                              child: const Icon(Icons.movie, color: Colors.white54),
-                            ),
-                          )
-                        : Container(
-                            width: 90,
-                            height: 130,
-                            color: const Color(0xFF2A2A2A),
-                            child: const Icon(Icons.movie, color: Colors.white54),
-                          ),
+                    child: CachedImage(
+                      url: item.posterUrl,
+                      width: 90,
+                      height: 130,
+                      fit: BoxFit.cover,
+                      errorWidget: Container(width: 90, height: 130, color: const Color(0xFF2A2A2A), child: const Icon(Icons.movie, color: Colors.white54)),
+                    ),
                   ),
                   Positioned(
                     top: 4,

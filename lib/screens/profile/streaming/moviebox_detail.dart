@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/moviebox_service.dart';
 import 'player/play.dart';
 import 'components/lang_preference.dart';
+import 'cache/cache.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -222,13 +223,10 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
       children: [
         ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-          child: Image.network(
-            imageUrl,
+          child: CachedImage(
+            url: imageUrl,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              color: const Color(0xFF1a1a1a),
-              child: const Icon(Icons.movie, color: Colors.white24, size: 64),
-            ),
+            errorWidget: Container(color: const Color(0xFF1a1a1a), child: const Icon(Icons.movie, color: Colors.white24, size: 64)),
           ),
         ),
         Container(
@@ -266,19 +264,11 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: imageUrl.isNotEmpty
-            ? Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: const Color(0xFF1a1a1a),
-                  child: const Icon(Icons.movie, color: Colors.white24, size: 48),
-                ),
-              )
-            : Container(
-                color: const Color(0xFF1a1a1a),
-                child: const Icon(Icons.movie, color: Colors.white24, size: 48),
-              ),
+        child: CachedImage(
+          url: imageUrl,
+          fit: BoxFit.cover,
+          errorWidget: Container(color: const Color(0xFF1a1a1a), child: const Icon(Icons.movie, color: Colors.white24, size: 48)),
+        ),
       ),
     );
   }
@@ -654,19 +644,11 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: imageUrl.isNotEmpty
-                        ? Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: const Color(0xFF1a1a1a),
-                              child: const Icon(Icons.movie, color: Colors.white24, size: 48),
-                            ),
-                          )
-                        : Container(
-                            color: const Color(0xFF1a1a1a),
-                            child: const Icon(Icons.movie, color: Colors.white24, size: 48),
-                        ),
+                    child: CachedImage(
+                      url: imageUrl,
+                      fit: BoxFit.cover,
+                      errorWidget: Container(color: const Color(0xFF1a1a1a), child: const Icon(Icons.movie, color: Colors.white24, size: 48)),
+                    ),
                   ),
                 ),
               );

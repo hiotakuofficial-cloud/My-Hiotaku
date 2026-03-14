@@ -3,6 +3,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/moviebox_service.dart';
 import 'moviebox_detail.dart';
+import 'cache/cache.dart';
 
 class MovieBoxSearch extends StatefulWidget {
   const MovieBoxSearch({Key? key}) : super(key: key);
@@ -421,16 +422,10 @@ class _MovieBoxSearchState extends State<MovieBoxSearch> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.network(
-                imageUrl,
+              child: CachedImage(
+                url: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.shade800,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.broken_image, color: Colors.white70),
-                  );
-                },
+                errorWidget: Container(color: Colors.grey.shade800, alignment: Alignment.center, child: const Icon(Icons.broken_image, color: Colors.white70)),
               ),
             ),
             Positioned.fill(
