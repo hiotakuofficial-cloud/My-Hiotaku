@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../controllers/live_room_controller.dart';
@@ -156,7 +156,7 @@ class _QuickLiveSheetState extends State<_QuickLiveSheet> {
                             Row(children: [
                               Text(widget.subjectType, style: const TextStyle(fontSize: 13, color: _grey, fontFamily: _font)),
                               const Text(' • ', style: TextStyle(color: _grey)),
-                              const Icon(CupertinoIcons.star_fill, color: Colors.amber, size: 13),
+                              const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
                               const SizedBox(width: 3),
                               Text(widget.rating.toStringAsFixed(1), style: const TextStyle(fontSize: 13, color: _grey, fontFamily: _font)),
                               const Text(' • ', style: TextStyle(color: _grey)),
@@ -169,9 +169,15 @@ class _QuickLiveSheetState extends State<_QuickLiveSheet> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Username
-                  Text('Username: $_username',
-                    style: const TextStyle(fontSize: 15, color: _white, fontFamily: _font)),
+                  // Username with shimmer while loading
+                  _username.isEmpty
+                      ? Shimmer.fromColors(
+                          baseColor: Colors.grey[800]!,
+                          highlightColor: Colors.grey[600]!,
+                          child: Container(height: 16, width: 160, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                        )
+                      : Text('Username: $_username',
+                          style: const TextStyle(fontSize: 15, color: _white, fontFamily: _font)),
                   const SizedBox(height: 12),
 
                   // Room ID
@@ -192,7 +198,7 @@ class _QuickLiveSheetState extends State<_QuickLiveSheet> {
                             overflow: TextOverflow.ellipsis),
                         ),
                         IconButton(
-                          icon: const Icon(CupertinoIcons.doc_on_clipboard, color: _grey),
+                          icon: const Icon(Icons.content_copy_rounded, color: _grey),
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: _roomId));
                             Fluttertoast.showToast(msg: 'Room ID copied!');
@@ -214,9 +220,9 @@ class _QuickLiveSheetState extends State<_QuickLiveSheet> {
                       hintStyle: const TextStyle(color: Colors.white54, fontFamily: _font),
                       filled: true,
                       fillColor: _surface,
-                      prefixIcon: const Icon(CupertinoIcons.lock_fill, color: _grey),
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: _grey),
                       suffixIcon: IconButton(
-                        icon: Icon(_passVisible ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill, color: _grey),
+                        icon: Icon(_passVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: _grey),
                         onPressed: () => setState(() => _passVisible = !_passVisible),
                       ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
