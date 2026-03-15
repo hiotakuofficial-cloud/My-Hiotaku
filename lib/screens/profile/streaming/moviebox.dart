@@ -10,6 +10,7 @@ import 'cache/cache.dart';
 import 'moviebox_search.dart';
 import 'history.dart';
 import 'downloads.dart';
+import 'moviebox_stream.dart';
 import '../../../dialogs/maintenance.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -253,7 +254,13 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
           ),
         ),
       ),
-      body: AnimatedSwitcher(
+      body: _currentNavIdx == 1
+          ? const MovieBoxStream()
+          : _currentNavIdx == 2
+              ? const DownloadsScreen()
+              : _currentNavIdx == 3
+                  ? const WatchHistoryScreen()
+                  : AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         child: _isLoading
             ? _buildLoading()
@@ -269,19 +276,7 @@ class _MovieBoxHomeState extends State<MovieBoxHome>
       bottomNavigationBar: StreamingBottomNav(
         currentIndex: _currentNavIdx,
         onTap: (i) {
-          if (i == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const DownloadsScreen()),
-            );
-          } else if (i == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const WatchHistoryScreen()),
-            );
-          } else if (i != _currentNavIdx) {
-            setState(() => _currentNavIdx = i);
-          }
+          setState(() => _currentNavIdx = i);
         },
       ),
     );
