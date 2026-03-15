@@ -4,10 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../services/moviebox_service.dart';
 import 'player/play.dart';
 import 'components/lang_preference.dart';
 import 'cache/cache.dart';
+import 'live/compponets/not_login.dart';
+import 'live/controllers/live_room_controller.dart';
+import 'live/pages/connector.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -528,7 +532,29 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: null, // Disabled
+            onPressed: () async {
+              if (FirebaseAuth.instance.currentUser == null) {
+                LiveNotLoggedIn.show(context);
+                return;
+              }
+              final subject = _detailData?['data']?['subject'] as Map<String, dynamic>?;
+              final title = subject?['title']?.toString() ?? 'Live Room';
+              final playId = widget.subjectId;
+              final thumbnail = subject?['cover']?['url']?.toString();
+              final room = await LiveRoomController.createRoom(
+                title: title,
+                playId: playId,
+                thumbnail: thumbnail,
+              );
+              if (room == null) {
+                Fluttertoast.showToast(msg: 'Failed to create room');
+                return;
+              }
+              if (!mounted) return;
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => LiveRoomPage(room: room),
+              ));
+            },
             icon: const Icon(Icons.live_tv),
             label: const Text('Stream Now'),
             style: ElevatedButton.styleFrom(
