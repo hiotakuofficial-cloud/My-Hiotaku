@@ -10,8 +10,7 @@ import 'player/play.dart';
 import 'components/lang_preference.dart';
 import 'cache/cache.dart';
 import 'live/compponets/not_login.dart';
-import 'live/controllers/live_room_controller.dart';
-import 'live/pages/connector.dart';
+import 'live/compponets/quick_live.dart';
 
 class MovieBoxDetail extends StatefulWidget {
   final String subjectId;
@@ -538,22 +537,21 @@ class _MovieBoxDetailState extends State<MovieBoxDetail> {
                 return;
               }
               final subject = _detailData?['data']?['subject'] as Map<String, dynamic>?;
-              final title = subject?['title']?.toString() ?? 'Live Room';
-              final playId = widget.subjectId;
-              final thumbnail = subject?['cover']?['url']?.toString();
-              final room = await LiveRoomController.createRoom(
-                title: title,
-                playId: playId,
-                thumbnail: thumbnail,
+              final releaseDate = subject?['releaseDate']?.toString() ?? '';
+              final episodeCount = subject?['episodeCount']?.toString() ?? '';
+              final subjectTypeVal = subject?['subjectType'] ?? 2;
+              final yearOrEp = subjectTypeVal == 1
+                  ? releaseDate.isNotEmpty ? releaseDate.substring(0, 4) : ''
+                  : episodeCount.isNotEmpty ? '$episodeCount Ep' : '';
+              QuickLive.show(
+                context,
+                title: subject?['title']?.toString() ?? 'Live Room',
+                thumbnail: subject?['cover']?['url']?.toString() ?? '',
+                playId: widget.subjectId,
+                subjectType: subjectTypeVal == 1 ? 'Movie' : 'Series',
+                rating: double.tryParse(subject?['imdbRatingValue']?.toString() ?? '0') ?? 0.0,
+                yearOrEpisodes: yearOrEp,
               );
-              if (room == null) {
-                Fluttertoast.showToast(msg: 'Failed to create room');
-                return;
-              }
-              if (!mounted) return;
-              Navigator.push(context, MaterialPageRoute(
-                builder: (_) => LiveRoomPage(room: room),
-              ));
             },
             icon: const Icon(Icons.live_tv),
             label: const Text('Stream Now'),
